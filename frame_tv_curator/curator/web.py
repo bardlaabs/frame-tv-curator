@@ -2,7 +2,7 @@
 import os, io, json, logging, mimetypes, hashlib, tempfile, urllib.parse, urllib.request
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from PIL import Image
-from . import ha, library, render, store, config
+from . import ha, library, render, store, config, discover
 log = logging.getLogger("web")
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 THUMBS = os.path.join(config.ROOT, "_thumbs")
@@ -141,6 +141,22 @@ def make(engine):
                     else: return self._send(404, {"error": "unknown pattern"})
                     im.thumbnail((1280, 720)); buf = io.BytesIO(); im.save(buf, "JPEG", quality=85)
                     return self._send(200, buf.getvalue(), "image/jpeg")
+                if p == "/api/discover/artists":
+                    return self._send(200, discover.SOURCES[q.get("source", "reframed")].artists())
+                if p == "/api/discover/search":
+                    from concurrent.futures import ThreadPoolExecutor
+                    src = discover.SOURCES[q.get("source", "reframed")]
+                    r = src.search(q.get("q", ""), q.get("artist", ""), q.get("sort", "az"), int(q.get("page") or 0), int(q.get("per") or 24))
+                    def one(k):
+                        try:
+                            return src.detail(k)
+                        except Exception as e:
+                            return {"key": k, "source": src.id, "error": str(e)}
+                    with ThreadPoolExecutor(4) as ex:
+                        items = list(ex.map(one, r["keys"]))
+                    return self._send(200, {"total": r["total"], "page": r["page"], "per": r["per"], "items": items})
+                if p == "/api/discover/job":
+                    return self._send(200, discover.JOBS.get(q.get("id")) or {"error": "unknown job"})
                 if p == "/api/duplicates": return self._send(200, library.find_duplicates())
                 if p == "/api/backups": return self._send(200, library.list_backups())
                 if p == "/api/templates":
@@ -187,6 +203,11 @@ def make(engine):
                 if p == "/api/show": return self._send(200, engine.show(b["id"], force_push=b.get("force", False)))
                 if p == "/api/settings":
                     r = engine.settings.update(b); engine.tv.cfg = r.get("tv", engine.tv.cfg); config.apply_log_level(r.get("log_level")); engine.invalidate_next(); engine._notify(); return self._send(200, r)
+                if p == "/api/discover/check":
+                    src = discover.SOURCES[b.get("source", "reframed")]
+                    return self._send(200, discover.check(src.detail(b["key"])))
+                if p == "/api/discover/add":
+                    return self._send(200, discover.add(b["items"], b["folder"]))
                 if p == "/api/folder": return self._send(200, {"folder": library.create_folder(b["name"])})
                 if p == "/api/sidecar": return self._send(200, library.patch_sidecar(b["id"], b["patch"]))
                 if p == "/api/display":           # replace the per-image display block entirely ({} = use globals)

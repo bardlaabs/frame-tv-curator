@@ -411,6 +411,28 @@ def is_low_res(img_id):
     except Exception:
         return False
 
+def dhash_image(im):
+    """64-bit difference hash (hex) of a PIL image; same algorithm as image_facts."""
+    from PIL import ImageOps
+    sm = ImageOps.exif_transpose(im).convert("L").resize((9, 8), Image.LANCZOS)
+    px = list(sm.getdata())
+    bits = 0
+    for r in range(8):
+        for c in range(8):
+            bits = (bits << 1) | (1 if px[r * 9 + c] > px[r * 9 + c + 1] else 0)
+    return "%016x" % bits
+
+def source_of(img_id, sc=None):
+    """Where the image came from, if known (museum / site / camera), for duplicate comparisons."""
+    sc = sc if sc is not None else load_sidecar(img_id)
+    col = sc.get("collection") or {}
+    src = col.get("institution") or sc.get("source")
+    if not isinstance(src, str):
+        src = None
+    if not src and sc.get("kind") == "photo":
+        src = "own photo" + (" (%s)" % sc["camera"] if sc.get("camera") else "")
+    return src or (sc.get("card_text") or {}).get("credit") or None
+
 def _ham(a, b):
     return bin(int(a, 16) ^ int(b, 16)).count("1")
 
@@ -444,7 +466,7 @@ def find_duplicates(threshold=4):
     for g in groups.values():
         if len(g) > 1:
             out.append([{"id": i, "name": display_info(i)["name"], "folder": i.split("/")[0], "w": facts[i]["w"], "h": facts[i]["h"],
-                         "bytes": facts[i]["s"]} for i in sorted(g)])
+                         "bytes": facts[i]["s"], "source": source_of(i)} for i in sorted(g)])
     return out
 
 def duplicate_of(img_id, threshold=5):

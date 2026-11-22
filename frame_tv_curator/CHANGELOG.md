@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+- New **Discover** tab. First source: Reframed Gallery (free, already 3840x2160). Search by title or artist, filter by artist, order A-Z / recently added / shuffle, preview, select several, pick a destination folder (or type a new one), add with download progress.
+- Everything the source publishes is saved in the sidecar: title, artist, date, description, source and page URL, license, size, and whether the image was AI-extended. The placard and Info tab show them.
+- Duplicate warning: selecting something that is already in your library (same picture by preview hash, or same title and artist) is flagged. A side-by-side comparison shows each file's size in pixels and MB and its source; choose skip, keep both, or replace (the old one goes to _trash).
+- Library > Find duplicates now also shows each image's source.
+- Reads the public sitemap (cached for a day) with a polite request rate; no API keys.
+
 ## 0.9.7
 - TV tab: Save & apply now moved to its own card above the status card.
 
