@@ -662,7 +662,8 @@ function tvCards(s){
 
  // live status
  const live=el('div',{class:'card'},el('h3',{},'What it is doing now'),el('div',{id:'ambstat',class:'mut'},'…'),
-  el('div',{class:'row'},el('button',{onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now')));
+  el('div',{class:'row'},el('button',{onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now'),
+   el('button',{onclick:async ev=>{const b=ev.currentTarget;b.disabled=true;b.textContent='Refreshing…';await updAmb();b.disabled=false;b.textContent='Refresh status'}},'Refresh status')));
  const updAmb=async()=>{const e=$('#ambstat');if(!e||$('#t-tv').hidden)return;try{const a=await api('ambient');
    const b=a.brightness||{},c=a.color_temp||{},l=a.light||{},pr=a.presence||{};
    fillKids(e,el('div',{},'TV: '+(a.tv_state||'?')),

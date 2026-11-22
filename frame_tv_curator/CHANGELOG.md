@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.3
+- TV tab: Refresh status button on the "What it is doing now" panel.
+
 ## 0.9.2
 - Fix: the TV tab status panel showed Presence as "off" even when it was enabled and working.
 
