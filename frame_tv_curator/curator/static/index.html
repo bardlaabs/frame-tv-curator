@@ -84,6 +84,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 @media(max-width:800px){.pvx{flex-direction:column}.pvside{width:auto;max-height:50vh}}
 .now>*{min-width:0}#details{overflow-wrap:anywhere}.nsub{color:var(--acc);font-weight:700;margin-bottom:10px}.nstack{display:flex;flex-direction:column;gap:10px}
 .ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.nb.empty{opacity:.6;cursor:pointer}.nb.empty .nv{color:var(--mut);font-style:italic}.nb.empty:hover{opacity:1;outline:1px dashed var(--acc)}.nb{background:var(--panel2);border-radius:8px;padding:7px 10px;min-width:0}.nk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}.nv{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.nv a{color:var(--acc)}.nfacts{color:var(--mut);font-size:12px;line-height:1.5}
+.lcol{min-width:0}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
 <nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
@@ -250,7 +251,7 @@ async function renderNow(){const s=curStatus.current?curStatus:await api('status
   field('',{r:rot},'r.value','num',{min:1}),field('',{r:rot},'r.unit','select',{options:{minutes:'minutes',hours:'hours',days:'days'}}),
   el('button',{onclick:async()=>{S=await api('settings',{rotation:rot});await poll();toast('Rotation saved — changing every '+rot.value+' '+rot.unit+'; '+(curStatus.due_in>0?'next change in '+Math.ceil(curStatus.due_in/60)+' min':'a change is due now'),5000)}},'Save'));
  const lastErr=s.last_error?el('p',{class:'warn'},'Last error: '+s.last_error):null;
- root.append(el('div',{class:'now'},hero,side),ctl,el('div',{class:'card'},el('h3',{},'Rotation'),rf,lastErr,s.pending?el('p',{class:'warn'},'Waiting for the TV to enter Art Mode…'):null));
+ root.append(el('div',{class:'now'},el('div',{class:'lcol'},hero,ctl,el('div',{class:'card'},el('h3',{},'Rotation'),rf,lastErr,s.pending?el('p',{class:'warn'},'Waiting for the TV to enter Art Mode…'):null)),side));
  tick();if(s.current)drawDetails(s.current)}
 async function drawDetails(id){const box=$('#details');if(!box)return;
  let r;try{r=await api('sidecar?id='+encodeURIComponent(id))}catch(e){box.textContent='Could not load details';return}

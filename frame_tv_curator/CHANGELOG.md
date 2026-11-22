@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.6
+- Now Playing: Controls and Rotation sit in a column under the preview, so the details on the right can grow downward without pushing them.
+
 ## 0.10.5
 - Now Playing details always list every field, including Title, Camera, Description, Notes, Links, Source, License and Edits. Fields with no value read "Not set" (dimmed); click one to open the editor and fill it in.
 
