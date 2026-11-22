@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Frame TV Curator</title>
+<style>
+:root{--bg:#121212;--panel:#1c1c1e;--panel2:#26262a;--line:#34343a;--fg:#f1efe9;--mut:#a6a49d;--acc:#e0b15a;--bad:#e5726a;--ok:#7fc58b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 "Kumbh Sans",system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;align-items:center;gap:18px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.02em}
+nav{display:flex;gap:4px}
+nav button{background:none;border:0;color:var(--mut);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+nav button.on{background:var(--panel2);color:var(--fg)}
+main{padding:18px;max-width:1500px;margin:0 auto}
+button,.btn{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--acc)}button.pri{background:var(--acc);color:#1a1a1a;border-color:var(--acc);font-weight:700}
+button.danger{border-color:var(--bad);color:var(--bad)}
+input,select,textarea{background:#101012;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;max-width:100%}
+input[type=color]{padding:0;width:44px;height:30px}
+#upl{font-size:13px;margin:-6px 0 12px}#upl div{padding:2px 0}#upl .ok{color:var(--ok)}#upl .err{color:var(--bad)}#upl .w{color:#f0b35a}input[type=range]{padding:0;vertical-align:middle}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}.row>label{min-width:140px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;position:relative}
+.tile:hover{border-color:var(--acc)}.tile img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
+.tile .t{padding:8px 10px}.tile .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.tile .t span{color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tile.ex{opacity:.45}.badges{position:absolute;top:6px;right:6px;display:flex;gap:4px}
+.badges i{font-style:normal;background:#000a;border-radius:6px;padding:1px 6px;font-size:12px}
+.tile.cur{outline:2px solid var(--acc)}
+.badges{align-items:center}.fb{font-style:normal;background:#000a;border:1px solid #fff4;color:#ddd;border-radius:6px;width:26px;height:24px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s}
+.fb svg{width:16px;height:16px}.tile:hover .fb,.fb.on{opacity:1}.fb:hover{border-color:#fff;color:#fff}
+.fb.on.fav{color:#ffc928;border-color:#ffc928;background:#5a4300cc}.fb.on.more{color:#4ade80;border-color:#4ade80;background:#0b4a2acc}.fb.on.exc{color:#ff7b72;border-color:#ff7b72;background:#5a1410cc}
+@media (hover:none){.fb{opacity:.75}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.chip{padding:6px 12px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);cursor:pointer}.chip.on{background:var(--acc);color:#1a1a1a;border-color:var(--acc);font-weight:700}
+.hero img{width:100%;max-width:960px;border-radius:0;display:block;background:#000}
+.mut{color:var(--mut)}.pill{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--panel2)}
+.modal{position:fixed;inset:0;background:#000c;z-index:20;display:none;overflow:auto;padding:20px}.modal.on{display:block}
+.mbox{max-width:1400px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.pv{position:relative}.pv img{width:100%;border-radius:0;display:block;background:#000;aspect-ratio:16/9}
+.pv .sp{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0008;border-radius:8px}.pv.busy .sp{display:flex}
+.tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-radius:8px 8px 0 0;background:none;color:var(--mut)}.tabs button.on{background:var(--panel2);color:var(--fg)}
+.sw{display:flex;gap:6px;flex-wrap:wrap}.sw span{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 3px;border-radius:99px;background:var(--panel2);cursor:pointer;font-size:12px;border:1px solid var(--line)}
+.sw span i{width:20px;height:20px;border-radius:50%;display:block;border:1px solid #fff3}
+.warn{color:#f0b35a}.drop{border:2px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--mut);margin-bottom:14px}.drop.over{border-color:var(--acc);color:var(--fg)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#000d;padding:10px 18px;border-radius:99px;display:none;z-index:50}
+.ch{display:inline-block;padding:5px 12px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;font-size:13px;user-select:none}
+.ch:hover{border-color:var(--acc)}.ch.on{background:var(--acc);color:#1a1a1a;border-color:var(--acc);font-weight:700}.chips2{display:flex;gap:6px;flex-wrap:wrap}
+.pv img{cursor:zoom-in}
+.pv img,.hero img{box-shadow:0 0 0 1px #000,0 0 0 3px rgba(255,255,255,.9)}
+.now{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px;align-items:start}@media(max-width:900px){.now{grid-template-columns:1fr}}
+.spin{display:inline-block;width:14px;height:14px;border:3px solid #0004;border-top-color:#1a1a1a;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-2px;margin-right:8px}@keyframes sp{to{transform:rotate(360deg)}}
+#actbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:70;background:var(--acc);color:#1a1a1a;font-weight:700;padding:9px 20px;border-radius:99px;box-shadow:0 4px 18px #0008;display:none}
+.tile.sel{outline:4px solid var(--acc);outline-offset:-4px}
+#bulk{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;background:var(--panel2);border:1px solid var(--line);box-shadow:0 6px 24px #000a;padding:10px 14px;border-radius:14px;display:none;gap:8px;flex-wrap:wrap;align-items:center;max-width:96vw}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:4px 10px;margin:10px 0;font-size:14px}.kv b{color:var(--mut);font-weight:400}
+.viewer{position:fixed;inset:0;background:#000;z-index:60;overflow:hidden;touch-action:none;cursor:grab}.viewer.drag{cursor:grabbing}
+.viewer img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;user-select:none;-webkit-user-drag:none;image-rendering:auto}
+.vbar{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:61;background:#000b;padding:6px;border-radius:99px;align-items:center}
+.vbar button{border-radius:99px;padding:5px 14px}.vbar span{padding:0 8px;color:var(--mut);min-width:54px;text-align:center}
+textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 12px;padding:6px 12px}legend{color:var(--acc);padding:0 6px;font-size:13px}
+</style></head><body>
+<header><h1>Frame TV Curator</h1>
+<nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
+<span style="flex:1"></span><span id="tvs" class="pill mut"></span></header>
+<main>
+<section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section>
+</main>
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div><div id="toast"></div>
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const api=async(p,body,m)=>{const r=await fetch('api/'+p,body===undefined?{}:{method:m||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ if(!r.ok){const tx=(await r.text())||r.status;try{clog('API '+p+' failed: '+String(tx).slice(0,300))}catch(e){}throw new Error(tx)};const t=r.headers.get('content-type')||'';return t.includes('json')?r.json():r.blob()};
+function toast(m,ms=2500){if(/fail|error|could not|did not|didn.t|problem|not running|not found/i.test(String(m)))try{clog('popup: '+m)}catch(e){}const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',ms)}
+function fillKids(e,...k){e.replaceChildren(...k.flat().filter(x=>x!=null&&x!==false))}
+function el(tag,at={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(at)){if(k=='class')e.className=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k=='html')e.innerHTML=v;else e.setAttribute(k,v)}
+ for(const c of kids.flat())if(c!=null)e.append(c.nodeType?c:document.createTextNode(c));return e}
+const get=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+const set=(o,p,v)=>{const ks=p.split('.');let a=o;ks.slice(0,-1).forEach(k=>a=a[k]??={});a[ks.at(-1)]=v};
+const dm=(a,b)=>{const o=JSON.parse(JSON.stringify(a||{}));for(const[k,v]of Object.entries(b||{}))o[k]=(v&&typeof v=='object'&&!Array.isArray(v)&&typeof o[k]=='object'&&o[k])?dm(o[k],v):JSON.parse(JSON.stringify(v));return o};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const dbounce=(f,ms)=>{let h;return(...a)=>{clearTimeout(h);h=setTimeout(()=>f(...a),ms)}};
+
+/* ---------- generic bound field ---------- */
+let PICKID=null,PALETTE=[];const PALHOSTS=[];
+function fillPal(box,setVal){box.replaceChildren(...PALETTE.map(c=>el('span',{title:c.color+' · '+c.pct+'% of the picture',style:'width:30px;height:30px;border-radius:6px;border:1px solid #0008;cursor:pointer;background:'+c.color,onclick:()=>setVal(c.color,true)})));
+ if(!PALETTE.length)box.textContent=PICKID?'Loading picture colors…':'Open a picture’s editor to pick colors from that picture.'}
+function setPalette(id,list){PICKID=id;PALETTE=list}
+function field(label,obj,path,kind,o={},onch){
+ const cur=get(obj,path);let inp;
+ const ch=v=>{set(obj,path,v);onch&&onch(path)};
+ if(kind=='check'){inp=el('input',{type:'checkbox'});inp.checked=!!cur;inp.onchange=()=>ch(inp.checked)}
+ else if(kind=='select'&&Object.keys(o.options).length<=6&&!o.native){const g=el('div',{class:'chips2'});const mk=()=>g.replaceChildren(...Object.entries(o.options).map(([v,l])=>el('span',{class:'ch'+(String(get(obj,path))==v?' on':''),onclick:()=>{ch(v);mk()}},l)));mk();inp=g}
+ else if(kind=='select'){inp=el('select',{},Object.entries(o.options).map(([v,l])=>el('option',{value:v},l)));inp.value=cur;inp.onchange=()=>ch(inp.value)}
+ else if(kind=='range'){const out=el('span',{class:'mut'},cur);const r=el('input',{type:'range',min:o.min,max:o.max,step:o.step||1});r.value=cur;
+   r.oninput=()=>{out.textContent=r.value};r.onchange=()=>ch(+r.value);inp=el('span',{},r,' ',out)}
+ else if(kind=='num'){inp=el('input',{type:'number',min:o.min,max:o.max,step:o.step||1,style:'width:90px'});inp.value=cur;inp.onchange=()=>ch(+inp.value)}
+ else if(kind=='color'){ // in-page picker: the native one (macOS "Show Colors" panel) breaks inside the HA app web view
+  const isHex=v=>/^#[0-9a-f]{6}$/i.test(v);let val=isHex(cur)?cur:'#efece4';
+  const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255);
+  const toHsl=h=>{const[r,g,b]=rgb(h),mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let H=0,S=0;
+   if(d){S=d/(1-Math.abs(2*l-1));H=mx==r?((g-b)/d)%6:mx==g?(b-r)/d+2:(r-g)/d+4;H=(H*60+360)%360}return[H,S*100,l*100]};
+  const toHex=(H,S,L)=>{S/=100;L/=100;const c=(1-Math.abs(2*L-1))*S,x=c*(1-Math.abs((H/60)%2-1)),m=L-c/2;
+   const[r,g,b]=H<60?[c,x,0]:H<120?[x,c,0]:H<180?[0,c,x]:H<240?[0,x,c]:H<300?[x,0,c]:[c,0,x];
+   return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('')};
+  const sw=el('span',{title:'Click to choose a color',style:'display:inline-block;width:44px;height:30px;border:1px solid var(--line);border-radius:6px;vertical-align:middle;cursor:pointer'});
+  const tx=el('input',{type:'text',maxLength:7,style:'width:84px;margin-left:8px;font-family:monospace'});
+  const sl=(max,bg)=>el('input',{type:'range',min:0,max,step:1,style:'width:200px'});
+  const sH=sl(359),sS=sl(100),sL=sl(100);
+  const panel=el('div',{style:'display:none;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)'});
+  const row=(n,i)=>el('div',{class:'row',style:'margin:2px 0'},el('label',{style:'width:70px'},n),i);
+  const PAL=['#ffffff','#f5f1e8','#efece4','#e3dccb','#cfc6b2','#a89f8c','#7d776b','#4a4640','#2b2b2b','#111111','#1f2a44','#2e4a6b','#2f4a3a','#6b7f5a','#5a2a2a','#8c3b3b','#7a5c3a','#a89060','#6b7f8f','#c9a227'];
+  const chips=el('div',{style:'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px'},PAL.map(c=>el('span',{title:c,style:'width:24px;height:24px;border-radius:5px;border:1px solid #0008;cursor:pointer;background:'+c,onclick:()=>setVal(c,true)})));
+  const palBox=el('div',{style:'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px'});palBox._fill=()=>fillPal(palBox,setVal);PALHOSTS.push(palBox);palBox._fill();
+  const cv=el('canvas',{width:320,height:180,title:'Click the picture to pick the exact color under the pointer',style:'width:320px;max-width:100%;margin-top:8px;cursor:crosshair;border:1px solid var(--line);display:none'});
+  const ctx=cv.getContext('2d',{willReadFrequently:true});let loaded=false;
+  const loadPic=()=>{if(loaded||!PICKID)return;loaded=true;const im=new Image();im.onload=()=>{const k=Math.min(320/im.naturalWidth,180/im.naturalHeight);cv.width=Math.round(im.naturalWidth*k);cv.height=Math.round(im.naturalHeight*k);ctx.drawImage(im,0,0,cv.width,cv.height);cv.style.display='block'};im.src='api/thumb?id='+encodeURIComponent(PICKID)};
+  cv.onclick=ev=>{const r=cv.getBoundingClientRect(),x=Math.floor((ev.clientX-r.left)*cv.width/r.width),y=Math.floor((ev.clientY-r.top)*cv.height/r.height);const d=ctx.getImageData(x,y,1,1).data;setVal('#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join(''),true)};
+  panel.append(el('div',{class:'mut',style:'margin-top:4px'},'Colors from this picture (click one, or click anywhere on the picture below)'),palBox,cv,el('div',{class:'mut',style:'margin-top:8px'},'Fine tune / other colors'),row('Hue',sH),row('Saturation',sS),row('Lightness',sL),chips);
+  panel._open=loadPic;
+  function paint(v){val=v;sw.style.background=v;tx.value=v;const[h,sa,l]=toHsl(v);sH.value=h;sS.value=sa;sL.value=l}
+  function setVal(v,commit){if(!isHex(v))return;paint(v.toLowerCase());if(commit)ch(val)}
+  const fromSliders=commit=>{const v=toHex(+sH.value,+sS.value,+sL.value);val=v;sw.style.background=v;tx.value=v;if(commit)ch(v)};
+  for(const r of [sH,sS,sL]){r.oninput=()=>fromSliders(false);r.onchange=()=>fromSliders(true)}
+  tx.onchange=()=>{let v=tx.value.trim();if(v&&v[0]!='#')v='#'+v;if(/^#[0-9a-f]{3}$/i.test(v))v='#'+[...v.slice(1)].map(c=>c+c).join('');if(isHex(v))setVal(v,true);else tx.value=val};
+  sw.onclick=()=>{panel.style.display=panel.style.display=='none'?'block':'none';if(panel.style.display=='block')panel._open()};
+  paint(val);inp=el('div',{},sw,tx,panel);inp._set=v=>setVal(v,true)}
+ else if(kind=='area'){inp=el('textarea',{rows:3});inp.value=cur??'';inp.onchange=()=>ch(inp.value)}
+ else{inp=el('input',{type:'text',style:'width:min(100%,340px)'});inp.value=cur??'';inp.onchange=()=>ch(inp.value)}
+ const rowEl=el('div',{class:'row'},el('label',{},label),inp);rowEl._set=inp._set;return rowEl}
+
+const TEMPL={};const SECNAME={placard:'placard',mat:'mat',liner:'liner',bevel:'bevel & lighting'};
+const POS={'bottom-right':'Bottom right','bottom-left':'Bottom left','bottom-center':'Bottom center','top-right':'Top right','top-left':'Top left','top-center':'Top center'};
+function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in place
+ d.placard??={};d.mat??={};d.mat.bevel??={};d.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},d.mat.liner||{});
+ const root=el('div'),swatch=el('div',{class:'sw'});
+ const inhRow=sec=>{if(!opts.inherit)return null;const cb=el('input',{type:'checkbox'});cb.checked=!opts.inherit.use[sec];
+  cb.onchange=()=>{opts.inherit.use[sec]=!cb.checked;root.applyInherit();opts.inherit.onChange&&opts.inherit.onChange(sec,cb.checked)};
+  return el('div',{class:'row'},el('label',{},'Customize the '+SECNAME[sec]+' for this image'),cb,el('span',{class:'mut',id:'inhnote-'+sec}))};
+ const fp=el('fieldset',{},el('legend',{},'Placard'),
+  field('Show placard',d,'placard.enabled','check',{},onch),inhRow('placard'),el('div',{class:'inh-placard'},
+  field('Template',d,'placard.template','select',{options:TEMPL},onch),
+  field('Placement',d,'placard.placement','select',{options:{overlay:'Box over image',mat:'Printed on the mat'}},onch),
+  field('Position',d,'placard.position','select',{options:POS},onch),
+  field('Size (scale)',d,'placard.scale','range',{min:.6,max:1.8,step:.05},onch),
+  field('Card margin from edge (%)',d,'placard.margin_pct','range',{min:.5,max:8,step:.1},onch),
+  field('Layout when printed on the mat',d,'placard.mat_layout','select',{options:{one_line:'Single line',two_line:'Two lines',three_line:'Three lines'}},onch),
+  field('Divider line (modern)',d,'placard.divider','check',{},onch)));
+ const TINT_OPTS={'':'Fixed color (set below)',best:'Best contrast with the picture',accent:'Accent tint',complement:'Complement',dominant:'Dominant muted',deep_neutral:'Deep neutral',warm_white:'Warm gallery white'};
+ const tintHost=el('div');const mkTint=()=>tintHost.replaceChildren(field('Mat color from the picture',d,'mat.auto_tint','select',{options:TINT_OPTS,native:true},onch));mkTint();
+ const onc=p=>{if(p=='mat.color'&&d.mat.auto_tint){d.mat.auto_tint='';mkTint();onch('mat.auto_tint')}onch(p)};
+ const colorRow=field('Fixed mat color',d,'mat.color','color',{},onc);
+ const fm=el('fieldset',{},el('legend',{},'Mat'),
+  field('Use a mat',d,'mat.enabled','check',{},onch),inhRow('mat'),el('div',{class:'inh-mat'},tintHost,colorRow,
+  opts.suggest?el('div',{class:'row'},el('label',{},'Suggested'),swatch):null,
+  field('Width (% of height)',d,'mat.width_pct','range',{min:1,max:16,step:.5},onch),
+  field('Mat shape',d,'mat.shape','select',{options:{even:'Even on all sides (trims picture slightly)',proportional:'Proportional (no trim; sides wider)'}},onch),
+  field('Texture',d,'mat.texture','select',{options:{flat:'Flat',paper:'Paper',linen:'Linen'}},onch),
+  field('Non-16:9 images',d,'mat.letterbox','select',{options:{mat:'Mat fills the sides','bars_inside':'Black bars inside',bars_outside:'Even mat, black outside'}},onch)));
+ const fl=el('fieldset',{},el('legend',{},'Inner liner mat (second layer)'),
+  field('Use an inner liner',d,'mat.liner.enabled','check',{},onch),inhRow('liner'),el('div',{class:'inh-liner'},
+  field('Liner color',d,'mat.liner.color','color',{},onch),field('Liner width (% of height)',d,'mat.liner.width_pct','range',{min:.3,max:3,step:.1},onch)));
+ const fb=el('fieldset',{},el('legend',{},'Bevel & lighting'),
+  field('Bevel',d,'mat.bevel.enabled','check',{},onch),inhRow('bevel'),el('div',{class:'inh-bevel'},
+  field('Width',d,'mat.bevel.width_pct','range',{min:.1,max:1.5,step:.05},onch),
+  field('Intensity',d,'mat.bevel.intensity','range',{min:0,max:100,step:1},onch),
+  field('Light direction (° clockwise from top)',d,'mat.bevel.light_angle','range',{min:0,max:359,step:5},onch),
+  field('Light elevation',d,'mat.bevel.elevation','range',{min:15,max:85,step:1},onch),
+  field('Cast shadow',d,'mat.bevel.shadow','range',{min:0,max:100,step:1},onch)));
+ root.append(fp,fm,fl,fb);
+ root.applyInherit=()=>{if(!opts.inherit)return;for(const sec of ['placard','mat','liner','bevel']){const use=!!opts.inherit.use[sec];root.querySelectorAll('.inh-'+sec).forEach(n=>{n.style.opacity=use?.45:1;n.style.pointerEvents=use?'none':'auto'});const nt=root.querySelector('#inhnote-'+sec);if(nt)nt.textContent=use?'Using the default '+SECNAME[sec]+' settings (shown dimmed; change them in the Display tab). Tick Customize to override them for this image. The on/off box above still applies to this image.':'This image has its own '+SECNAME[sec]+' settings. Untick Customize to go back to the defaults.'}};
+ root.setSuggestions=list=>{swatch.replaceChildren(...list.map(s=>el('span',{title:'edge contrast '+s.edge_contrast,onclick:()=>{colorRow._set(s.color)}},el('i',{style:'background:'+s.color}),s.name)))};
+ return root}
+
+/* ---------- state ---------- */
+let S={},folderList=[],curFolder=null,curStatus={};
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
+async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'art')}
+ renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
+async function refreshFolders(){folderList=await api('folders')}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
+ ls.set('fc_tab',b.dataset.t);['now','lib','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow()});
+
+/* ---------- Now playing ---------- */
+async function poll(){try{const t0=Date.now();curStatus=await api('status');curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
+ const id=curStatus.current,k=(curStatus.showing||{}).kind,nx=(curStatus.next||{}).id;if((id!==poll.id||k!==poll.kind||nx!==poll.nx)&&!(curStatus.activity&&curStatus.activity.phase!='idle')){poll.id=id;poll.kind=k;poll.nx=nx;if(!$('#t-now').hidden)renderNow()}}catch(e){}}
+let actTimer=null;
+function showAct(){let b=$('#actbar');if(!b){b=el('div',{id:'actbar'});document.body.append(b)}const a=(curStatus.activity||{});
+ if(a.phase&&a.phase!='idle'){b.replaceChildren(el('span',{class:'spin'}),a.detail+' … '+Math.floor(a.elapsed+(Date.now()/1000+(curStatus.skew||0)-curStatus.server_time))+'s');b.style.display='block';
+  if(!actTimer)actTimer=setInterval(poll,1000)}
+ else{b.style.display='none';if(actTimer){clearInterval(actTimer);actTimer=null;if(!$('#t-now').hidden)renderNow()}}}
+function tick(){const e=$('#cd');if(!e||!curStatus.last_change)return;const now=Date.now()/1000+(curStatus.skew||0),left=curStatus.last_change+curStatus.interval_s-now,a=curStatus.activity||{};
+ const when=new Date((curStatus.last_change+curStatus.interval_s)*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+ const iv=curStatus.interval_s%3600==0?curStatus.interval_s/3600+' h':curStatus.interval_s%60==0?curStatus.interval_s/60+' min':curStatus.interval_s+' s';
+ let t;if(!curStatus.enabled)t='Rotation paused';
+ else if(a.phase&&a.phase!='idle')t=a.detail+'…';
+ else if((curStatus.showing||{}).kind&&curStatus.showing.kind!='image'&&curStatus.showing.kind!='birdframe')t='Test pattern on the TV — rotation continues at the next change time ('+when+')';
+ else if(left<=0)t='Change is due — starting now…';
+ else t=(curStatus.schedule?'Schedule “'+curStatus.schedule+'” is active · ':'')+'Next change at '+when+' (in '+(left>3600?Math.floor(left/3600)+'h ':'')+Math.floor(left%3600/60)+'m '+Math.floor(left%60)+'s) · every '+iv;
+ e.textContent=t}
+const PATTERNS={colorbars:'SMPTE color bars (test pattern)',calibration:'the overscan calibration grid (test pattern)',birdframe:'the Bird Frame collage'};
+async function tvCtl(action,label){toast(label+'…',8000);try{const r=await api('tv',{action});toast(r.message,6000)}catch(e){toast(label+' failed: '+e.message)}await poll()}
+async function renderNow(){const s=curStatus.current?curStatus:await api('status');curStatus=s;const root=$('#t-now');root.replaceChildren();
+ const kind=(s.showing||{}).kind||'image',pat=kind!='image'?kind:null;
+ const banner=pat?el('div',{style:'background:var(--acc);color:#1a1a1a;font-weight:700;padding:10px 14px;border-radius:8px;margin-bottom:10px'},
+   'On the TV right now: '+PATTERNS[pat]+(pat=='birdframe'&&s.bird_until?' — until '+new Date(s.bird_until*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'')+'. '+(pat=='birdframe'?'Normal rotation resumes afterward.':'Press ↻ Resend art when you are done to put the art back.')):null;
+ const shot=pat?el('img',{style:'margin:3px',src:'api/pattern?kind='+pat+'&t='+(s.last_change|0)}):(s.current?el('img',{style:'margin:3px',src:'api/render?id='+encodeURIComponent(s.current)+'&t='+(s.last_change|0)}):el('p',{class:'mut'},'Nothing shown yet.'));
+ const hero=el('div',{class:'card hero'},banner,shot,el('div',{class:'mut',id:'cd',style:'margin-top:10px'}));
+ const side=el('div',{class:'card',id:'details'},el('p',{class:'mut'},'Loading details…'));
+ const nx=s.next?el('div',{style:'display:flex;gap:12px;align-items:center;margin-top:12px'},el('img',{src:'api/thumb?id='+encodeURIComponent(s.next.id),style:'width:200px;aspect-ratio:16/9;object-fit:cover;border-radius:0;box-shadow:0 0 0 1px #000,0 0 0 3px rgba(255,255,255,.9);margin:3px'}),
+   el('div',{},el('div',{class:'mut'},'Next up'),el('b',{},s.next.name))):null;
+ const ctl=el('div',{class:'card'},el('h3',{},'Controls'),el('div',{class:'row'},
+  el('button',{onclick:async()=>{toast('Going back…');await api('previous',{});await poll();renderNow()}},'⏮ Previous'),
+  el('button',{class:'pri',onclick:async()=>{toast('Choosing next image…',6000);const r=await api('next',{});toast(r.error||('TV: '+r.tv));await poll();renderNow()}},'Next ⏭'),
+  el('button',{title:'Send the current art to the TV again (also takes the TV off a test pattern)',onclick:async()=>{toast('Resending…',6000);const r=await api('resend',{});toast(r.error||('TV: '+r.tv));await poll();renderNow()}},'↻ Resend art'),
+  el('button',{onclick:async()=>{S=await api('settings',{enabled:!S.enabled});toast(S.enabled?'Rotation on':'Rotation paused');await poll();renderNow()}},curStatus.enabled?'⏸ Pause rotation':'▶ Resume rotation')),nx,
+  el('h3',{style:'margin-top:16px'},'TV'),el('div',{class:'row'},
+  el('button',{title:'Wake the TV if needed and switch it to Art Mode',onclick:()=>tvCtl('art_on','Turning Art Mode on')},'🖼 Art Mode on'),
+  el('button',{title:'Leave Art Mode and show normal TV',onclick:()=>tvCtl('art_off','Leaving Art Mode')},'📺 Art Mode off'),
+  el('button',{title:'Turn the TV off',onclick:()=>tvCtl('power_off','Turning the TV off')},'⏻ TV power off')));
+ const rot=clone(S.rotation);const rf=el('div',{class:'row'},el('label',{},'Change every'),
+  field('',{r:rot},'r.value','num',{min:1}),field('',{r:rot},'r.unit','select',{options:{minutes:'minutes',hours:'hours',days:'days'}}),
+  el('button',{onclick:async()=>{S=await api('settings',{rotation:rot});await poll();toast('Rotation saved — changing every '+rot.value+' '+rot.unit+'; '+(curStatus.due_in>0?'next change in '+Math.ceil(curStatus.due_in/60)+' min':'a change is due now'),5000)}},'Save'));
+ const lastErr=s.last_error?el('p',{class:'warn'},'Last error: '+s.last_error):null;
+ root.append(el('div',{class:'now'},hero,side),ctl,el('div',{class:'card'},el('h3',{},'Rotation'),rf,lastErr,s.pending?el('p',{class:'warn'},'Waiting for the TV to enter Art Mode…'):null));
+ tick();if(s.current)drawDetails(s.current)}
+async function drawDetails(id){const box=$('#details');if(!box)return;
+ let r;try{r=await api('sidecar?id='+encodeURIComponent(id))}catch(e){box.textContent='Could not load details';return}
+ const sc=r.sidecar,i=r.info,ct=sc.card_text||{},flags=Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{});
+ const loc=(sc.location&&typeof sc.location=='object')?sc.location.name:sc.location;
+ const rows=[['Artist',i.artist],['Date',ct.date||(sc.date||{}).display],[sc.kind=='photo'?'Location':'Medium',sc.kind=='photo'?(ct.location||loc):(ct.medium||sc.medium)],
+  ['Credit',ct.credit||(sc.collection||{}).credit_line],['Folder',i.folder],['File',i.file],['Size',r.size[0]+' × '+r.size[1]+(r.low_res?' (low resolution)':'')],
+  ['Identified',(sc.identification||{}).status&&(sc.identification||{}).status!='verified'?(sc.identification||{}).status:null]].filter(x=>x[1]);
+ const chip=k=>flagChip(flags,k,async(k,c)=>{flags[k]=!flags[k];await api('flags',{id,flags});c.classList.toggle('on',flags[k]);
+   toast(k=='exclude'&&flags[k]?'Excluded from rotation (stays up until the next change)':'Saved')});
+ box.replaceChildren(el('h3',{},'Now showing'),el('h2',{style:'margin:0 0 4px'},i.name),
+  el('div',{class:'kv'},rows.flatMap(([k,v])=>[el('b',{},k),el('span',{},String(v))])),
+  el('div',{class:'chips2',style:'margin:12px 0'},chip('favorite'),chip('show_more'),chip('exclude')),
+  el('button',{onclick:()=>openEditor(id)},'Edit details & look…'))}
+
+/* ---------- Library ---------- */
+const SORTS={name:'Title (or filename)',artist:'Artist',file:'Filename',date:'Artwork date',added:'Date added',fav:'Favorites first'};
+const sortPref=(()=>{try{return JSON.parse(localStorage.getItem('fc_sort')||'{}')}catch(e){return{}}})();
+let sortKey=sortPref.k||'name',sortDir=sortPref.d||1;
+const saveSort=()=>{try{localStorage.setItem('fc_sort',JSON.stringify({k:sortKey,d:sortDir}))}catch(e){}};
+function sortItems(items){const c=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
+ const key={name:i=>i.name,artist:i=>i.artist,file:i=>i.file,date:i=>i.year,added:i=>i.added,fav:i=>(i.flags.favorite?0:i.flags.show_more?1:2)}[sortKey];
+ return items.slice().sort((a,b)=>{const x=key(a),y=key(b);const nx=x===''||x==null,ny=y===''||y==null;if(nx!==ny)return nx?1:-1; // empties always last
+  let r=typeof x=='number'&&typeof y=='number'?x-y:c(x,y);if(!r)r=c(a.name,b.name);return r*sortDir})}
+const EYE_SLASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2 0 3.7.6 5.1 1.5M22 12s-3.5 7-10 7c-2 0-3.7-.6-5.1-1.5"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
+function flagBtn(i,k,cls,tip){const b=el('button',{class:'fb '+cls+(i.flags[k]?' on':''),title:tip+(i.flags[k]?' — click to clear':'')});
+ b.innerHTML=k=='favorite'?(i.flags[k]?'★':'☆'):k=='show_more'?(i.flags[k]?'＋':'<span style="font-weight:300">＋</span>'):EYE_SLASH;
+ if(k=='show_more'&&!i.flags[k])b.style.fontWeight='300';
+ b.onclick=async e=>{e.stopPropagation();const v=!i.flags[k];const nf=Object.assign({},i.flags,{[k]:v});
+  try{await api('flags',{id:i.id,flags:nf})}catch(x){toast('Could not save flag: '+x.message);return}
+  i.flags=nf;b.classList.toggle('on',v);if(k=='favorite')b.textContent=v?'★':'☆';
+  b.title=tip+(v?' — click to clear':'');const t=b.closest('.tile');if(t&&k=='exclude')t.classList.toggle('ex',v)};
+ return b}
+const FLAGLBL={favorite:'★ Favorite',show_more:'＋ Show more',exclude:EYE_SLASH+' Exclude'};
+function flagChip(obj,k,after){const c=el('span',{class:'ch'+(obj[k]?' on':''),style:'display:inline-flex;align-items:center;gap:5px'});c.innerHTML=FLAGLBL[k];c.querySelector('svg')?.setAttribute('style','width:15px;height:15px');
+ c.onclick=()=>after(k,c);return c}
+async function renderLib(){const root=$('#t-lib');root.replaceChildren();await refreshFolders();
+ const chips=el('div',{class:'chips'},folderList.map(f=>el('span',{class:'chip'+(f.name==curFolder?' on':''),onclick:()=>{setFolder(f.name);renderLib()}},f.name+' ('+f.count+')')),
+  el('button',{onclick:async()=>{const n=prompt('New folder name');if(!n)return;const r=await api('folder',{name:n});setFolder(r.folder);renderLib()}},'+ Folder'));
+ const upl=el('div',{id:'upl'});
+ const fin=el('input',{type:'file',multiple:true,accept:'image/*,.heic,.heif',hidden:true,onchange:e=>{upload([...e.target.files],upl);e.target.value=''}});
+ const drop=el('div',{class:'drop'},'Drop images here (JPEG, PNG, HEIC from Apple Photos…) or ',el('label',{class:'btn',style:'display:inline-block'},'choose files',fin),' — uploading into “'+curFolder+'”');
+ ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+ ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+ drop.addEventListener('drop',e=>upload([...e.dataTransfer.files],upl));
+ const q=el('input',{type:'search',placeholder:'Filter by title, artist or filename…',style:'width:min(100%,320px)'});
+ const sel=el('select',{},Object.entries(SORTS).map(([k,l])=>el('option',{value:k},l)));sel.value=sortKey;
+ const dir=el('button',{title:'Reverse order'},sortDir>0?'↑ A→Z':'↓ Z→A');
+ const selBtn=el('button',{title:'Select several images to change them together'},selMode?'☑ Selecting (tap to finish)':'☐ Select');
+ selBtn.onclick=()=>{selMode=!selMode;if(!selMode)selected.clear();renderLib()};
+ const dupBtn=el('button',{title:'Look for images that are the same picture',onclick:()=>findDuplicates()},'🔍 Find duplicates');
+ const bar=el('div',{class:'row',style:'margin-bottom:12px'},q,el('label',{style:'color:var(--mut)'},'Sort by'),sel,dir,selBtn,dupBtn,el('span',{class:'mut',id:'cnt'}));
+ const grid=el('div',{class:'grid'});root.append(chips,drop,upl,bar,grid);
+ const items=await api('library?folder='+encodeURIComponent(curFolder));
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f)));
+  $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
+  grid.replaceChildren(...list.slice(0,600).map(i=>
+  el('div',{class:'tile'+(i.flags.exclude?' ex':'')+(i.id==curStatus.current?' cur':'')+(selected.has(i.id)?' sel':''),onclick:function(){if(selMode){selected.has(i.id)?selected.delete(i.id):selected.add(i.id);this.classList.toggle('sel');drawBulk()}else openEditor(i.id)}},
+   el('img',{loading:'lazy',src:'api/thumb?id='+encodeURIComponent(i.id)}),
+   el('div',{class:'badges'},flagBtn(i,'favorite','fav','Favorite (shown more often)'),flagBtn(i,'show_more','more','Show more often'),flagBtn(i,'exclude','exc','Exclude from rotation'),i.has_display?el('i',{title:'This image has customized display settings'},'⚙'):null,i.low_res?el('i',{title:'Below 1920×1080 — may look soft on the TV'},'⚠'):null),
+   el('div',{class:'t'},el('b',{},i.name),el('span',{},(sortKey=='date'&&i.year?i.year+' · ':'')+(i.artist||(i.title?i.file:'')||'\u00a0'))))))};
+ sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
+ q.oninput=dbounce(draw,150);draw();drawBulk();window._libList=()=>sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(q.value.toLowerCase())))}
+const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):('folder '+(r.folder||'art')));
+ if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
+ if(r.date_from||r.date_to)p.push((r.date_from||r.date_to)+(r.date_to&&r.date_to!=r.date_from?' to '+r.date_to:''));return '· '+p.join(' · ')+(r.enabled===false?' · OFF':'')}
+function imagePicker(rule){rule.images??=[];const box=el('div'),cnt=el('span',{class:'mut'}),grid=el('div',{class:'grid',style:'max-height:320px;overflow:auto;margin-top:8px'});
+ const upd=()=>cnt.textContent=rule.images.length+' selected';
+ const sel=el('select',{},folderList.map(f=>el('option',{value:f.name},f.name)));sel.value=(rule.images[0]||'').split('/')[0]||curFolder;
+ const load=async()=>{const items=await api('library?folder='+encodeURIComponent(sel.value));grid.replaceChildren(...items.map(i=>{const t=el('div',{class:'tile'+(rule.images.includes(i.id)?' sel':''),title:i.name,
+   onclick:()=>{const k=rule.images.indexOf(i.id);if(k>=0)rule.images.splice(k,1);else rule.images.push(i.id);t.classList.toggle('sel');upd()}},
+   el('img',{loading:'lazy',src:'api/thumb?id='+encodeURIComponent(i.id)}),el('div',{class:'t'},el('b',{},i.name)));return t}));upd()};
+ sel.onchange=load;box.append(el('div',{class:'row'},el('label',{},'Pick from folder'),sel,cnt),grid);load();return box}
+function scheduleEditor(s,ix){const r=s.schedules[ix];r.days??=[];
+ const dayChips=el('div',{class:'chips2'});const mkd=()=>dayChips.replaceChildren(...DAYN.map((n,d)=>el('span',{class:'ch'+(r.days.includes(d)?' on':''),onclick:()=>{const k=r.days.indexOf(d);if(k>=0)r.days.splice(k,1);else r.days.push(d);mkd()}},n)));mkd();
+ const what=el('div');const drawWhat=()=>what.replaceChildren(r.kind=='images'?imagePicker(r):field('Folder',r,'folder','select',{options:Object.fromEntries(folderList.map(f=>[f.name,f.name])),native:true}));
+ const kindF=field('Show',r,'kind','select',{options:{images:'Specific images',folder:'A whole folder'}},()=>drawWhat());drawWhat();
+ showModal(el('h2',{},'Schedule'),field('Name',r,'name','text'),field('Enabled',r,'enabled','check'),kindF,what,
+  el('div',{class:'row'},el('label',{},'Days (none = every day)'),dayChips),
+  field('From time (HH:MM, blank = all day)',r,'time_from','text'),field('To time (HH:MM)',r,'time_to','text'),
+  field('From date each year (MM-DD, blank = any)',r,'date_from','text'),field('To date (MM-DD)',r,'date_to','text'),
+  field('Priority (higher wins)',r,'priority','num',{min:0,max:99}),
+  el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{if(r.kind=='images'&&!r.images.length){toast('Pick at least one image');return}
+    for(const k of ['date_from','date_to'])if(r[k]&&!/^\d{1,2}-\d{1,2}$/.test(r[k])){toast('Dates look like 12-24');return}
+    for(const k of ['time_from','time_to'])if(r[k]&&!/^\d{1,2}:\d{2}$/.test(r[k])){toast('Times look like 18:30');return}
+    S=await api('settings',{schedules:s.schedules});closeModal();toast('Schedule saved — it applies right away');renderSet()}},'Save'),
+   el('button',{onclick:async()=>{S=await api('settings');closeModal();renderSet()}},'Cancel')))}
+let selMode=false;const selected=new Set();
+function showModal(...nodes){const m=$('#modal'),b=$('#mbox');b.replaceChildren(...nodes);m.classList.add('on');return m}
+const closeModal=()=>$('#modal').classList.remove('on');
+async function bulk(payload,label){const ids=[...selected];if(!ids.length){toast('Select some images first');return}
+ try{const r=await api('bulk',Object.assign({ids},payload));toast(label+': '+r.done+' of '+r.of+' images');selected.clear();closeModal();renderLib()}catch(e){toast('Failed: '+e.message)}}
+function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.body.append(b)}
+ if(!selMode){b.style.display='none';return}
+ const fl=(k,v,l)=>el('button',{onclick:()=>bulk({flags:{[k]:v}},l)},l);
+ b.replaceChildren(el('b',{},selected.size+' selected'),el('button',{onclick:()=>{(window._libList?window._libList():[]).forEach(i=>selected.add(i.id));renderLib()}},'All shown'),el('button',{onclick:()=>{selected.clear();renderLib()}},'None'),
+  fl('favorite',true,'★ Favorite'),fl('favorite',false,'☆ Un-favorite'),fl('show_more',true,'＋ Show more'),fl('show_more',false,'Show normally'),fl('exclude',true,'Exclude (hide)'),fl('exclude',false,'Include'),
+  el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
+  el('button',{onclick:()=>{const f=prompt('Move the selected images to which folder? (existing or new)',curFolder);if(f)bulk({move_to:f},'Moved')}},'Move…'),
+  el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
+  el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+function bulkInfo(){const ct={artist:'',date:'',medium:'',location:'',credit:''};
+ showModal(el('h2',{},'Set info on '+selected.size+' images'),el('p',{class:'mut'},'Only the boxes you fill in are changed; blank boxes leave each image as it is.'),
+  ...Object.keys(ct).map(k=>field(k[0].toUpperCase()+k.slice(1),ct,k,'text')),
+  el('div',{class:'row'},el('button',{class:'pri',onclick:()=>bulk({card_text:ct},'Updated')},'Apply'),el('button',{onclick:closeModal},'Cancel')))}
+async function findDuplicates(){showModal(el('h2',{},'Duplicate check'),el('p',{class:'mut'},'Looking at every image… (a minute the first time)'));
+ let g;try{g=await api('duplicates')}catch(e){showModal(el('h2',{},'Duplicate check'),el('p',{class:'warn'},'Failed: '+e.message),el('button',{onclick:closeModal},'Close'));return}
+ const mb=n=>(n/1048576).toFixed(1)+' MB';
+ const body=g.length?g.map(grp=>{const best=[...grp].sort((a,b)=>b.w*b.h-a.w*a.h||b.bytes-a.bytes)[0];
+   return el('div',{class:'card'},el('div',{class:'row',style:'align-items:flex-start'},...grp.map(i=>el('div',{style:'width:190px'},
+    el('img',{src:'api/thumb?id='+encodeURIComponent(i.id),style:'width:100%;aspect-ratio:16/9;object-fit:cover;box-shadow:0 0 0 1px #000,0 0 0 3px rgba(255,255,255,.9);margin:3px;border-radius:0'}),
+    el('div',{},el('b',{},i.name)),el('div',{class:'mut'},i.folder+' · '+i.w+'×'+i.h+' · '+mb(i.bytes)+(i.id==best.id?' · best':'')),
+    el('button',{style:'color:#ff7b72',onclick:async()=>{if(!confirm('Delete '+i.name+' ('+i.folder+')?\nIt is moved to the _trash folder.'))return;await api('delete',{id:i.id});findDuplicates()}},'🗑 Delete this one')))),
+    el('div',{style:'margin-top:8px'},el('button',{onclick:async()=>{if(!confirm('Keep '+best.name+' and delete the other '+(grp.length-1)+'?'))return;for(const i of grp)if(i.id!=best.id)await api('delete',{id:i.id});findDuplicates()}},'Keep the best, delete the rest')))}):[el('p',{},'No duplicates found.')];
+ showModal(el('div',{class:'row',style:'justify-content:space-between'},el('h2',{style:'margin:0'},'Duplicate check — '+g.length+' group'+(g.length==1?'':'s')),el('button',{onclick:()=>{closeModal();renderLib()}},'✕ Close')),el('p',{class:'mut'},'Images that look like the same picture (even at different sizes). Deleted images go to the _trash folder.'),...body)}
+let upMode='raw';
+const clog=m=>{try{fetch('api/clientlog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({msg:m,ua:navigator.userAgent})})}catch(e){}};
+const b64=blob=>new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=no;fr.readAsDataURL(blob)});
+async function sendChunk(url,piece){const r=upMode=='raw'?await fetch(url,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:piece}):
+  await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:await b64(piece)})});
+ if(r.status==413)throw new Error('413 chunk too large for the web server');if(!r.ok&&r.status!=200)throw new Error('HTTP '+r.status);return r}
+async function upload(files,log){log.replaceChildren();if(!files.length){log.append(el('div',{class:'err'},'No files were received from the picker. Try dragging the photo in, or export it from Photos to a folder first.'));return}
+ let n=0;for(const f of files){const line=el('div',{},f.name+' ('+Math.round(f.size/1024)+' KB) — uploading…');log.append(line);
+  try{const CH=384*1024,total=Math.max(1,Math.ceil(f.size/CH)),uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);let r;
+   for(let i=0;i<total;i++){line.textContent=f.name+' ('+Math.round(f.size/1048576*10)/10+' MB) — uploading '+Math.round(i/total*100)+'%…';
+    const url='api/upload_chunk?folder='+encodeURIComponent(curFolder)+'&name='+encodeURIComponent(f.name)+'&uid='+uid+'&index='+i+'&total='+total,piece=f.slice(i*CH,(i+1)*CH);
+    for(let a=0;;a++){try{r=await sendChunk(url,piece);break}catch(e){clog('chunk '+i+'/'+total+' mode='+upMode+' attempt '+a+': '+e);
+      if(upMode=='raw'){upMode='json'}else if(a>=2)throw e}}}
+   const t=await r.text();let j;try{j=JSON.parse(t)}catch(e){throw new Error('server said '+r.status+(r.status==413?' (file too large for the connection)':'')+' '+t.slice(0,80))}
+   if(j.error)throw new Error(j.error);n++;line.className=(j.low_res||j.duplicate_of)?'w':'ok';line.textContent='✓ '+f.name+' added'+(j.id.split('/').pop()!==f.name?' as '+j.id.split('/').pop():'')+(j.low_res?' — below 1920×1080, may look soft on the TV':'')+(j.duplicate_of?' — looks like a duplicate of '+j.duplicate_of:'')}
+  catch(e){clog('upload failed '+f.name+': '+e);line.className='err';line.textContent='✗ '+f.name+': '+e.message}}
+ if(n){toast(n+' uploaded',3000);const keep=log.innerHTML;await renderLib();$('#upl').innerHTML=keep}}
+
+/* ---------- Editor ---------- */
+async function openEditor(id){
+ const r=await api('sidecar?id='+encodeURIComponent(id)),sc=r.sidecar,g=S.display;
+ const ed={id,sc,
+  d:dm({placard:g.placard,mat:g.mat},sc.display||{}),
+  meta:{title:(sc.card_text||{}).title||sc.placard_title||sc.title||'',artist:(sc.card_text||{}).artist||(sc.artist||{}).display||(sc.artist||{}).name||'',
+   date:(sc.card_text||{}).date||(sc.date||{}).display||'',medium:(sc.card_text||{}).medium||sc.medium||'',
+   credit:(sc.card_text||{}).credit||(sc.collection||{}).credit_line||'',
+   location:(sc.card_text||{}).location||(typeof sc.location=='object'&&sc.location?sc.location.name:sc.location)||''},
+  flags:Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{}),
+  edit:Object.assign({rotate:0,straighten:0,crop:null},sc.edit||{}),
+  geo:{lat:(sc.location&&sc.location.lat!=null)?String(sc.location.lat):'',lon:(sc.location&&sc.location.lon!=null)?String(sc.location.lon):'',name:(sc.location&&sc.location.name)||''}};
+ const leaves=(o,pre)=>Object.entries(o||{}).flatMap(([k,v])=>v&&typeof v=='object'&&!Array.isArray(v)?leaves(v,pre+k+'.'):[pre+k]);
+ const SEC={placard:{test:p=>p.startsWith('placard.'),en:'placard.enabled'},
+  mat:{test:p=>p.startsWith('mat.')&&!p.startsWith('mat.bevel.')&&!p.startsWith('mat.liner.'),en:'mat.enabled'},
+  liner:{test:p=>p.startsWith('mat.liner.'),en:'mat.liner.enabled'},bevel:{test:p=>p.startsWith('mat.bevel.'),en:'mat.bevel.enabled'}};
+ const base=()=>{const b=dm({placard:S.display.placard,mat:S.display.mat},{});b.placard??={};b.mat??={};b.mat.bevel??={};b.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},b.mat.liner||{});return b};
+ ed.touched=new Set(leaves(sc.display||{},''));ed.use={};
+ for(const k in SEC)ed.use[k]=![...ed.touched].some(p=>SEC[k].test(p)&&p!=SEC[k].en);
+ const modal=$('#modal'),box=$('#mbox');box.replaceChildren();modal.classList.add('on');
+ const pvimg=el('img',{title:'Click for full screen, zoom and pan',onclick:()=>openViewer(id,build(),editOut())}),pv=el('div',{class:'pv'},pvimg,el('div',{class:'sp'},'Rendering…'));
+ let seq=0;const build=()=>{const out={};for(const k in SEC){[...ed.touched].filter(SEC[k].test).forEach(p=>{
+    if(ed.use[k]&&(p!=SEC[k].en||!!get(ed.d,p)===!!get(base(),p)))return;set(out,p,get(ed.d,p))})}return out};
+ const editOut=()=>{const e=ed.edit;return(!e.crop&&!e.rotate&&Math.abs(e.straighten||0)<.01)?null:{rotate:e.rotate||0,straighten:+e.straighten||0,crop:e.crop}};
+ const refresh=dbounce(async()=>{const my=++seq;pv.classList.add('busy');try{const b=await api('preview',{id,display:build(),edit:editOut()});
+  if(my==seq)pvimg.src=URL.createObjectURL(b)}catch(e){toast('Preview failed: '+e.message)}pv.classList.remove('busy')},600);
+  // override toggles: touching any placard/mat control turns that override on; the checkbox lets you go back to global
+ let form;const dispHost=el('div');
+ const mkForm=()=>{form=displayForm(ed.d,p=>{ed.touched.add(p);refresh()},
+   {suggest:true,inherit:{use:ed.use,onChange:(sec,use)=>{if(use){const b=base();[...ed.touched].filter(SEC[sec].test).forEach(p=>{if(p!=SEC[sec].en){set(ed.d,p,get(b,p));ed.touched.delete(p)}});mkForm()}refresh()}}});
+   if(ed.sugg)form.setSuggestions(ed.sugg);dispHost.replaceChildren(form);form.applyInherit()};mkForm();
+ const tabs=['Info','Display','Crop'],panes={};
+ const isPhoto=sc.kind=='photo',gps=sc.location&&typeof sc.location=='object'&&sc.location.lat!=null;
+ let locF=null;
+ const geoP=()=>{const la=field('Latitude',ed.geo,'lat','text'),lo=field('Longitude',ed.geo,'lon','text'),inLa=$('input',la),inLo=$('input',lo);
+  const sync=()=>{inLa.value=ed.geo.lat;inLo.value=ed.geo.lon};
+  return el('fieldset',{},el('legend',{},'GPS location'),el('div',{class:'row'},la,lo),el('div',{class:'row'},
+   el('button',{title:'Look up the place name from these coordinates and put it in the Location field',onclick:async()=>{const a=parseFloat(ed.geo.lat),o=parseFloat(ed.geo.lon);
+     if(isNaN(a)||isNaN(o)){toast('Enter latitude and longitude first');return}toast('Looking up place name…',6000);
+     try{const x=await api('geocode?lat='+a+'&lon='+o);ed.geo.name=x.name||'';ed.meta.location=x.name||'';$('input',locF).value=ed.meta.location;toast(x.name?'Found: '+x.name:'No place name found for those coordinates');refresh()}catch(e){toast(e.message)}}},'🔎 Recheck place name'),
+   el('button',{onclick:()=>{if(ed.meta.location&&ed.meta.location==ed.geo.name){ed.meta.location='';$('input',locF).value=''}ed.geo={lat:'',lon:'',name:''};sync();refresh()}},'Clear GPS')),
+   el('p',{class:'mut'},'Coordinates are saved with the image (decimal degrees, e.g. 32.9750 and -117.2629). Change them and press Recheck place name to update the Location text.'))};
+ const mfs=(isPhoto?['title','artist','date','location']:['title','artist','date','medium','credit']).map(k=>{const f=field(k[0].toUpperCase()+k.slice(1),ed.meta,k,'text',{},refresh);if(k=='location')locF=f;return f});
+ const metaP=el('div',{},...mfs,
+  isPhoto?geoP():null,
+  r.low_res?el('p',{class:'warn'},'⚠ Resolution is below 1920×1080; it may look soft on the TV.'):null,
+  el('p',{class:'mut'},'Source: '+((sc.collection||{}).institution||sc.source||(typeof sc.source_image=='string'?sc.source_image:'')||'—')+((sc.source_image&&sc.source_image.width)?' · '+sc.source_image.width+'×'+sc.source_image.height+' px':'')));
+ const cropP=cropPane(ed,id,refresh,()=>save(()=>toast('Crop saved')));const cropShow=()=>cropP.start();
+ const dispP=el('div',{},el('p',{class:'mut'},'Changes here apply to this image only. Each section follows the Display-tab defaults until you tick Customize; unticking it again goes back to the defaults. The on/off box always applies to this image.'),dispHost);
+ const flagP=el('div',{class:'chips2',style:'margin:10px 0'},...['favorite','show_more','exclude'].map(k=>flagChip(ed.flags,k,(k,c)=>{ed.flags[k]=!ed.flags[k];c.classList.toggle('on',ed.flags[k])})));
+ const body=el('div');const show=n=>{tabs.forEach((t,i)=>{$$tab[i].classList.toggle('on',t==n)});body.replaceChildren({Info:metaP,Display:dispP,Crop:cropP}[n]);if(n=='Crop')cropShow()};
+ const $$tab=tabs.map(t=>el('button',{onclick:()=>show(t)},t));
+ let saved=null;const snap=()=>JSON.stringify([ed.meta,ed.flags,ed.geo,ed.edit,build()]);
+ const closeEd=()=>{modal.classList.remove('on');renderLib()};
+ const push=async()=>{toast('Pushing to TV…',8000);const x=await api('show',{id});toast('TV: '+x.tv)};
+ const askClose=()=>{if(snap()===saved){closeEd();return}
+  const dlg=el('div',{style:'position:fixed;inset:0;background:#000a;z-index:80;display:flex;align-items:center;justify-content:center'},
+   el('div',{class:'card',style:'max-width:420px'},el('h3',{},'Save changes?'),el('p',{class:'mut'},'You changed this image. Save before closing?'),
+    el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{dlg.remove();try{await save(closeEd)}catch(e){toast('Save failed: '+e.message)}}},'Save & close'),el('button',{onclick:()=>{dlg.remove();closeEd()}},'Discard changes'),el('button',{onclick:()=>dlg.remove()},'Keep editing'))));
+  document.body.append(dlg)};
+ const save=async(then)=>{const ct={artist:ed.meta.artist,title:ed.meta.title,date:ed.meta.date,medium:ed.meta.medium,credit:ed.meta.credit,location:ed.meta.location};
+  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
+ box.append(el('div',{class:'row',style:'justify-content:space-between;position:sticky;top:0;z-index:5;background:var(--panel);padding:8px 0;margin-bottom:6px'},
+   el('h2',{style:'margin:0'},ed.meta.title||id.split('/').pop().replace(/\.[^.]+$/,'')),
+   el('div',{class:'row'},el('button',{onclick:askClose},'✕ Close'),el('button',{onclick:()=>save()},'Save'),el('button',{class:'pri',title:'Save, then show this image on the TV now',onclick:()=>save(push)},'Save & show on TV'))),
+  el('div',{class:'cols'},el('div',{},pv,flagP,el('div',{class:'row'},el('button',{onclick:refresh},'↻ Refresh preview'),el('button',{onclick:()=>openViewer(id,build(),editOut())},'⛶ Full screen'),
+    el('button',{onclick:async()=>{const f=prompt('Move to which folder? (existing or new)',curFolder);if(!f)return;const x=await api('move',{id,folder:f});modal.classList.remove('on');setFolder(f.replace(/[^\w\- ]/g,''));renderLib();toast('Moved')}},'Move…'),
+    el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:async()=>{const nm=ed.meta.title||id.split('/').pop();
+     if(!confirm('Delete this image?\n\n'+nm+'\n('+id+')\n\nIt is moved to the _trash folder on the share, so it can be recovered from there. Are you sure?'))return;
+     try{await api('delete',{id});modal.classList.remove('on');renderLib();toast('Deleted '+nm)}catch(e){toast('Delete failed: '+e.message)}}},'🗑 Delete…'))),
+   el('div',{},el('div',{class:'tabs'},...$$tab),body)));
+ saved=snap();
+ show('Info');refresh();
+ PICKID=id;PALETTE=[];PALHOSTS.length=0;
+ api('palette?id='+encodeURIComponent(id)).then(l=>{PALETTE=l;PALHOSTS.forEach(h=>h.isConnected&&h._fill&&h._fill())}).catch(()=>{});
+ api('suggest_mats?id='+encodeURIComponent(id)).then(l=>{ed.sugg=l;form.setSuggestions(l)}).catch(()=>{})}
+
+/* ---------- Crop / rotate / straighten (non-destructive: stored in the sidecar, applied at render time) ---------- */
+function cropPane(ed,id,refresh,onSave){
+ const e=ed.edit,root=el('div'),stage=el('div',{style:'position:relative;overflow:hidden;user-select:none;touch-action:none;margin:10px 3px;line-height:0;box-shadow:0 0 0 1px #000,0 0 0 3px rgba(255,255,255,.9)'}),box=el('div',{style:'position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move;box-sizing:border-box'});
+ let img=null,nw=1,nh=1,mode=e.crop?(Math.abs(e.crop.w*0/1)>=0?'free':'free'):'full',ready=false,seq=0;
+ const K=()=>nw*9/(16*nh);                                   // crop height fraction per unit width fraction when 16:9
+ const draw=()=>{const c=e.crop;box.style.display=c?'block':'none';if(c){Object.assign(box.style,{left:c.x*100+'%',top:c.y*100+'%',width:c.w*100+'%',height:c.h*100+'%'})}info.textContent=c?('Crop: '+Math.round(c.w*nw)+' × '+Math.round(c.h*nh)+' px of the source'+(mode=='169'?' (16:9)':'')):'No crop — whole picture is used'};
+ const def=()=>{if(mode=='full'){e.crop=null;return}if(mode=='169'){let w=1,h=K();if(h>1){h=1;w=1/K()}e.crop={x:(1-w)/2,y:(1-h)/2,w,h}}else e.crop={x:.05,y:.05,w:.9,h:.9}};
+ const setMode=m=>{mode=m;def();draw();refresh();mk()};
+ const chips=el('div',{class:'chips2'});const mk=()=>chips.replaceChildren(...[['full','Whole picture'],['169','Crop to 16:9'],['free','Free crop']].map(([v,l])=>el('span',{class:'ch'+(mode==v?' on':''),onclick:()=>setMode(v)},l)));
+ const info=el('div',{class:'mut'});
+ const load=async()=>{const my=++seq;stage.style.opacity=.5;try{const r=await fetch('api/edit_base?id='+encodeURIComponent(id)+'&rotate='+(e.rotate||0)+'&straighten='+(e.straighten||0)+'&w=1400');if(!r.ok)throw new Error('HTTP '+r.status);
+   const b=await r.blob();if(my!=seq)return;const im=el('img',{src:URL.createObjectURL(b),draggable:false,style:'width:100%;display:block'});await new Promise(ok=>{im.onload=ok});
+   nw=im.naturalWidth;nh=im.naturalHeight;img=im;stage.replaceChildren(im,box);ready=true;def();draw();refresh()}catch(x){toast('Crop view failed: '+x.message)}stage.style.opacity=1};
+ const geomChange=()=>{if(mode=='full')e.crop=null;load();refresh()};
+ const rot=d=>{e.rotate=((e.rotate||0)+d+360)%360;geomChange()};
+ const sl=el('input',{type:'range',min:-10,max:10,step:.1,style:'width:240px'});sl.value=e.straighten||0;const slv=el('span',{class:'mut'},(+sl.value).toFixed(1)+'°');
+ sl.oninput=()=>{slv.textContent=(+sl.value).toFixed(1)+'°'};sl.onchange=()=>{e.straighten=+sl.value;geomChange()};
+ let drag=null;const P=ev=>{const r=stage.getBoundingClientRect();return{x:Math.min(1,Math.max(0,(ev.clientX-r.left)/r.width)),y:Math.min(1,Math.max(0,(ev.clientY-r.top)/r.height))}};
+ const HS=22;stage.addEventListener('pointerdown',ev=>{if(!e.crop||!ready)return;const p=P(ev),c=e.crop,r=stage.getBoundingClientRect(),tx=HS/r.width,ty=HS/r.height;
+  const nearX=[Math.abs(p.x-c.x)<tx?'w':Math.abs(p.x-(c.x+c.w))<tx?'e':null][0],nearY=Math.abs(p.y-c.y)<ty?'n':Math.abs(p.y-(c.y+c.h))<ty?'s':null;
+  if(nearX&&nearY)drag={t:'size',ax:nearX=='w'?c.x+c.w:c.x,ay:nearY=='n'?c.y+c.h:c.y};
+  else if(p.x>c.x&&p.x<c.x+c.w&&p.y>c.y&&p.y<c.y+c.h)drag={t:'move',dx:p.x-c.x,dy:p.y-c.y};else return;
+  stage.setPointerCapture(ev.pointerId);ev.preventDefault()});
+ stage.addEventListener('pointermove',ev=>{if(!drag){return}const p=P(ev),c=e.crop;
+  if(drag.t=='move'){c.x=Math.min(1-c.w,Math.max(0,p.x-drag.dx));c.y=Math.min(1-c.h,Math.max(0,p.y-drag.dy))}
+  else{let w=Math.abs(p.x-drag.ax),h=Math.abs(p.y-drag.ay);if(mode=='169'){w=Math.min(w,h/K());h=w*K()}w=Math.max(w,.04);h=Math.max(h,.04);
+   c.x=p.x<drag.ax?drag.ax-w:drag.ax;c.y=p.y<drag.ay?drag.ay-h:drag.ay;c.w=w;c.h=h;
+   if(c.x<0){c.x=0}if(c.y<0){c.y=0}if(c.x+c.w>1)c.x=1-c.w;if(c.y+c.h>1)c.y=1-c.h}
+  draw()});
+ const end=()=>{if(drag){drag=null;refresh()}};stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
+ root.append(el('p',{class:'mut'},'Non-destructive: the original file is never changed. Drag the box to move it, drag a corner to resize.'),chips,
+  el('div',{class:'row'},el('button',{onclick:()=>rot(-90)},'⟲ Rotate left'),el('button',{onclick:()=>rot(90)},'⟳ Rotate right'),
+   el('label',{},'Straighten'),sl,slv,el('button',{onclick:()=>{e.rotate=0;e.straighten=0;sl.value=0;slv.textContent='0.0°';mode='full';e.crop=null;mk();load();refresh()}},'Reset')),
+  stage,info,
+  el('div',{class:'row'},el('button',{class:'pri',onclick:()=>onSave&&onSave()},'✓ Save crop'),el('span',{class:'mut'},'Changes show in the preview on the left right away, but are only stored when you press Save (here, or the Save button under the preview).')));
+ root.start=()=>{if(!ready&&!root._l){root._l=1;if(e.crop)mode='free';mk();load().then(()=>{if(e.crop===null&&mode!='full')def()})}};
+ mk();return root}
+
+/* ---------- Full-screen viewer (zoom / pan at native 3840x2160) ---------- */
+async function openViewer(id,disp,edit){
+ const v=el('div',{class:'viewer'}),bar=el('div',{class:'vbar'}),zl=el('span',{},'…');let img=null,sc=1,tx=0,ty=0,drag=null;
+ const apply=()=>{if(img){img.style.boxShadow=`0 0 0 ${1/sc}px #000,0 0 0 ${3/sc}px rgba(255,255,255,.9)`;img.style.transform=`translate(${tx}px,${ty}px) scale(${sc})`;zl.textContent=Math.round(sc*100)+'%'}};
+ const fit=()=>{sc=Math.min(innerWidth/img.naturalWidth,innerHeight/img.naturalHeight);tx=(innerWidth-img.naturalWidth*sc)/2;ty=(innerHeight-img.naturalHeight*sc)/2;apply()};
+ const zoom=(f,cx=innerWidth/2,cy=innerHeight/2)=>{const ns=Math.min(8,Math.max(.05,sc*f));tx=cx-(cx-tx)*ns/sc;ty=cy-(cy-ty)*ns/sc;sc=ns;apply()};
+ const one=()=>{const cx=innerWidth/2,cy=innerHeight/2;const ns=1;tx=cx-(cx-tx)*ns/sc;ty=cy-(cy-ty)*ns/sc;sc=ns;apply()};
+ const close=()=>{v.remove();bar.remove();removeEventListener('keydown',key)};
+ const key=e=>{if(e.key=='Escape')close();else if(e.key=='+'||e.key=='=')zoom(1.25);else if(e.key=='-')zoom(.8);else if(e.key=='0')fit();else if(e.key=='1')one()};
+ addEventListener('keydown',key);
+ bar.append(el('button',{onclick:()=>zoom(.8)},'−'),zl,el('button',{onclick:()=>zoom(1.25)},'+'),el('button',{onclick:fit},'Fit'),el('button',{onclick:one},'100%'),el('button',{onclick:close},'✕ Close'));
+ v.append(el('div',{style:'color:#aaa;position:absolute;inset:0;display:flex;align-items:center;justify-content:center'},'Rendering full resolution…'));
+ document.body.append(v,bar);
+ try{const b=await api('preview',{id,display:disp,w:3840,edit});img=el('img',{src:URL.createObjectURL(b),draggable:false});
+  await new Promise(r=>{img.onload=r});v.replaceChildren(img);fit()}catch(e){toast('Preview failed: '+e.message);close();return}
+ v.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY)},{passive:false});
+ v.addEventListener('pointerdown',e=>{drag={x:e.clientX-tx,y:e.clientY-ty};v.classList.add('drag');v.setPointerCapture(e.pointerId)});
+ v.addEventListener('pointermove',e=>{if(drag){tx=e.clientX-drag.x;ty=e.clientY-drag.y;apply()}});
+ v.addEventListener('pointerup',()=>{drag=null;v.classList.remove('drag')});
+ v.addEventListener('dblclick',e=>{Math.abs(sc-1)<.01?fit():(()=>{const f=1/sc;zoom(f,e.clientX,e.clientY)})()})}
+
+/* ---------- Settings ---------- */
+function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceChildren();const s=clone(S);
+ const src=el('div');const drawSrc=()=>{src.replaceChildren(field('Pick from',s,'source.mode','select',{options:{folder:'One folder',mix:'Weighted mix of folders'}},drawSrc));
+  if(s.source.mode=='folder')src.append(field('Folder',s,'source.folder','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}));
+  else{s.source.mix??={};folderList.forEach(f=>{s.source.mix[f.name]??=0;src.append(field(f.name+' weight',s,'source.mix.'+f.name,'range',{min:0,max:100,step:5}))})}};drawSrc();
+ const gd={placard:s.display.placard,mat:s.display.mat,overscan:Object.assign({top:0,right:0,bottom:0,left:0,mode:'placard'},s.display.overscan||{}),srgb:s.display.srgb!==false};s.display=gd;
+ const cards=[
+  el('div',{class:'card'},el('h3',{},'Image source'),src,field('Rotation enabled',s,'enabled','check'),
+   field('Change every',s,'rotation.value','num',{min:1}),field('Unit',s,'rotation.unit','select',{options:{minutes:'minutes',hours:'hours',days:'days'}}),
+   field('Quiet hours (HH:MM-HH:MM, blank = none)',s,'rotation.quiet_hours','text')),
+  el('div',{class:'card'},el('h3',{},'Default look (images without their own settings)'),displayForm(gd,()=>{})),
+  el('div',{class:'card'},el('h3',{},'Overscan / TV edge'),
+   el('p',{class:'mut'},'If the TV hides a little of the picture edge, measure it: show the grid, read the outermost number you can fully see on each side, and enter it here (percent of the screen).'),
+   el('div',{class:'row'},el('button',{onclick:async()=>{const r=await api('calibrate',{});toast(r.error?('Could not show grid: '+r.error):'Grid is on the TV — press Next to resume normal art',7000)}},'Show calibration grid on TV'),
+    el('button',{title:'SMPTE bars: check color, brightness (PLUGE) and contrast of the TV in Art Mode',onclick:async()=>{const r=await api('colorbars',{});toast(r.error?('Could not show bars: '+r.error):'SMPTE color bars are on the TV — press Resend or Next to go back',7000)}},'Show SMPTE color bars on TV')),
+   field('Top %',gd,'overscan.top','num',{min:0,max:12,step:.5}),field('Right %',gd,'overscan.right','num',{min:0,max:12,step:.5}),
+   field('Bottom %',gd,'overscan.bottom','num',{min:0,max:12,step:.5}),field('Left %',gd,'overscan.left','num',{min:0,max:12,step:.5}),
+   field('How to compensate',gd,'overscan.mode','select',{options:{placard:'Keep picture full-screen; keep the card and mat text inside the visible area',inset:'Shrink the whole picture into the visible area'}})),
+  el('div',{class:'card'},el('h3',{},'E-paper card'),field('Send info to e-paper',s,'epaper.enabled','check'),
+   field('Device ID',s,'epaper.device_id','text'),field('Style',s,'epaper.style','select',{options:{gallery:'Gallery',inverted:'Inverted',grid:'Grid'}}),
+   el('p',{class:'mut'},'Default device: “4 Inch ePaper Display” (522×152, black/white/red).')),
+  el('div',{class:'card'},el('h3',{},'Schedules & special occasions'),
+   el('p',{class:'mut'},'While a schedule is active it replaces the normal source: show a folder or specific images at certain times of day, days of the week, or dates each year (e.g. the Christmas stockings image on 12-24 to 12-25). The art changes as soon as a schedule starts or ends. If two overlap, the higher priority wins.'),
+   ...((s.schedules||[]).map((r,ix)=>el('div',{class:'row',style:'border-top:1px solid var(--line);padding-top:8px'},
+     el('b',{},r.name||'(unnamed)'),el('span',{class:'mut'},scheduleText(r)),
+     el('button',{onclick:()=>scheduleEditor(s,ix)},'Edit'),
+     el('button',{style:'color:#ff7b72',onclick:async()=>{if(!confirm('Delete schedule “'+(r.name||'')+'”?'))return;s.schedules.splice(ix,1);S=await api('settings',{schedules:s.schedules});renderSet()}},'Delete')))),
+   el('div',{class:'row'},el('button',{onclick:()=>{s.schedules=s.schedules||[];s.schedules.push({id:'r'+Date.now().toString(36),name:'New schedule',enabled:true,kind:'images',images:[],days:[],time_from:'',time_to:'',date_from:'',date_to:'',priority:1});scheduleEditor(s,s.schedules.length-1)}},'+ Add schedule'))),
+  el('div',{class:'card'},el('h3',{},'Bird Frame interleave'),
+   el('p',{class:'mut'},'Every so often, show the bird picture for a while, then go back to the art. “Live collage” asks the Bird Frame add-on to render and show its current collage (it must be running; set its own interval long so it does not change the TV by itself). “Folder” shows an image from the birds folder instead.'),
+   field('Interleave birds',s,'birdframe.enabled','check'),
+   field('Every N art changes (0 = off)',s,'birdframe.every_n','num',{min:0,max:500}),
+   field('…or every N minutes (0 = off)',s,'birdframe.every_minutes','num',{min:0,max:10000}),
+   field('Show it for (minutes, 0 = one change slot)',s,'birdframe.duration_minutes','num',{min:0,max:600,step:1}),
+   field('Bird source',s,'birdframe.source','select',{options:{live:'Live Bird Frame collage',folder:'Image from a folder'}}),
+   field('Bird folder',s,'birdframe.folder','text'),field('Bird Frame add-on host',s,'birdframe.host','text'),
+   el('div',{class:'row'},el('button',{onclick:async()=>{toast('Asking for a bird picture…',20000);const r=await api('bird_now',{});toast(r.error?('Bird picture failed: '+r.error):'Bird picture is on the TV',6000);await poll()}},'Show bird picture now'))),
+  el('div',{class:'card'},el('h3',{},'Logging'),field('Log level',s,'log_level','select',{options:{'':'Add-on option (default)',debug:'Debug (most detail)',info:'Info',warning:'Warnings only',error:'Errors only'},native:true}),
+   el('p',{class:'mut'},'Takes effect as soon as you save — no restart. Errors shown in pop-ups are also written to the add-on log so they can be read there. Use Debug while chasing a problem, then set it back.')),
+  el('div',{class:'card'},el('h3',{},'Backups'),el('p',{class:'mut'},'Sidecar files (titles, mats, crops, flags) and these settings are backed up automatically once a day to the share (folder _backups, newest 14 kept).'),
+   el('div',{class:'row'},el('button',{onclick:async()=>{const r=await api('backup_now',{});toast('Backed up '+r.sidecars+' sidecars: '+r.file,6000);renderSet()}},'Back up now'),el('span',{class:'mut',id:'bk'},'')),
+   (api('backups').then(l=>{const e=$('#bk');if(e)e.textContent=l.length?('Latest: '+new Date(l[0].mtime*1000).toLocaleString()+' ('+l.length+' kept)'):'No backups yet'}).catch(()=>{}),null)),
+  null,null];
+ const mkSave=label=>el('button',{class:'pri',onclick:async()=>{S=await api('settings',s);api('ambient_now',{}).catch(()=>{});toast('Saved — applies to the next image');renderSet()}},label||'Save settings');
+ const srgbCard=el('div',{class:'card'},el('h3',{},'Color management'),
+  field('Convert photos to sRGB using their embedded color profile',gd,'srgb','check'),
+  el('p',{class:'mut'},'Photos from phones and cameras are often tagged Display P3 or Adobe RGB. The TV assumes sRGB, so without conversion those can look over- or under-saturated. Untagged images are used as they are. Changing this re-renders images as they come up.'));
+ const put=(id,list)=>$('#'+id).replaceChildren(...list.filter(Boolean));
+ put('t-set',[cards[0],cards[3],cards[5],cards[6],cards[7],mkSave()]);
+ put('t-disp',[cards[1],srgbCard,mkSave()]);
+ put('t-sched',[cards[4]]);
+ put('t-tv',[...tvCards(s),cards[2],mkSave()])}
+
+/* ---------- TV tab: connection, brightness, color temperature, companion light ---------- */
+const HAENT={};
+function entList(doms){return HAENT[doms]??=api('ha_entities?domains='+doms).catch(()=>[])}
+function entityField(label,obj,path,doms,o={}){
+ const inp=el('input',{type:'text',placeholder:o.ph||'(none)',style:'width:min(100%,340px)'});inp.value=get(obj,path)||'';
+ const dl=el('datalist',{id:'dl'+Math.random().toString(36).slice(2)});inp.setAttribute('list',dl.id);
+ const now=el('span',{class:'mut'});
+ const upd=l=>{const e=l.find(x=>x.id==inp.value);now.textContent=e?(e.name+' · now '+e.state+(e.unit?' '+e.unit:'')):(inp.value?'⚠ not found in Home Assistant':'')};
+ entList(doms).then(l=>{let f=o.filter?l.filter(o.filter):l;if(!f.length)f=l;f.forEach(e=>dl.append(el('option',{value:e.id},e.name+' ('+e.state+(e.unit?' '+e.unit:'')+')')));upd(l)});
+ inp.onchange=()=>{set(obj,path,inp.value.trim());entList(doms).then(upd)};
+ return el('div',{class:'row'},el('label',{},label),inp,dl,now)}
+let ambTimer=null;
+function tvCards(s){
+ s.ambient??={};const A=s.ambient;A.brightness??={};A.color_temp??={};A.light??={};s.tv??={};
+ const num=(l,o,p,mn,mx,st)=>field(l,o,p,'num',{min:mn,max:mx,step:st||1});
+ // connection
+ const conn=el('div',{class:'card'},el('h3',{},'Connection & remote control'),
+  field('TV IP address (blank = find automatically)',s,'tv.ip','text'),
+  entityField('Media player entity',s,'tv.entity','media_player',{ph:'media_player.frametv'}),
+  field('TV MAC address (for Wake-on-LAN when the TV is fully off)',s,'tv.mac','text'),
+  el('div',{class:'row'},...[['art_on','Art Mode on'],['art_off','Art Mode off'],['power_off','Power off']].map(([a,l])=>el('button',{onclick:async()=>{toast('Sending…');const r=await api('tv',{action:a});toast(r.message,5000)}},l))));
+ // brightness
+ const B=A.brightness,bd=el('div');
+ const drawB=()=>{fillKids(bd,
+  field('Art brightness',B,'mode','select',{options:{off:'Leave the TV alone',manual:'Fixed',lux:'Lux sensor',entity:'Follow an entity',sun:'Time of day'}},drawB),
+  B.mode=='manual'?field('Brightness (%)',B,'manual','range',{min:0,max:100,step:5}):null,
+  B.mode=='lux'?entityField('Lux sensor',B,'lux_entity','sensor',{filter:e=>e.dc=='illuminance'||/lux|illuminance/i.test(e.id),ph:'sensor.living_room_illuminance'}):null,
+  B.mode=='lux'?num('Dark at (lux) → minimum',B,'lux_low',0,1000):null,B.mode=='lux'?num('Bright at (lux) → maximum',B,'lux_high',10,20000):null,
+  B.mode=='entity'||B.mode=='lux'?entityField(B.mode=='lux'?'Fallback control entity':'Control entity',B,'entity','input_number,number,sensor,light,switch',{ph:'input_number.frame_brightness or the Adaptive Lighting switch'}):null,
+  B.mode=='entity'||B.mode=='lux'?num('Entity value that means 100% (if it is not 0–100)',B,'entity_max',1,1000):null,
+  B.mode!='off'&&B.mode!='manual'?entityField('Sun entity (for time of day)',B,'sun_entity','sun',{ph:'sun.sun'}):null,
+  B.mode!='off'?num('Never dimmer than (%)',B,'min_pct',0,100,5):null,B.mode!='off'?num('Never brighter than (%)',B,'max_pct',0,100,5):null,
+  B.mode!='off'?field('Turn off the TV’s own auto-brightness',B,'disable_sensor','check'):null,
+  B.mode!='off'?num('Change at most every (seconds)',B,'min_interval_s',10,3600,10):null,
+  B.mode=='lux'||B.mode=='entity'?el('p',{class:'mut'},'If the chosen sensor or entity is missing or unavailable, the add-on falls back to the other one, then to the sun (or the clock), then to the fixed value — so the art never gets stuck.'):null)};drawB();
+ const bright=el('div',{class:'card'},el('h3',{},'Brightness'),bd);
+ // color temperature
+ const C=A.color_temp,cd=el('div');
+ const drawC=()=>{fillKids(cd,
+  field('Art color temperature',C,'mode','select',{options:{off:'Leave the TV alone',manual:'Fixed',sun:'Time of day / location',entity:'Follow Adaptive Lighting (or another entity)'}},drawC),
+  C.mode=='manual'?num('Color temperature (K, lower = warmer)',C,'manual_k',2000,7000,100):null,
+  C.mode=='sun'?num('Night (K)',C,'night_k',2000,7000,100):null,C.mode=='sun'?num('Daylight (K)',C,'day_k',2000,7000,100):null,
+  C.mode=='entity'?entityField('Entity with a color temperature',C,'entity','switch,light,sensor,input_number,number',{ph:'switch.adaptive_lighting_living_room'}):null,
+  C.mode=='entity'?el('p',{class:'mut'},'Reads color_temp_kelvin (or color_temp in mireds, or a plain number) from the entity — the Adaptive Lighting switch provides it. Unavailable? It falls back to the sun, then the fixed value.'):null,
+  C.mode=='sun'||C.mode=='entity'?entityField('Sun entity',C,'sun_entity','sun',{ph:'sun.sun'}):null,
+  C.mode!='off'?el('fieldset',{},el('legend',{},'Map to the TV’s scale'),
+    num('Warmest setting (K)',C,'low_k',1500,6000,100),num('Coolest setting (K)',C,'high_k',3000,10000,100),field('Flip direction',C,'flip','check'),
+    el('p',{class:'mut'},'The TV only has a simple warm⇄cool slider. These test buttons move the TV’s art color tone to its two ends so you can see which is warm. If the “high end” looks warmer, tick Flip direction.'),
+    el('div',{class:'row'},...[['min','Low end'],['max','High end']].map(([w,l])=>el('button',{onclick:async()=>{const p=await api('tv_probe');const r=p.color_temperature;if(!r||r.min==null){toast('TV did not report its range'+(p.error?': '+p.error:''),6000);return}
+      const x=await api('tv_apply',{color_temp:w=='min'?r.min:r.max});toast(l+' ('+(w=='min'?r.min:r.max)+'): '+x.message,4000)}},'Test: '+l)),
+     el('button',{onclick:async()=>{const p=await api('tv_probe');toast('TV reports: brightness '+JSON.stringify(p.brightness||'?')+' · tone '+JSON.stringify(p.color_temperature||'?')+' · sensor '+(p.sensor??'?'),9000)}},'What does the TV report?'))):null,
+  C.mode!='off'?num('Change at most every (seconds)',C,'min_interval_s',30,7200,30):null)};drawC();
+ const ct=el('div',{class:'card'},el('h3',{},'Color temperature'),cd);
+ // light
+ const L=A.light,ld=el('div');
+ const drawL=()=>{fillKids(ld,
+  entityField('Light (or switch) that follows the TV',L,'entity','light,switch,input_boolean',{ph:'(none)'}),
+  field('Turn it on and off with the TV',L,'follow','check'),
+  L.entity&&L.follow?field('Match its brightness to the art',L,'sync_brightness','check'):null,
+  L.entity&&L.follow&&L.sync_brightness?num('Light at minimum art brightness (%)',L,'light_min_pct',1,100,5):null,
+  L.entity&&L.follow&&L.sync_brightness?num('Light at maximum art brightness (%)',L,'light_max_pct',1,100,5):null,
+  L.entity&&L.follow?field('Match its color temperature to the art',L,'sync_color_temp','check'):null,
+  L.entity?el('div',{class:'row'},el('button',{onclick:()=>api('light_test',{on:true}).then(r=>toast(r.message))},'Test: on'),el('button',{onclick:()=>api('light_test',{on:false}).then(r=>toast(r.message))},'Test: off')):null,
+  el('p',{class:'mut'},'The light switches on when the TV turns on (Art Mode or not) and off when it turns off or goes to standby. With nothing chosen, this is off. If another automation or Adaptive Lighting already manages this light, leave the matching options off so they don’t fight.'))};drawL();
+ const light=el('div',{class:'card'},el('h3',{},'Light that follows the TV'),ld);
+ // live status
+ const live=el('div',{class:'card'},el('h3',{},'What it is doing now'),el('div',{id:'ambstat',class:'mut'},'…'),
+  el('div',{class:'row'},el('button',{onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now')));
+ const updAmb=async()=>{const e=$('#ambstat');if(!e||$('#t-tv').hidden)return;try{const a=await api('ambient');
+   const b=a.brightness||{},c=a.color_temp||{},l=a.light||{};
+   fillKids(e,el('div',{},'TV: '+(a.tv_state||'?')),
+    el('div',{},'Brightness: '+(b.mode=='off'?'not controlled':((b.pct??'—')+'% — '+b.source+(b.applied!=null?' · TV set to '+b.applied:'')))),
+    el('div',{},'Color temperature: '+(c.mode=='off'?'not controlled':((c.kelvin??'—')+' K — '+c.source+(c.applied!=null?' · TV set to '+c.applied:'')))),
+    el('div',{},'Light: '+(l.entity?(l.entity+(l.follow?' follows the TV':' (not following)')+(l.last?' · '+l.last:'')):'none')),
+    a.error?el('div',{class:'warn'},'Problem: '+a.error):null)}catch(x){}};
+ if(ambTimer)clearInterval(ambTimer);ambTimer=setInterval(updAmb,5000);setTimeout(updAmb,300);
+ return [conn,bright,ct,light,live]}
+const $$=x=>x;
+boot();
+</script></body></html>
