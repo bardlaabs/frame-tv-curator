@@ -80,8 +80,10 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 .arow.downloading{border-left-color:#5fa8d3}.arow.done{border-left-color:var(--ok)}.arow.skipped{border-left-color:#e5a24a}.arow.failed{border-left-color:var(--bad)}
 .pill{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:#444;color:#fff;white-space:nowrap}.pill.downloading{background:#2f6f94}.pill.done{background:#2f7a42}.pill.skipped{background:#9a6a1c}.pill.failed{background:#a33b34}.pill.queued{background:#444}
 .pvx{position:fixed;inset:0;z-index:90;background:#000e;display:flex;gap:0;outline:none}.pvimg{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;min-width:0}.pvimg img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 10px 50px #000}
-.pvside{width:min(400px,40vw);background:var(--panel);border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:8px;overflow:auto}.pva{color:var(--acc);font-weight:700}.pvb{background:var(--panel2);border-radius:10px;padding:8px 12px}.kv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--line)}.kv:last-child{border:0}.kv span{color:var(--mut)}.pvd{color:var(--fg);line-height:1.5;font-size:14px}.pvdup{background:#4a3a14;color:#f0b35a;border-radius:8px;padding:8px 10px;font-size:13px}
+.pvside{width:min(400px,40vw);background:var(--panel);border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:8px;overflow:auto}.pva{color:var(--acc);font-weight:700}.pvb{background:var(--panel2);border-radius:10px;padding:8px 12px}.pkv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--line)}.pkv:last-child{border:0}.pkv span{color:var(--mut)}.pvd{color:var(--fg);line-height:1.5;font-size:14px}.pvdup{background:#4a3a14;color:#f0b35a;border-radius:8px;padding:8px 10px;font-size:13px}
 @media(max-width:800px){.pvx{flex-direction:column}.pvside{width:auto;max-height:50vh}}
+.now>*{min-width:0}#details{overflow-wrap:anywhere}.nsub{color:var(--acc);font-weight:700;margin-bottom:10px}.nstack{display:flex;flex-direction:column;gap:10px}
+.ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.nb{background:var(--panel2);border-radius:8px;padding:7px 10px;min-width:0}.nk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}.nv{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.nv a{color:var(--acc)}.nfacts{color:var(--mut);font-size:12px;line-height:1.5}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
 <nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
@@ -254,13 +256,27 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
  let r;try{r=await api('sidecar?id='+encodeURIComponent(id))}catch(e){box.textContent='Could not load details';return}
  const sc=r.sidecar,i=r.info,ct=sc.card_text||{},flags=Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{});
  const loc=(sc.location&&typeof sc.location=='object')?sc.location.name:sc.location;
+ const og=sc.origin||{},si=sc.source_image||{},idn=sc.identification||{},col=sc.collection||{};
+ const link=(u,t)=>u&&/^https?:\/\//.test(u)?el('a',{href:u,target:'_blank',rel:'noopener'},t||u):null;
+ const links=(sc.links||[]).filter(x=>x&&x.url).map(x=>link(x.url,x.label||x.url));
+ const gps=sc.location&&typeof sc.location=='object'&&sc.location.lat!=null?(+sc.location.lat).toFixed(5)+', '+(+sc.location.lon).toFixed(5):null;
+ const facts=[og.discover?'Found with Discover'+(og.downloaded?' on '+og.downloaded:''):null,og.ai_extended?'Edges extended by AI':null,
+  idn.status&&idn.status!='verified'?'Identification: '+idn.status:null,idn.method?'Method: '+idn.method:null,sc.description_attribution].filter(Boolean);
  const rows=[['Artist',i.artist],['Date',ct.date||(sc.date||{}).display],[sc.kind=='photo'?'Location':'Medium',sc.kind=='photo'?(ct.location||loc):(ct.medium||sc.medium)],
-  ['Credit',ct.credit||(sc.collection||{}).credit_line],['Folder',i.folder],['File',i.file],['Size',r.size[0]+' × '+r.size[1]+(r.low_res?' (low resolution)':'')],
-  ['Identified',(sc.identification||{}).status&&(sc.identification||{}).status!='verified'?(sc.identification||{}).status:null]].filter(x=>x[1]);
+  ['GPS',gps],['Credit',ct.credit||col.credit_line],['Source',col.institution],['License',sc.license],
+  ['Folder',i.folder],['File',i.file],['Size',r.size[0]+' × '+r.size[1]+' px'+(r.low_res?' (low resolution)':'')],
+  ['Original',si.width&&si.height&&(si.width!=r.size[0]||si.height!=r.size[1])?si.width+' × '+si.height+' px':null]].filter(x=>x[1]);
+ const blk=(k,v)=>v?el('div',{class:'nb'},el('div',{class:'nk'},k),el('div',{class:'nv'},v)):null;
+ const stack=el('div',{class:'nstack'},
+  el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,String(v)))),
+  blk('Description',sc.description),
+  blk('Notes',sc.notes),
+  blk('Links',(links.length||link(sc.source_url))?el('div',{},link(sc.source_url,'Source page ↗'),links.filter(x=>x&&x.href!=sc.source_url)):null),
+  facts.length?el('div',{class:'nfacts'},facts.join(' · ')):null);
  const chip=k=>flagChip(flags,k,async(k,c)=>{flags[k]=!flags[k];await api('flags',{id,flags});c.classList.toggle('on',flags[k]);
    toast(k=='exclude'&&flags[k]?'Excluded from rotation (stays up until the next change)':'Saved')});
- box.replaceChildren(el('h3',{},'Now showing'),el('h2',{style:'margin:0 0 4px'},i.name),
-  el('div',{class:'kv'},rows.flatMap(([k,v])=>[el('b',{},k),el('span',{},String(v))])),
+ box.replaceChildren(el('h3',{},'Now showing'),el('h2',{style:'margin:0 0 2px;overflow-wrap:anywhere'},ct.title||i.name),el('div',{class:'nsub'},[i.artist,ct.date||(sc.date||{}).display].filter(Boolean).join(' · ')),
+  stack,
   el('div',{class:'chips2',style:'margin:12px 0'},chip('favorite'),chip('show_more'),chip('exclude')),
   el('button',{onclick:()=>openEditor(id)},'Edit details & look…'))}
 
@@ -458,7 +474,7 @@ function previewD(i){const items=(D.data&&D.data.items||[]).filter(x=>!x.error),
  const go=d=>{if(items.length>1){cur=(cur+d+items.length)%items.length;draw()}};
  const draw=async()=>{const x=items[cur];if(!x)return;const on=D.sel.has(x.key);
   const c=D.chk.get(x.key),n=(c&&c.new)||{},dup=c&&c.matches&&c.matches.length;
-  const row=(k,v)=>v?el('div',{class:'kv'},el('span',{},k),el('b',{},v)):null;
+  const row=(k,v)=>v?el('div',{class:'pkv'},el('span',{},k),el('b',{},v)):null;
   root.replaceChildren(
    el('div',{class:'pvimg',onclick:close},el('img',{src:bigImg(x.thumb),onerror:function(){this.onerror=null;this.src=x.thumb}})),
    el('div',{class:'pvside'},

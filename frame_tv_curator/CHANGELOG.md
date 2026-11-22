@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.4
+- Now Playing details are stacked in labelled blocks that wrap instead of running off to the right, and show everything known about the image: title, artist, date, medium or location, GPS, credit, source, license, folder, file, size, original size, description, notes, links, origin and identification notes.
+- Fixed a style clash from 0.10.0 (the preview's row style overrode the details grid), which was the cause of the overflow.
+
 ## 0.10.3
 - Editor Info tab: new Details section with Description, Source, Source link (with an open link), License and private Notes, plus a read-only line with the original size, where it came from and whether the edges were AI-extended. Everything is saved in the sidecar.
 
