@@ -1,0 +1,15 @@
+# Optional: Discover
+
+Find public-domain art from museum collections and add it to your library, with metadata and license filled into the sidecar.
+
+## Sources
+- **Reframed**: a curated gallery of public-domain art.
+- **Art Institute of Chicago**: public-domain works from the museum's open-access API (CC0 data). Images come at the museum's own 3000 px download size (the largest it publishes), downloaded by your browser and uploaded to the add-on.
+
+## Using it
+1. Open **Library > Discover**, choose a source, type and order, or search by keyword or artist.
+2. Tick items (a duplicate check warns about images you already have) and choose the destination folder.
+3. Use the preview button for a full-screen look with details before adding.
+4. A toast summarizes how many were added or skipped.
+
+Please keep the polite request rate; the add-on throttles requests to museum servers.

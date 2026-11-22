@@ -22,14 +22,14 @@ def source_ids(src):
         for f in (src.get("mix") or {}):
             ids += library.images(f)
         return ids
-    return library.images(src.get("folder", "art"))
+    return library.images(src.get("folder", "Art"))
 
 def source_key(src):
     if src.get("mode") == "images":
         return "images:" + str(src.get("rule"))
     if src.get("mode") == "mix":
         return "mix:" + ",".join(sorted((src.get("mix") or {}).keys()))
-    return "folder:" + src.get("folder", "art")
+    return "folder:" + src.get("folder", "Art")
 
 def next_id(src, state_data, avoid=None):
     """Returns (image_id, bags_dict). Mix mode picks a folder by weight, then draws from that folder's bag."""

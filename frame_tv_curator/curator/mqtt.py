@@ -61,7 +61,7 @@ class Entities:
 
     def _folders(self):
         from . import library
-        return [f["name"] for f in library.folders()] or ["art"]
+        return [f["name"] for f in library.folders()] or ["Art"]
 
     def _on_message(self, c, u, m):
         t, p = m.topic.split("/")[1], m.payload.decode()
@@ -81,5 +81,5 @@ class Entities:
         P = lambda k, v: self.c.publish(f"{NODE}/{k}", "" if v is None else str(v), retain=True)
         P("title", st.get("title")); P("artist", st.get("artist")); P("image", st.get("current"))
         P("rotation", "ON" if st["enabled"] else "OFF")
-        P("folder", s["source"].get("folder", "art"))
+        P("folder", s["source"].get("folder", "Art"))
         r = s["rotation"]; P("interval", int(float(r["value"]) * {"minutes": 1, "hours": 60, "days": 1440}[r["unit"]]))

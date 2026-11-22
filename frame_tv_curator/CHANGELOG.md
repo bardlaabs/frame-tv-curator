@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2
+- Folder lists (chips, dropdowns) are sorted alphabetically, ignoring case.
+- The add-on creates the Art and Photos folders on first run if they do not exist (existing folders of any case are kept). Defaults now use Art and Photos.
+- Optional one-time rename of lowercase art/photos folders to Art/Photos, including folder names in settings, schedules and state (enabled by a marker file).
+- Added the "Add to my Home Assistant" button, a minimal-setup section, an optional-settings table and a full manual in `docs/`.
+
 ## 0.11.1
 - Art Institute of Chicago downloads now use the same 3000 px best-fit size as the museum's own Download button (the largest it publishes; other sizes are refused). If that is refused, the browser tries 1686 px, then the add-on falls back to a reduced copy, and the dialog says which size you got.
 

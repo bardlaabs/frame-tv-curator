@@ -4,7 +4,7 @@ from . import config
 
 DEFAULT_SETTINGS = {
     "enabled": True,
-    "source": {"mode": "folder", "folder": "art", "mix": {"art": 70, "photos": 30}},
+    "source": {"mode": "folder", "folder": "Art", "mix": {"Art": 70, "Photos": 30}},
     "rotation": {"value": 30, "unit": "minutes", "at_time": "06:00", "quiet_hours": ""},
     # global display defaults; merged under render.DEFAULTS and under each sidecar's own "display"
     "display": {

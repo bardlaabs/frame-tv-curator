@@ -16,7 +16,7 @@ def abspath(img_id):
 
 def folders():
     out = []
-    for n in sorted(os.listdir(config.ROOT)):
+    for n in sorted(os.listdir(config.ROOT), key=lambda x: (x.lower(), x)):
         p = os.path.join(config.ROOT, n)
         if n.startswith("_") or not os.path.isdir(p):
             continue
@@ -482,3 +482,70 @@ def duplicate_of(img_id, threshold=5):
             except Exception:
                 pass
     return None
+
+
+DEFAULT_FOLDERS = ("Art", "Photos")
+
+
+def ensure_default_folders():
+    """Create the Art and Photos folders on first run (matched case-insensitively, so existing folders are kept)."""
+    os.makedirs(config.ROOT, exist_ok=True)
+    have = {n.lower() for n in os.listdir(config.ROOT) if os.path.isdir(os.path.join(config.ROOT, n))}
+    for n in DEFAULT_FOLDERS:
+        if n.lower() not in have:
+            os.makedirs(os.path.join(config.ROOT, n), exist_ok=True)
+
+
+def _retarget(o, old, new):
+    if isinstance(o, str):
+        if o == old:
+            return new
+        if o.startswith(old + "/"):
+            return new + o[len(old):]
+        return o
+    if isinstance(o, list):
+        return [_retarget(x, old, new) for x in o]
+    if isinstance(o, dict):
+        return {_retarget(k, old, new): _retarget(v, old, new) for k, v in o.items()}
+    return o
+
+
+def migrate_folder_case():
+    """One-time opt-in rename of art/photos to Art/Photos. Runs only when the marker file
+    <media>/frame/_meta/rename_folders_to_title_case exists, then renames the marker to .done."""
+    import logging
+    log = logging.getLogger("library")
+    marker = os.path.join(config.ROOT, "_meta", "rename_folders_to_title_case")
+    if not os.path.exists(marker):
+        return
+    pairs = []
+    for new in DEFAULT_FOLDERS:
+        old = new.lower()
+        names = os.listdir(config.ROOT)
+        if old in names and new not in names:
+            tmp = os.path.join(config.ROOT, "." + old + ".renaming")
+            os.rename(os.path.join(config.ROOT, old), tmp)
+            os.rename(tmp, os.path.join(config.ROOT, new))
+            pairs.append((old, new))
+            for sub in ("_originals", "_trash"):
+                sp = os.path.join(config.ROOT, sub, old)
+                if os.path.isdir(sp) and not os.path.exists(os.path.join(config.ROOT, sub, new)):
+                    os.rename(sp, os.path.join(config.ROOT, sub, new))
+            log.info("renamed folder %s -> %s", old, new)
+    if pairs and os.path.isdir(config.DATA):
+        for fn in os.listdir(config.DATA):
+            if not fn.endswith(".json"):
+                continue
+            p = os.path.join(config.DATA, fn)
+            try:
+                data = json.load(open(p))
+            except Exception:
+                continue
+            new_data = data
+            for old, new in pairs:
+                new_data = _retarget(new_data, old, new)
+            if new_data != data:
+                json.dump(new_data, open(p + ".tmp", "w"), indent=1)
+                os.replace(p + ".tmp", p)
+                log.info("updated folder names in %s", fn)
+    os.replace(marker, marker + ".done")

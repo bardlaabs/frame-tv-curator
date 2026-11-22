@@ -1,7 +1,7 @@
 # Frame TV Curator
 
 ## Setup
-1. Put images in the `frame` folder of your media share (for example `art/` and `photos/` subfolders). Files dropped there are picked up within a minute.
+1. Put images in the `frame` folder of your media share. The add-on creates `Art` and `Photos` subfolders on first run; files dropped there are picked up within a minute.
 2. Open the add-on panel. In **Settings** choose the rotation interval and folders; in the **TV** tab set the media player entity (default `media_player.frametv`) and, optionally, the TV's IP address and MAC address (used for Wake-on-LAN when the TV is fully off).
 3. Accept the pairing prompt on the TV the first time the add-on connects.
 
@@ -22,3 +22,5 @@
 - A TV change takes about 10-14 seconds. The add-on only pushes while the TV is in Art Mode.
 - Ambient control, companion light and other entity-linked features are off by default and always fall back to a manual value if an entity is missing.
 - Your data (settings, sidecars, caches) lives in the add-on's `/data` folder; images and sidecars live on the media share.
+
+Full manual: https://github.com/bardlaabs/frame-tv-curator/tree/main/docs

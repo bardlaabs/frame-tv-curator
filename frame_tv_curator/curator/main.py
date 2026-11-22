@@ -8,6 +8,9 @@ def main():
     logging.basicConfig(level=getattr(logging, lvl, logging.INFO), format="%(asctime)s %(name)s %(levelname)s %(message)s")
     for d in (config.RENDER_DIR, config.EPAPER_DIR):
         os.makedirs(d, exist_ok=True)
+    from . import library
+    library.ensure_default_folders()
+    library.migrate_folder_case()
     eng = Engine()
     config.apply_log_level(eng.settings.get().get("log_level"))
     web.serve(eng, int(os.environ.get("FC_PORT", 8099)))
