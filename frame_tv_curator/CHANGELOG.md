@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.9
+- The open-license fonts used by the placard are now included in the repository. They were missing from GitHub, so a fresh install from the repo could not draw placards.
+
 ## 0.10.8
 - New placard option "Auto-fit text to the mat height" (Display tab, for text printed on the mat, also per image with Customize). It picks the largest text that fits the mat strip while keeping the text centered with even space above and below, and still shrinks to fit the picture width. When on, the Size slider is ignored.
 
