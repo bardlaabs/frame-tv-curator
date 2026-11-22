@@ -616,18 +616,47 @@ function tvCards(s){
   L.entity?el('div',{class:'row'},el('button',{onclick:()=>api('light_test',{on:true}).then(r=>toast(r.message))},'Test: on'),el('button',{onclick:()=>api('light_test',{on:false}).then(r=>toast(r.message))},'Test: off')):null,
   el('p',{class:'mut'},'The light switches on when the TV turns on (Art Mode or not) and off when it turns off or goes to standby. With nothing chosen, this is off. If another automation or Adaptive Lighting already manages this light, leave the matching options off so they don’t fight.'))};drawL();
  const light=el('div',{class:'card'},el('h3',{},'Light that follows the TV'),ld);
+ // presence
+ s.presence??={};const P=s.presence;P.entities??=[];const pd=el('div');
+ const multiEnt=()=>{const box=el('div',{class:'row'}),chips=el('span'),inp=el('input',{type:'text',placeholder:'add a presence / motion sensor…',style:'width:min(100%,300px)'});
+  const dl=el('datalist',{id:'dlp'+Math.random().toString(36).slice(2)});inp.setAttribute('list',dl.id);
+  entList('binary_sensor,person,device_tracker,input_boolean').then(l=>l.forEach(e=>dl.append(el('option',{value:e.id},e.name+' ('+e.state+')'))));
+  const draw=()=>fillKids(chips,...P.entities.map((x,i)=>el('span',{class:'chip'},x+' ',el('a',{href:'#',onclick:ev=>{ev.preventDefault();P.entities.splice(i,1);draw()}},'×'))));draw();
+  inp.onchange=()=>{const v=inp.value.trim();if(v&&!P.entities.includes(v))P.entities.push(v);inp.value='';draw()};
+  box.append(el('label',{},'Presence sensors (any one “on” = someone is here)'),chips,inp,dl);return box};
+ const tvSel=(label,path)=>{const row=el('div',{class:'row'}),sel=el('select'),ent=P[path];row.append(el('label',{},label));
+  if(!ent){row.append(el('span',{class:'mut'},'not set'));return row}
+  api('ha_entities?domains=select').then(l=>{const e=l.find(x=>x.id==ent);if(!e){row.append(el('span',{class:'mut'},'⚠ '+ent+' not found'));return}
+   api('ha_state?entity='+ent).then(st=>{(st.attributes?.options||[]).forEach(o=>sel.append(el('option',{value:o},o)));sel.value=e.state;
+    sel.onchange=async()=>{const r=await api('ha_select',{entity:ent,option:sel.value});toast(label+': '+r.message)};row.append(sel)}).catch(()=>{})});return row};
+ const drawP=()=>{fillKids(pd,
+  field('Turn the Frame on and off with presence',P,'enabled','check',{},drawP),
+  P.enabled?multiEnt():null,
+  P.enabled?num('Nobody here for (minutes) before turning off',P,'away_minutes',1,240):null,
+  P.enabled?field('When everyone has left',P,'away_action','select',{options:{power_off:'Power the TV off',art_off:'Leave Art Mode (normal TV)'}}):null,
+  P.enabled?field('Turn Art Mode on when someone returns',P,'on_return','check'):null,
+  P.enabled?field('Only turn off while Art Mode is showing (never interrupt TV)',P,'only_art_mode','check'):null,
+  P.enabled?field('Only wake it during these hours (HH:MM-HH:MM, blank = always)',P,'active_hours','text'):null,
+  P.enabled?field('Fallback if every sensor is unavailable: assume home during (HH:MM-HH:MM, blank = do nothing)',P,'fallback_hours','text'):null,
+  P.enabled?el('p',{class:'mut'},'Short sensor dropouts are ignored: the TV is only turned off after the sensors have read “nobody” continuously for the time above. If no sensor is available, the TV is left alone (or follows the fallback hours). Presence only ever turns the TV on when someone returns after it turned it off, so switching it off by hand while you are in the room stays off.'):null,
+  el('h4',{},'The TV’s own motion sensor'),
+  tvSel('Motion sensitivity','tv_motion_sensitivity_entity'),tvSel('Motion timer (minutes, off = disabled)','tv_motion_timer_entity'),
+  el('p',{class:'mut'},'The Frame has a built-in sensor that dims or turns off the screen when no motion is seen. Use it instead of, or together with, the sensors above. Changes apply to the TV immediately.'))};drawP();
+ const pres=el('div',{class:'card'},el('h3',{},'Presence'),pd);
+
  // live status
  const live=el('div',{class:'card'},el('h3',{},'What it is doing now'),el('div',{id:'ambstat',class:'mut'},'…'),
   el('div',{class:'row'},el('button',{onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now')));
  const updAmb=async()=>{const e=$('#ambstat');if(!e||$('#t-tv').hidden)return;try{const a=await api('ambient');
-   const b=a.brightness||{},c=a.color_temp||{},l=a.light||{};
+   const b=a.brightness||{},c=a.color_temp||{},l=a.light||{},pr=a.presence||{};
    fillKids(e,el('div',{},'TV: '+(a.tv_state||'?')),
     el('div',{},'Brightness: '+(b.mode=='off'?'not controlled':((b.pct??'—')+'% — '+b.source+(b.applied!=null?' · TV set to '+b.applied:'')))),
     el('div',{},'Color temperature: '+(c.mode=='off'?'not controlled':((c.kelvin??'—')+' K — '+c.source+(c.applied!=null?' · TV set to '+c.applied:'')))),
+    el('div',{},'Presence: '+(pr.enabled?((pr.present==null?'unknown':pr.present?'someone is here':'nobody ('+Math.round((pr.away_for_s||0)/60)+' min)')+' — '+pr.source+(pr.last?' · '+pr.last:'')):'off')),
     el('div',{},'Light: '+(l.entity?(l.entity+(l.follow?' follows the TV':' (not following)')+(l.last?' · '+l.last:'')):'none')),
     a.error?el('div',{class:'warn'},'Problem: '+a.error):null)}catch(x){}};
  if(ambTimer)clearInterval(ambTimer);ambTimer=setInterval(updAmb,5000);setTimeout(updAmb,300);
- return [conn,bright,ct,light,live]}
+ return [conn,pres,bright,ct,light,live]}
 const $$=x=>x;
 boot();
 </script></body></html>

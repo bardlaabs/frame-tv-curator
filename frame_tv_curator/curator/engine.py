@@ -14,6 +14,8 @@ class Engine:
         self.tv = TV(self.settings.get()["tv"], self.dry)
         from .ambient import Ambient
         self.ambient = Ambient(self)
+        from .presence import Presence
+        self.presence = Presence(self)
         self.lock = threading.RLock()
         self.listeners = []
         self.last_error = None
@@ -339,7 +341,7 @@ class Engine:
                 "dry_run": self.dry, "last_error": self.last_error,
                 "tv": self._tv_text(), "activity": dict(self.activity, elapsed=time.time() - self.activity["since"]),
                 "due_in": (d.get("last_change", 0) + self.interval_s()) - time.time(), "server_time": time.time(),
-                "showing": (d.get("showing") or {"kind": "image"}), "schedule": (self.active_source()[1] or {}).get("name"), "bird_until": d.get("bird_until"), "next": self._next_info(d), "ambient": self.ambient.status()}
+                "showing": (d.get("showing") or {"kind": "image"}), "schedule": (self.active_source()[1] or {}).get("name"), "bird_until": d.get("bird_until"), "next": self._next_info(d), "ambient": self.ambient.status(), "presence": self.presence.status()}
 
     def _next_info(self, d):
         h, pos = d.get("history", []), d.get("pos", -1)

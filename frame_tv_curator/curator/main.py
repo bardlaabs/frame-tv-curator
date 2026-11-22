@@ -15,6 +15,7 @@ def main():
         Entities(eng).start()
     eng.start()
     eng.ambient.start()
+    eng.presence.start()
     logging.getLogger("main").info("Frame TV Curator up (dry_run=%s)", eng.dry)
     signal.signal(signal.SIGTERM, lambda *a: sys.exit(0))
     while True:

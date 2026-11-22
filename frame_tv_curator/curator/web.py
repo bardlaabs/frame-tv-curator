@@ -98,6 +98,9 @@ def make(engine):
                 if p == "/api/status": return self._send(200, engine.status())
                 if p == "/api/ambient": return self._send(200, engine.ambient.status())
                 if p == "/api/tv_probe": return self._send(200, engine.ambient.probe(force=True))
+                if p == "/api/ha_state":
+                    ent = q.get("entity", "")
+                    return self._send(200, ha.get_state(ent, quiet=True) or {})
                 if p == "/api/ha_entities":
                     doms = [d for d in q.get("domains", "").split(",") if d]
                     out = []
@@ -236,6 +239,11 @@ def make(engine):
                     ok, msg = engine.tv.apply_art(brightness=b.get("brightness"), color_temp=b.get("color_temp"), sensor_off=b.get("sensor_off"))
                     engine.ambient.poke() if b.get("repoke") else None
                     return self._send(200, {"ok": ok, "message": msg})
+                if p == "/api/ha_select":
+                    ent, opt = b.get("entity"), b.get("option")
+                    if not ent or not ent.startswith("select.") or opt is None: return self._send(400, {"ok": False, "message": "entity and option required"})
+                    ha.call("select", "select_option", {"entity_id": ent, "option": str(opt)})
+                    return self._send(200, {"ok": True, "message": "set to %s" % opt})
                 if p == "/api/ambient_now": engine.ambient.poke(); return self._send(200, {"ok": True})
                 if p == "/api/light_test":
                     ent = (engine.settings.get().get("ambient", {}).get("light") or {}).get("entity")
