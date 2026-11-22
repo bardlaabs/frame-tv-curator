@@ -10,7 +10,7 @@ DEFAULT_SETTINGS = {
     "display": {
         "mat": {"enabled": False},
         "placard": {"enabled": True, "template": "modern_minimal", "placement": "overlay",
-                    "position": "bottom-right", "scale": 1.0, "margin_pct": 2.2, "mat_layout": "two_line"},
+                    "position": "bottom-right", "scale": 1.0, "margin_pct": 2.2, "mat_layout": "two_line", "mat_fit": False},
         "overscan": {"top": 0, "right": 0, "bottom": 0, "left": 0, "mode": "placard"},
         "srgb": True,
     },

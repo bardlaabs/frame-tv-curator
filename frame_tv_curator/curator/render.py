@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.10"
+VERSION = "1.11"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -29,7 +29,7 @@ DEFAULTS = {
                   "elevation": 50, "color": "auto", "shadow": 35},
     },
     "placard": {"enabled": True, "template": "modern_minimal", "placement": "overlay",
-                "position": "bottom-right", "scale": 1.0, "margin_pct": 2.2, "mat_layout": "two_line", "overrides": {}},
+                "position": "bottom-right", "scale": 1.0, "margin_pct": 2.2, "mat_layout": "two_line", "mat_fit": False, "overrides": {}},
     "overscan": {"top": 0, "right": 0, "bottom": 0, "left": 0, "mode": "placard"},   # % of the TV edge that is not visible
 }
 
@@ -538,7 +538,13 @@ def draw_on_mat(base, sc, pl, geom, region=None):
     tr = tpl["artist"][4]
     ttxt = title or atxt
     show_artist = bool(title and atxt)
-    base_ts = min(tpl["title"][2] * 0.85 * s, hs * 0.31 * pl.get("scale", 1.0)) * {"one_line": 0.85, "two_line": 1.0, "three_line": 0.8}.get(layout, 1.0)
+    fit = bool(pl.get("mat_fit"))
+    if fit:      # largest text that fits the mat strip, equal space above and below (about 22% of the strip each)
+        base_ts = hs * 0.5
+        steps, hmax = [1 - 0.02 * i for i in range(0, 46)], hs * 0.56
+    else:
+        base_ts = min(tpl["title"][2] * 0.85 * s, hs * 0.31 * pl.get("scale", 1.0)) * {"one_line": 0.85, "two_line": 1.0, "three_line": 0.8}.get(layout, 1.0)
+        steps, hmax = [1 - 0.05 * i for i in range(0, 12)], hs * 0.86
 
     def seg_w(txt, f, t):
         return spaced_len(d, txt, f, t) if t else d.textlength(txt, font=f)
@@ -569,9 +575,9 @@ def draw_on_mat(base, sc, pl, geom, region=None):
     chosen = None
     pp = list(parts)
     while True:
-        for k in [1 - 0.05 * i for i in range(0, 12)]:
+        for k in steps:
             lines, gap, wmax, hts = build(k, pp)
-            if wmax <= avail and sum(hts) <= hs * 0.86:
+            if wmax <= avail and sum(hts) <= hmax:
                 chosen = (lines, gap, hts); break
         if chosen or not pp:
             break
