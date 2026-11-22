@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2
+- Fixed a stray "null" showing below lists on several screens (empty slots are now ignored everywhere).
+- Discover: the Add button now follows the destination folder as you change it.
+- Discover: the add dialog is colorful (overall bar, thumbnails, per-image status chips), closes itself when everything finishes, and shows a summary toast (added / skipped / failed). If something failed, it stays open so you can read the reason.
+- Discover: full-screen preview with all details (size, MB, source, license, AI-extended, description, page link, duplicate warning), arrow keys to browse, Select or Add this one now. Click a card to select as before; the preview is the small expand button on a card.
+
 ## 0.10.1
 - Discover: image width and height now come from the image itself (Reframed pages do not publish them), so duplicate comparisons and sidecars show the real pixel size.
 
