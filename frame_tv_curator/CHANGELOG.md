@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.1
+- Entity pickers are now searchable: type any part of an entity id, name or state (several words allowed) to filter the list; arrow keys and Enter select.
+
 ## 0.9.0
 - Presence: turn the Frame on when someone returns and off after everyone has been gone (debounced). Choose any number of presence/motion sensors; falls back to a clock window or does nothing if sensors are unavailable. Optional active hours, "only while Art Mode is showing", and power-off vs. leave Art Mode.
 - TV tab: set the Frame's own motion sensitivity and motion timer.
