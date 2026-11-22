@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.10.8
-- New placard option "Auto-fit text to the mat height" (Display tab, for text printed on the mat, also per image with Customize). It picks the largest text that fits the mat strip while keeping about a fifth of the strip free above and below, and still shrinks to fit the picture width. When on, the Size slider is ignored.
+- New placard option "Auto-fit text to the mat height" (Display tab, for text printed on the mat, also per image with Customize). It picks the largest text that fits the mat strip while keeping the text centered with even space above and below, and still shrinks to fit the picture width. When on, the Size slider is ignored.
 
 ## 0.10.7
 - Placard Size (scale) now changes the caption size when it is printed on the mat. It was capped by the height of the mat strip, so values above 1 had no effect. The text still shrinks if needed to fit the strip and the picture width.

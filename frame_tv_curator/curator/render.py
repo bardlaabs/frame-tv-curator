@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.11"
+VERSION = "1.12"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -539,9 +539,9 @@ def draw_on_mat(base, sc, pl, geom, region=None):
     ttxt = title or atxt
     show_artist = bool(title and atxt)
     fit = bool(pl.get("mat_fit"))
-    if fit:      # largest text that fits the mat strip, equal space above and below (about 22% of the strip each)
+    if fit:      # largest text that fits the mat strip, equal space above and below (about 14% of the strip each, plus line spacing)
         base_ts = hs * 0.5
-        steps, hmax = [1 - 0.02 * i for i in range(0, 46)], hs * 0.56
+        steps, hmax = [1 - 0.02 * i for i in range(0, 46)], hs * 0.72
     else:
         base_ts = min(tpl["title"][2] * 0.85 * s, hs * 0.31 * pl.get("scale", 1.0)) * {"one_line": 0.85, "two_line": 1.0, "three_line": 0.8}.get(layout, 1.0)
         steps, hmax = [1 - 0.05 * i for i in range(0, 12)], hs * 0.86
