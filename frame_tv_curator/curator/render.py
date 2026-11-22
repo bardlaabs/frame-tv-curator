@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.9"
+VERSION = "1.10"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -538,7 +538,7 @@ def draw_on_mat(base, sc, pl, geom, region=None):
     tr = tpl["artist"][4]
     ttxt = title or atxt
     show_artist = bool(title and atxt)
-    base_ts = min(tpl["title"][2] * 0.85 * s, hs * 0.31) * {"one_line": 0.85, "two_line": 1.0, "three_line": 0.8}.get(layout, 1.0)
+    base_ts = min(tpl["title"][2] * 0.85 * s, hs * 0.31 * pl.get("scale", 1.0)) * {"one_line": 0.85, "two_line": 1.0, "three_line": 0.8}.get(layout, 1.0)
 
     def seg_w(txt, f, t):
         return spaced_len(d, txt, f, t) if t else d.textlength(txt, font=f)

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.7
+- Placard Size (scale) now changes the caption size when it is printed on the mat. It was capped by the height of the mat strip, so values above 1 had no effect. The text still shrinks if needed to fit the strip and the picture width.
+
 ## 0.10.6
 - Now Playing: Controls and Rotation sit in a column under the preview, so the details on the right can grow downward without pushing them.
 
