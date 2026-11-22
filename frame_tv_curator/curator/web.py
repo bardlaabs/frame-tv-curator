@@ -96,7 +96,7 @@ def make(engine):
             p = u.path.rstrip("/") or "/"
             try:
                 if p == "/api/status": return self._send(200, engine.status())
-                if p == "/api/ambient": return self._send(200, engine.ambient.status())
+                if p == "/api/ambient": return self._send(200, dict(engine.ambient.status(), presence=engine.presence.status()))
                 if p == "/api/tv_probe": return self._send(200, engine.ambient.probe(force=True))
                 if p == "/api/ha_state":
                     ent = q.get("entity", "")

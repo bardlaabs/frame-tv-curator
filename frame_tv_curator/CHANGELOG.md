@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.2
+- Fix: the TV tab status panel showed Presence as "off" even when it was enabled and working.
+
 ## 0.9.1
 - Entity pickers are now searchable: type any part of an entity id, name or state (several words allowed) to filter the list; arrow keys and Enter select.
 
