@@ -110,15 +110,22 @@ class Ambient:
         return {"lux": [lux, entity, sun, manual], "entity": [entity, lux, sun, manual], "sun": [sun, manual],
                 "manual": [manual]}
 
-    def _first(self, fns, label):
+    @staticmethod
+    def _why(ent, noun):
+        return "No %s chosen" % noun if not ent else "%s unavailable" % ent
+
+    def _first(self, fns, label, why=None):
         for i, f in enumerate(fns):
             r = f()
             if r:
-                return r[0], (r[1] if i == 0 else "fallback: " + r[1])
+                if i == 0:
+                    return r[0], r[1]
+                return r[0], ((why + " \u2014 using " if why else "fallback: ") + r[1])
         return None, "no source available"
 
     def brightness_pct(self, c, mode):
-        f, src = self._first(self._b_chain(c).get(mode, []), "brightness")
+        why = {"lux": self._why(c.get("lux_entity"), "lux sensor"), "entity": self._why(c.get("entity"), "entity")}.get(mode)
+        f, src = self._first(self._b_chain(c).get(mode, []), "brightness", why)
         if f is None:
             return None, src
         lo, hi = float(c.get("min_pct", 10)), float(c.get("max_pct", 100))
@@ -147,11 +154,7 @@ class Ambient:
         def manual():
             return float(c.get("manual_k", 5000)), "manual %s K" % c.get("manual_k", 5000)
         chain = {"entity": [entity, sun, manual], "sun": [sun, manual], "manual": [manual]}.get(mode, [])
-        for i, f in enumerate(chain):
-            r = f()
-            if r:
-                return r[0], (r[1] if i == 0 else "fallback: " + r[1])
-        return None, "no source available"
+        return self._first(chain, "color temperature", self._why(c.get("entity"), "entity") if mode == "entity" else None)
 
     # ---- TV ranges (cached)
     def probe(self, force=False):

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.5
+- Entity pickers: every empty box now reads "Select…" (no more example ids that look like a chosen value); boxes widen to fit the full entity name.
+- Status panel: entity names are bold in the accent color and numbers/values are bold. When a mode needs an entity and none is chosen (or it is unavailable) the panel says so, e.g. "No entity chosen — using sun +31°".
+
 ## 0.9.4
 - TV tab: "What it is doing now" moved to a sticky right-hand column (on top on narrow screens) and reorganized into a labelled grid: TV, Brightness, Color temp., Presence, Light, each with a short detail line.
 - Entities are shown by friendly name everywhere (status panel, chips, pickers); the entity id appears as a second line in the dropdown and under the field. Search still matches name, id and state.

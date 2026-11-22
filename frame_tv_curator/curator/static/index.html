@@ -38,8 +38,8 @@ input[type=color]{padding:0;width:44px;height:30px}
 .stat{display:grid;grid-template-columns:104px 1fr;gap:10px 12px;margin:6px 0 12px}.stat .k{color:var(--mut);font-size:13px;padding-top:2px}
 .stat .v{font-weight:600;overflow-wrap:anywhere}.stat .d{display:block;color:var(--mut);font-weight:400;font-size:13px;margin-top:1px}
 .pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line);margin-right:6px}.pill.ok{background:#25422d;color:var(--ok);border-color:#2f5a3a}.pill.off{color:var(--mut)}.pill.bad{background:#4a2623;color:var(--bad);border-color:#6a3430}
-.cbl .n{font-weight:600}.cbl .i{color:var(--mut);font-size:12px;display:block}
-.cbw{position:relative;display:inline-block;max-width:100%}.cbl{position:absolute;left:0;top:100%;z-index:30;min-width:100%;width:max(100%,380px);max-height:280px;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #0009;margin-top:2px}
+.ent{color:var(--acc);font-weight:700}.num{color:var(--fg);font-weight:700}.stat .d .ent{color:var(--acc)}.cbl .n{font-weight:600}.cbl .i{color:var(--mut);font-size:12px;display:block}
+.cbw{position:relative;display:inline-block;max-width:100%}.cbl{position:absolute;left:0;top:100%;z-index:30;min-width:100%;width:max(100%,420px);max-height:280px;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #0009;margin-top:2px}
 .cbl div{padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}.cbl div:hover,.cbl div.sel{background:#3a3a40}.cbl small{color:var(--mut)}.cbl mark{background:none;color:var(--acc);font-weight:700}
 .chip{padding:6px 12px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);cursor:pointer}.chip.on{background:var(--acc);color:#1a1a1a;border-color:var(--acc);font-weight:700}
 .hero img{width:100%;max-width:960px;border-radius:0;display:block;background:#000}
@@ -566,12 +566,18 @@ const NAMES={};
 function entList(doms){return HAENT[doms]??=api('ha_entities?domains='+doms).then(l=>{l.forEach(e=>NAMES[e.id]=e.name);return l}).catch(()=>[])}
 const nameOf=id=>NAMES[id]||id;
 // replace entity ids inside a text by their friendly names
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// status text with entity names in accent bold and numbers (with units) in bold
+const rich=s=>{const ph=[];let h=esc(s).replace(/\b[a-z_]+\.[a-z0-9_]+\b/g,m=>NAMES[m]?'\u0001'+String(ph.push(NAMES[m])-1).replace(/\d/g,d=>'abcdefghij'[d])+'\u0002':m);
+ h=h.replace(/([+-]?\d+(?:\.\d+)?(?:\s?(?:%|lx|K|°|min))?)/g,'<b class="num">$1</b>');
+ return h.replace(/\u0001([a-j]+)\u0002/g,(m,i)=>'<b class="ent">'+esc(ph[+i.replace(/[a-j]/g,c=>'abcdefghij'.indexOf(c))])+'</b>')};
 const humanize=s=>String(s??'').replace(/\b[a-z_]+\.[a-z0-9_]+\b/g,m=>NAMES[m]||m);
 function hilite(s,ws){let h=s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));ws.forEach(w=>{if(w)h=h.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(?![^<]*>)','ig'),'<mark>$1</mark>')});return h}
 // searchable entity box: shows friendly names (ids as a second line); matches any part of name, id or state; every typed word must match
 function combo(inp,getItems,getId,onPick){
  const w=el('span',{class:'cbw'}),list=el('div',{class:'cbl'});list.hidden=true;inp.replaceWith(w);w.append(inp,list);let sel=-1,shown=[],typing=false;
- const show=()=>{const id=getId();inp.value=id?nameOf(id):''};
+ const fit=()=>{inp.style.width=Math.min(Math.max(inp.value.length+4,24),64)+'ch';inp.style.maxWidth='100%'};
+ const show=()=>{const id=getId();inp.value=id?nameOf(id):'';fit()};
  const draw=()=>{const ws=typing?inp.value.toLowerCase().split(/\s+/).filter(Boolean):[];
   shown=getItems().filter(e=>{const h=(e.name+' '+e.id+' '+e.state).toLowerCase();return ws.every(x=>h.includes(x))}).slice(0,60);sel=shown.length?0:-1;
   list.replaceChildren(...shown.map((e,i)=>{const d=el('div',{class:i==sel?'sel':''});d.innerHTML='<span><span class="n">'+hilite(e.name,ws)+'</span><span class="i">'+hilite(e.id,ws)+'</span></span><small>'+e.state+(e.unit?' '+e.unit:'')+'</small>';
@@ -579,13 +585,13 @@ function combo(inp,getItems,getId,onPick){
   list.hidden=!shown.length};
  const pick=id=>{typing=false;list.hidden=true;onPick(id);show()};
  const mv=d=>{if(!shown.length)return;sel=(sel+d+shown.length)%shown.length;[...list.children].forEach((c,i)=>c.classList.toggle('sel',i==sel));list.children[sel].scrollIntoView({block:'nearest'})};
- inp.addEventListener('focus',()=>{typing=false;inp.select();draw()});inp.addEventListener('input',()=>{typing=true;draw()});
+ inp.addEventListener('focus',()=>{typing=false;inp.select();draw()});inp.addEventListener('input',()=>{typing=true;fit();draw()});
  inp.addEventListener('keydown',ev=>{if(ev.key=='ArrowDown'){ev.preventDefault();mv(1)}else if(ev.key=='ArrowUp'){ev.preventDefault();mv(-1)}
   else if(ev.key=='Enter'&&!list.hidden&&shown[sel]){ev.preventDefault();pick(shown[sel].id)}else if(ev.key=='Escape'){list.hidden=true;typing=false;show()}});
  inp.addEventListener('blur',()=>setTimeout(()=>{list.hidden=true;if(typing){const v=inp.value.trim(),lv=v.toLowerCase(),hit=getItems().find(e=>e.id.toLowerCase()==lv||e.name.toLowerCase()==lv);typing=false;onPick(hit?hit.id:v)}show()},120));
  w.refresh=show;show();return w}
 function entityField(label,obj,path,doms,o={}){
- const inp=el('input',{type:'text',placeholder:o.ph||'(none)',style:'width:min(100%,340px)'});
+ const inp=el('input',{type:'text',placeholder:'Select…'});
  const now=el('span',{class:'mut'});let items=[];
  const upd=l=>{const id=get(obj,path)||'',e=l.find(x=>x.id==id);now.textContent=e?(id+' · now '+e.state+(e.unit?' '+e.unit:'')):(id?'⚠ not found in Home Assistant':'')};
  const box=combo(inp,()=>items,()=>get(obj,path)||'',v=>{if(v!==(get(obj,path)||'')){set(obj,path,v)}entList(doms).then(upd)});
@@ -647,7 +653,7 @@ function tvCards(s){
  const light=el('div',{class:'card'},el('h3',{},'Light that follows the TV'),ld);
  // presence
  s.presence??={};const P=s.presence;P.entities??=[];const pd=el('div');
- const multiEnt=()=>{const box=el('div',{class:'row'}),chips=el('span'),inp=el('input',{type:'text',placeholder:'add a presence / motion sensor…',style:'width:min(100%,300px)'});
+ const multiEnt=()=>{const box=el('div',{class:'row'}),chips=el('span'),inp=el('input',{type:'text',placeholder:'Select…'});
   let items=[];
   const draw=()=>fillKids(chips,...P.entities.map((x,i)=>el('span',{class:'chip',title:x},nameOf(x)+' ',el('a',{href:'#',onclick:ev=>{ev.preventDefault();P.entities.splice(i,1);draw()}},'×'))));draw();
   entList('binary_sensor,person,device_tracker,input_boolean').then(l=>{items=l;draw()});
@@ -681,14 +687,14 @@ function tvCards(s){
  const updAmb=async()=>{const e=$('#ambstat');if(!e||$('#t-tv').hidden)return;try{const a=await api('ambient');
    const b=a.brightness||{},c=a.color_temp||{},l=a.light||{},pr=a.presence||{};
    const pill=(txt,cls)=>el('span',{class:'pill '+(cls||'')},txt);
-   const row=(k,v,d)=>[el('div',{class:'k'},k),el('div',{class:'v'},v,d?el('span',{class:'d'},humanize(d)):null)];
+   const row=(k,v,d)=>[el('div',{class:'k'},k),el('div',{class:'v'},v,d?el('span',{class:'d',html:rich(d)}):null)];
    const tvs=a.tv_state,tvp=tvs=='on'?pill('On','ok'):tvs=='off'||tvs=='standby'?pill(tvs=='off'?'Off':'Standby','off'):pill(tvs||'unknown','bad');
    const ctl=(m,main,d)=>m=='off'?[pill('Not controlled','off')]:[main,d];
    const bv=ctl(b.mode,(b.pct??'—')+'%',[b.source,b.applied!=null?'TV set to '+b.applied:null].filter(Boolean).join(' · '));
    const cv=ctl(c.mode,(c.kelvin??'—')+' K',[c.source,c.applied!=null?'TV set to '+c.applied:null].filter(Boolean).join(' · '));
    const pp=!pr.enabled?[pill('Off','off')]:[pr.present==null?pill('Unknown','bad'):pr.present?pill('Someone is here','ok'):pill('Nobody · '+Math.round((pr.away_for_s||0)/60)+' min','bad'),
       [pr.source,pr.last].filter(Boolean).join(' · ')];
-   const lv=l.entity?[nameOf(l.entity),(l.follow?'Follows the TV':'Not following')+(l.last?' · '+l.last:'')]:[pill('None','off')];
+   const lv=l.entity?[el('span',{class:'ent'},nameOf(l.entity)),(l.follow?'Follows the TV':'Not following')+(l.last?' · '+l.last:'')]:[pill('None','off')];
    fillKids(e,el('div',{class:'stat'},
      ...row('TV',tvp),...row('Brightness',...bv),...row('Color temp.',...cv),...row('Presence',...pp),...row('Light',...lv)),
     a.error?el('div',{class:'warn'},'Problem: '+humanize(a.error)):null,
