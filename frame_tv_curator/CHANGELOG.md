@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.5
+- Now Playing details always list every field, including Title, Camera, Description, Notes, Links, Source, License and Edits. Fields with no value read "Not set" (dimmed); click one to open the editor and fill it in.
+
 ## 0.10.4
 - Now Playing details are stacked in labelled blocks that wrap instead of running off to the right, and show everything known about the image: title, artist, date, medium or location, GPS, credit, source, license, folder, file, size, original size, description, notes, links, origin and identification notes.
 - Fixed a style clash from 0.10.0 (the preview's row style overrode the details grid), which was the cause of the overflow.

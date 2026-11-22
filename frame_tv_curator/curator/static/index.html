@@ -83,7 +83,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 .pvside{width:min(400px,40vw);background:var(--panel);border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:8px;overflow:auto}.pva{color:var(--acc);font-weight:700}.pvb{background:var(--panel2);border-radius:10px;padding:8px 12px}.pkv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--line)}.pkv:last-child{border:0}.pkv span{color:var(--mut)}.pvd{color:var(--fg);line-height:1.5;font-size:14px}.pvdup{background:#4a3a14;color:#f0b35a;border-radius:8px;padding:8px 10px;font-size:13px}
 @media(max-width:800px){.pvx{flex-direction:column}.pvside{width:auto;max-height:50vh}}
 .now>*{min-width:0}#details{overflow-wrap:anywhere}.nsub{color:var(--acc);font-weight:700;margin-bottom:10px}.nstack{display:flex;flex-direction:column;gap:10px}
-.ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.nb{background:var(--panel2);border-radius:8px;padding:7px 10px;min-width:0}.nk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}.nv{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.nv a{color:var(--acc)}.nfacts{color:var(--mut);font-size:12px;line-height:1.5}
+.ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.nb.empty{opacity:.6;cursor:pointer}.nb.empty .nv{color:var(--mut);font-style:italic}.nb.empty:hover{opacity:1;outline:1px dashed var(--acc)}.nb{background:var(--panel2);border-radius:8px;padding:7px 10px;min-width:0}.nk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}.nv{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.nv a{color:var(--acc)}.nfacts{color:var(--mut);font-size:12px;line-height:1.5}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
 <nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
@@ -262,13 +262,17 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
  const gps=sc.location&&typeof sc.location=='object'&&sc.location.lat!=null?(+sc.location.lat).toFixed(5)+', '+(+sc.location.lon).toFixed(5):null;
  const facts=[og.discover?'Found with Discover'+(og.downloaded?' on '+og.downloaded:''):null,og.ai_extended?'Edges extended by AI':null,
   idn.status&&idn.status!='verified'?'Identification: '+idn.status:null,idn.method?'Method: '+idn.method:null,sc.description_attribution].filter(Boolean);
- const rows=[['Artist',i.artist],['Date',ct.date||(sc.date||{}).display],[sc.kind=='photo'?'Location':'Medium',sc.kind=='photo'?(ct.location||loc):(ct.medium||sc.medium)],
-  ['GPS',gps],['Credit',ct.credit||col.credit_line],['Source',col.institution],['License',sc.license],
+ const ed=sc.edit||{},cr=ed.crop,edits=[ed.rotate?'rotated '+ed.rotate+'°':null,ed.straighten?'straightened '+ed.straighten+'°':null,cr?'cropped':null].filter(Boolean).join(', ');
+ const photo=sc.kind=='photo';
+ const rows=[['Title',ct.title||sc.title],['Artist',i.artist],['Date',ct.date||(sc.date||{}).display],[photo?'Location':'Medium',photo?(ct.location||loc):(ct.medium||sc.medium)],
+  photo?['GPS',gps]:null,photo?['Camera',typeof sc.camera=='string'?sc.camera:(sc.camera&&(sc.camera.model||sc.camera.make))]:null,
+  ['Credit',ct.credit||col.credit_line],['Source',col.institution],['License',sc.license],
   ['Folder',i.folder],['File',i.file],['Size',r.size[0]+' × '+r.size[1]+' px'+(r.low_res?' (low resolution)':'')],
-  ['Original',si.width&&si.height&&(si.width!=r.size[0]||si.height!=r.size[1])?si.width+' × '+si.height+' px':null]].filter(x=>x[1]);
- const blk=(k,v)=>v?el('div',{class:'nb'},el('div',{class:'nk'},k),el('div',{class:'nv'},v)):null;
+  ['Original',si.width&&si.height&&(si.width!=r.size[0]||si.height!=r.size[1])?si.width+' × '+si.height+' px':null],
+  ['Edits',edits||'none']].filter(Boolean);
+ const blk=(k,v,wide)=>{const e=!v;const n=el('div',{class:'nb'+(e?' empty':''),title:e?'Not set. Click to add it in the editor':''},el('div',{class:'nk'},k),el('div',{class:'nv'},e?'Not set':v));if(e)n.onclick=()=>openEditor(id);return n};
  const stack=el('div',{class:'nstack'},
-  el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,String(v)))),
+  el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,v==null||v===''?'':String(v)))),
   blk('Description',sc.description),
   blk('Notes',sc.notes),
   blk('Links',(links.length||link(sc.source_url))?el('div',{},link(sc.source_url,'Source page ↗'),links.filter(x=>x&&x.href!=sc.source_url)):null),
