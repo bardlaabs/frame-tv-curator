@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+- Discover: second source, the **Art Institute of Chicago** (public domain, CC0). Pick the source at the top of the tab; filter by type (paintings, prints, drawings and watercolors, photographs, posters), search by title or artist, order by best match, A-Z by artist or shuffle.
+- Pictures are fitted inside 3840x2160 without cropping (the mat fills the rest). The museum's CDN only serves large sizes to real browsers, so your browser downloads the picture and hands it to the add-on; if the site refuses, the add-on falls back to a reduced 1686 px copy and says so.
+- Medium, credit line and the museum's description (CC BY 4.0) are saved in the sidecar.
+- The duplicate comparison shows pixel size for these; the file size is unknown until it is downloaded.
+
 ## 0.10.9
 - The open-license fonts used by the placard are now included in the repository. They were missing from GitHub, so a fresh install from the repo could not draw placards.
 

@@ -146,7 +146,9 @@ def make(engine):
                 if p == "/api/discover/search":
                     from concurrent.futures import ThreadPoolExecutor
                     src = discover.SOURCES[q.get("source", "reframed")]
-                    r = src.search(q.get("q", ""), q.get("artist", ""), q.get("sort", "az"), int(q.get("page") or 0), int(q.get("per") or 24))
+                    r = src.search(q.get("q", ""), q.get("artist", ""), q.get("sort", "az"), int(q.get("page") or 0), int(q.get("per") or 24), type=q.get("type", "Painting"))
+                    if "items" in r:
+                        return self._send(200, r)
                     def one(k):
                         try:
                             return src.detail(k)
@@ -155,6 +157,10 @@ def make(engine):
                     with ThreadPoolExecutor(4) as ex:
                         items = list(ex.map(one, r["keys"]))
                     return self._send(200, {"total": r["total"], "page": r["page"], "per": r["per"], "items": items})
+                if p == "/api/discover/sources":
+                    return self._send(200, [{"id": s.id, "name": s.name, "blurb": s.blurb, "sorts": s.sorts, "types": s.types,
+                                             "has_artists": s.has_artists, "client_fetch": s.client_fetch, "license": s.license}
+                                            for s in discover.SOURCES.values()])
                 if p == "/api/discover/job":
                     return self._send(200, discover.JOBS.get(q.get("id")) or {"error": "unknown job"})
                 if p == "/api/duplicates": return self._send(200, library.find_duplicates())
@@ -206,6 +212,8 @@ def make(engine):
                 if p == "/api/discover/check":
                     src = discover.SOURCES[b.get("source", "reframed")]
                     return self._send(200, discover.check(src.detail(b["key"])))
+                if p == "/api/discover/finish":
+                    return self._send(200, discover.finish(b["source"], b["key"], b["id"], b.get("replace") or []))
                 if p == "/api/discover/add":
                     return self._send(200, discover.add(b["items"], b["folder"]))
                 if p == "/api/folder": return self._send(200, {"folder": library.create_folder(b["name"])})

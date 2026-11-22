@@ -13,14 +13,16 @@ _net = threading.Lock()
 _last = [0.0]
 
 
-def _get(url, timeout=30, method="GET", gap=0.25):
+def _get(url, timeout=30, method="GET", gap=0.25, headers=None, data=None):
     """One polite HTTP request: at most one every `gap` seconds across all threads."""
     with _net:
         w = gap - (time.time() - _last[0])
         if w > 0:
             time.sleep(w)
         _last[0] = time.time()
-    r = urllib.request.Request(url, method=method, headers={"User-Agent": UA, "Accept": "*/*"})
+    h = {"User-Agent": UA, "Accept": "*/*"}
+    h.update(headers or {})
+    r = urllib.request.Request(url, method=method, headers=h, data=data)
     return urllib.request.urlopen(r, timeout=timeout)
 
 
@@ -48,6 +50,12 @@ class Reframed:
     name = "Reframed Gallery"
     home = "https://www.reframed.gallery"
     license = "Free to download and use (per the Reframed Gallery FAQ)"
+    client_fetch = False
+    blurb = ("Free classic paintings and photography already extended to 3840×2160, so they fill the screen without cropping. "
+             "Title, artist, date, description, source and license are saved with each image.")
+    sorts = [["az", "A–Z by artist"], ["recent", "Recently added"], ["random", "Shuffle (changes hourly)"]]
+    types = []
+    has_artists = True
     RESERVED = {"recent", "artists", "collections", "verticals", "colors", "what-is-reframed", "chrome-extension",
                 "faq", "contact", "browse", "search", "privacy", "terms"}
 
@@ -109,7 +117,7 @@ class Reframed:
             n[a] = n.get(a, 0) + 1
         return [{"slug": a, "name": a.replace("-", " ").title(), "count": c} for a, c in sorted(n.items())]
 
-    def search(self, q="", artist="", sort="az", page=0, per=24):
+    def search(self, q="", artist="", sort="az", page=0, per=24, **kw):
         items = self.index()
         if sort == "recent":
             rec = self.recent()
@@ -164,7 +172,81 @@ class Reframed:
         return d
 
 
-SOURCES = {"reframed": Reframed()}
+class AIC:
+    """Art Institute of Chicago open access (public domain, CC0). Their big images are only served to real browsers
+    (Cloudflare), so the page downloads the full-size picture itself and hands it to the add-on."""
+    id = "aic"
+    name = "Art Institute of Chicago"
+    home = "https://www.artic.edu"
+    license = "CC0 1.0, public domain (Art Institute of Chicago open access)"
+    client_fetch = True
+    blurb = ("Public-domain works from the Art Institute of Chicago, shown at up to 3840×2160 with the whole artwork kept "
+             "(the mat fills the rest). Large files are downloaded by your browser, so adding takes a little longer.")
+    sorts = [["relevance", "Best match"], ["az", "A–Z by artist"], ["random", "Shuffle (changes hourly)"]]
+    types = [["Painting", "Paintings"], ["Print", "Prints"], ["Drawing and Watercolor", "Drawings and watercolors"],
+             ["Photograph", "Photographs"], ["Poster", "Posters"], ["", "All types"]]
+    has_artists = False
+    API = "https://api.artic.edu/api/v1"
+    IIIF = "https://www.artic.edu/iiif/2"
+    HDR = {"AIC-User-Agent": "FrameTVCurator (github.com/bardlaabs/frame-tv-curator; personal use)", "Accept": "application/json"}
+    FIELDS = ["id", "title", "artist_title", "date_display", "image_id", "thumbnail", "medium_display", "credit_line",
+              "description", "short_description", "artwork_type_title", "style_title"]
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    def _item(self, r):
+        iid = r.get("image_id")
+        th = r.get("thumbnail") or {}
+        ow, oh = th.get("width") or 0, th.get("height") or 0
+        w = h = None
+        if ow and oh:
+            k = min(1.0, 3840 / ow, 2160 / oh)
+            w, h = max(1, int(ow * k)), max(1, int(oh * k))
+        desc = r.get("description") or r.get("short_description") or ""
+        desc = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", desc))).strip()
+        key = str(r["id"])
+        small = "%s/%s/full/843,/0/default.jpg" % (self.IIIF, iid)
+        d = {"source": self.id, "key": key, "url": self.home + "/artworks/" + key, "title": r.get("title") or "",
+             "artist": r.get("artist_title") or "", "date": r.get("date_display") or "", "description": desc,
+             "image": "%s/%s/full/%d,/0/default.jpg" % (self.IIIF, iid, w) if w else small,
+             "image_fallback": "%s/%s/full/1686,/0/default.jpg" % (self.IIIF, iid),
+             "thumb": small, "preview": "%s/%s/full/1686,/0/default.jpg" % (self.IIIF, iid),
+             "w": w, "h": h, "orig_w": ow or None, "orig_h": oh or None, "ai": False, "client_fetch": True,
+             "medium": r.get("medium_display") or "", "credit": r.get("credit_line") or "", "license": self.license}
+        self.det[key] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="Painting", **kw):
+        filt = [{"term": {"is_public_domain": True}}, {"exists": {"field": "image_id"}}]
+        if type:
+            filt.append({"term": {"artwork_type_title.keyword": type}})
+        bq = {"bool": {"filter": filt}}
+        if q.strip():
+            bq["bool"]["must"] = [{"multi_match": {"query": q.strip(), "fields": ["title^3", "artist_title^3", "style_title", "subject_titles", "place_of_origin", "description"]}}]
+        body = {"query": bq, "fields": self.FIELDS, "size": per, "from": min(page * per, 10000 - per)}
+        if sort == "az":
+            body["sort"] = [{"artist_title.keyword": "asc"}, {"title.keyword": "asc"}]
+        elif sort == "random":
+            body["query"] = {"function_score": {"query": bq, "random_score": {"seed": int(time.time() // 3600), "field": "id"}}}
+        r = _get(self.API + "/artworks/search", 40, "POST", gap=1.0, data=json.dumps(body).encode(),
+                 headers=dict(self.HDR, **{"Content-Type": "application/json"}))
+        j = json.loads(r.read().decode("utf8", "replace"))
+        items = [self._item(x) for x in j.get("data", []) if x.get("image_id")]
+        total = min(int((j.get("pagination") or {}).get("total") or 0), 10000)
+        return {"total": total, "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        r = _get("%s/artworks/%s?fields=%s" % (self.API, urllib.parse.quote(str(key)), ",".join(self.FIELDS)), 30, gap=1.0, headers=self.HDR)
+        return self._item(json.loads(r.read().decode("utf8", "replace"))["data"])
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC()}
 
 
 # ---------------- library matching ----------------
@@ -246,7 +328,7 @@ def check(d, entries=None):
             dh = ""
         _thumbcache[d["thumb"] or d["image"]] = dh
     t, a = norm(d["title"]), norm(d["artist"])
-    nb = remote_bytes(d["image"])
+    nb = None if d.get("client_fetch") else remote_bytes(d["image"])
     fill_dims(d)
     out = []
     for e in entries:
@@ -282,16 +364,31 @@ def sidecar_patch(d):
          "artist": {"name": d["artist"] or None, "display": d["artist"] or None},
          "date": {"display": d["date"] or None, "start": None, "end": None},
          "description": d["description"] or None,
-         "description_attribution": "Description from " + src.name if d["description"] else None,
-         "collection": {"institution": src.name, "status": "downloaded from " + src.name},
-         "card_text": {"artist": d["artist"], "title": d["title"], "date": d["date"], "medium": "", "credit": src.name},
+         "description_attribution": ("Description from " + src.name + (" (CC BY 4.0)" if src.id == "aic" else "")) if d["description"] else None,
+         "collection": {"institution": src.name, "status": "downloaded from " + src.name, "credit_line": d.get("credit") or None},
+         "medium": d.get("medium") or None,
+         "card_text": {"artist": d["artist"], "title": d["title"], "date": d["date"], "medium": d.get("medium") or "", "credit": d.get("credit") or src.name},
          "source_image": {"width": d.get("w"), "height": d.get("h")},
-         "source_url": d["url"], "license": src.license,
+         "source_url": d["url"], "license": d.get("license") or src.license,
          "links": [{"label": src.name + " page", "url": d["url"], "kind": "record"}],
          "origin": {"discover": src.id, "downloaded": time.strftime("%Y-%m-%d"), "ai_extended": bool(ai)},
          "identification": {"confidence": "high", "status": "from source site", "method": "title, artist and date as published by " + src.name,
                             "verified": False}}
     return p
+
+
+def finish(source, key, img_id, replace=()):
+    """The page downloaded the picture itself and uploaded it; record where it came from."""
+    d = SOURCES[source].detail(key)
+    library.patch_sidecar(img_id, sidecar_patch(d))
+    for old in replace or []:
+        try:
+            library.delete_image(old)
+        except Exception as e:
+            log.warning("replace: could not trash %s: %s", old, e)
+    library.save_image_cache()
+    log.info("discover: added %s (browser download)", img_id)
+    return {"ok": True, "id": img_id, "filename": _filename(d, ".jpg")}
 
 
 def _download(url, job_item):
@@ -315,7 +412,7 @@ def _run(job, specs, folder):
                 continue
             d = SOURCES[sp["source"]].detail(sp["key"])
             it["state"] = "downloading"
-            data, ctype = _download(d["image"], it)
+            data, ctype = _download(d.get("image_fallback") if sp.get("reduced") and d.get("image_fallback") else d["image"], it)
             im = Image.open(io.BytesIO(data)); im.load()
             ext = ".png" if "png" in ctype.lower() or d["image"].lower().endswith(".png") else ".jpg"
             img_id = library.save_upload(folder, _filename(d, ext), data)

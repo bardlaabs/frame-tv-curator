@@ -78,7 +78,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 .abar{height:10px;background:var(--panel2);border-radius:6px;overflow:hidden}.abar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e0b15a,#e5726a);transition:width .4s}.abar.sm{height:6px;margin-top:6px}.abar.sm i{background:linear-gradient(90deg,#5fa8d3,#7fc58b)}
 .arows{margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}.arow{display:flex;gap:12px;align-items:center;background:var(--panel2);border-radius:10px;padding:8px;border-left:4px solid var(--line)}.arow img{width:84px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:#000}.arow .ainfo{flex:1;min-width:0}.arow .ainfo b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arow.downloading{border-left-color:#5fa8d3}.arow.done{border-left-color:var(--ok)}.arow.skipped{border-left-color:#e5a24a}.arow.failed{border-left-color:var(--bad)}
-.pill{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:#444;color:#fff;white-space:nowrap}.pill.downloading{background:#2f6f94}.pill.done{background:#2f7a42}.pill.skipped{background:#9a6a1c}.pill.failed{background:#a33b34}.pill.queued{background:#444}
+.pill{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:#444;color:#fff;white-space:nowrap}.pill.downloading,.pill.saving{background:#2f6f94}.pill.done{background:#2f7a42}.pill.skipped{background:#9a6a1c}.pill.failed{background:#a33b34}.pill.queued{background:#444}
 .pvx{position:fixed;inset:0;z-index:90;background:#000e;display:flex;gap:0;outline:none}.pvimg{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;min-width:0}.pvimg img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 10px 50px #000}
 .pvside{width:min(400px,40vw);background:var(--panel);border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:8px;overflow:auto}.pva{color:var(--acc);font-weight:700}.pvb{background:var(--panel2);border-radius:10px;padding:8px 12px}.pkv{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid var(--line)}.pkv:last-child{border:0}.pkv span{color:var(--mut)}.pvd{color:var(--fg);line-height:1.5;font-size:14px}.pvdup{background:#4a3a14;color:#f0b35a;border-radius:8px;padding:8px 10px;font-size:13px}
 @media(max-width:800px){.pvx{flex-direction:column}.pvside{width:auto;max-height:50vh}}
@@ -388,25 +388,32 @@ async function findDuplicates(){showModal(el('h2',{},'Duplicate check'),el('p',{
     el('div',{style:'margin-top:8px'},el('button',{onclick:async()=>{if(!confirm('Keep '+best.name+' and delete the other '+(grp.length-1)+'?'))return;for(const i of grp)if(i.id!=best.id)await api('delete',{id:i.id});findDuplicates()}},'Keep the best, delete the rest')))}):[el('p',{},'No duplicates found.')];
  showModal(el('div',{class:'row',style:'justify-content:space-between'},el('h2',{style:'margin:0'},'Duplicate check — '+g.length+' group'+(g.length==1?'':'s')),el('button',{onclick:()=>{closeModal();renderLib()}},'✕ Close')),el('p',{class:'mut'},'Images that look like the same picture (even at different sizes). Deleted images go to the _trash folder.'),...body)}
 /* ---------- Discover: find new art online and add it to the library ---------- */
-const D={q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',data:null,artists:null,built:false};
+const D={source:'reframed',type:'Painting',srcs:null,q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',data:null,artists:null,built:false};
 const mbs=n=>n?(n/1048576).toFixed(1)+' MB':'size unknown';
 const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'art';
+ try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
  const nf=el('input',{type:'text',placeholder:'or type a new folder name',style:'width:200px',oninput:()=>{D.newf=nf.value;drawDbar()}});
  const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});
- const asel=el('select',{onchange:()=>{D.artist=asel.value;D.page=0;loadDisc()}},el('option',{value:''},'All artists'));
- api('discover/artists').then(l=>{D.artists=l;l.forEach(a=>asel.append(el('option',{value:a.slug},a.name+' ('+a.count+')')))}).catch(()=>{});
- const ssel=el('select',{onchange:()=>{D.sort=ssel.value;D.page=0;loadDisc()}},[['az','A–Z by artist'],['recent','Recently added'],['random','Shuffle (changes hourly)']].map(([v,l])=>el('option',{value:v},l)));
+ const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=(m.types[0]||[''])[0];buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
+ const ctl=el('div',{class:'row'}),blurb=el('p',{class:'mut'});
+ const buildCtl=()=>{const m=curSrc();blurb.textContent=m.blurb||'';
+  const kids=[el('label',{},'Search'),q];
+  if(m.has_artists){const asel=el('select',{onchange:()=>{D.artist=asel.value;D.page=0;loadDisc()}},el('option',{value:''},'All artists'));
+   api('discover/artists?source='+m.id).then(l=>{l.forEach(a=>asel.append(el('option',{value:a.slug},a.name+' ('+a.count+')')));asel.value=D.artist}).catch(()=>{});kids.push(el('label',{},'Artist'),asel)}
+  if((m.types||[]).length){const tsel=el('select',{onchange:()=>{D.type=tsel.value;D.page=0;loadDisc()}},m.types.map(([v,l])=>el('option',{value:v},l)));tsel.value=D.type;kids.push(el('label',{},'Type'),tsel)}
+  const ssel=el('select',{onchange:()=>{D.sort=ssel.value;D.page=0;loadDisc()}},m.sorts.map(([v,l])=>el('option',{value:v},l)));ssel.value=D.sort;kids.push(el('label',{},'Order'),ssel);
+  ctl.replaceChildren(...kids);loadDisc()};
  root.replaceChildren(
   el('div',{class:'card'},el('h3',{},'Discover art'),
-   el('p',{class:'mut'},'Source: Reframed Gallery — free classic paintings and photography already extended to 3840×2160, so they fill the screen without cropping. Title, artist, date, description, source and license are saved with each image. More sources (museums) are coming.'),
-   el('div',{class:'row'},el('label',{},'Search'),q,el('label',{},'Artist'),asel,el('label',{},'Order'),ssel),
+   el('div',{class:'row'},el('label',{},'Source'),srcSel),blurb,ctl,
    el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf)),
-  el('div',{id:'dres'}),el('div',{id:'dbar'}));loadDisc()}
+  el('div',{id:'dres'}),el('div',{id:'dbar'}));buildCtl()}
+const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
 async function loadDisc(){const box=$('#dres');if(!box)return;box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
- try{D.data=await api('discover/search?'+new URLSearchParams({q:D.q,artist:D.artist,sort:D.sort,page:D.page}));drawDres()}
+ try{D.data=await api('discover/search?'+new URLSearchParams({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page}));drawDres()}
  catch(e){box.replaceChildren(el('p',{class:'warn'},'Could not load: '+e.message))}}
 function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,pages=Math.max(1,Math.ceil(r.total/r.per));
  const nav=el('div',{class:'row',style:'justify-content:space-between'},el('span',{class:'mut'},r.total+' artworks · page '+(r.page+1)+' of '+pages),
@@ -434,41 +441,60 @@ function compareModal(dups){return new Promise(res=>{
   const bigger=c.matches.every(m=>px(n)>px(m))?'The new file has more pixels.':c.matches.every(m=>px(n)<px(m))?'Your existing file has more pixels.':'';
   const radio=(v,l)=>el('label',{style:'display:block;margin:3px 0'},el('input',{type:'radio',name:'dc'+i.key,checked:D.choice.get(i.key)==v,onchange:()=>D.choice.set(i.key,v)}),' '+l);
   return el('div',{class:'card'},el('b',{},i.title+' — '+i.artist),bigger?el('div',{class:'mut'},bigger):null,
-   el('div',{class:'dcmp'},el('div',{class:'c new'},el('img',{src:i.thumb}),el('b',{},'New (not yet added)'),el('div',{class:'mut'},dsz(Object.assign({w:i.w,h:i.h},n))),el('div',{class:'mut'},'Source: '+(n.source||'Reframed Gallery'))),
+   el('div',{class:'dcmp'},el('div',{class:'c new'},el('img',{src:i.thumb}),el('b',{},'New (not yet added)'),el('div',{class:'mut'},dsz(Object.assign({w:i.w,h:i.h},n))),el('div',{class:'mut'},'Source: '+(n.source||i.source))),
     ...c.matches.map(m=>el('div',{class:'c'},el('img',{src:'api/thumb?id='+encodeURIComponent(m.id)}),el('b',{},'In your library: '+m.name),el('div',{class:'mut'},m.folder+' · '+dsz(m)),el('div',{class:'mut'},'Source: '+(m.source||'unknown')),el('div',{class:'mut'},m.how)))),
    radio('skip','Skip the new one (keep what I have)'),radio('keep','Keep both'),radio('replace','Replace mine with the new one (mine goes to the _trash folder)'))});
  showModal(el('h2',{},'Possible duplicates'),el('p',{class:'mut'},'These look like images already in your library. Compare the sizes and sources, then choose what to keep.'),...body,
   el('div',{class:'row'},el('button',{class:'pri',onclick:()=>{closeModal();res(true)}},'Continue'),el('button',{onclick:()=>{closeModal();res(false)}},'Cancel')))})}
+const fileNameFor=(i,ext)=>{const base=((i.artist?i.artist+' - ':'')+(i.title||'Untitled')).replace(/[^\w.\-,'() &]/g,'').trim().slice(0,120)||'artwork';return base+ext};
+async function browserGet(i,st){const r=await fetch(i.image);if(!r.ok)throw new Error('the site answered '+r.status);
+ st.total=+r.headers.get('Content-Length')||0;const rd=r.body.getReader(),parts=[];let got=0;
+ for(;;){const x=await rd.read();if(x.done)break;parts.push(x.value);got+=x.value.length;st.got=got}
+ return new Blob(parts,{type:'image/jpeg'})}
+async function browserUpload(blob,name,folder){const CH=384*1024,total=Math.max(1,Math.ceil(blob.size/CH)),uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);let r;
+ for(let k=0;k<total;k++){const url='api/upload_chunk?folder='+encodeURIComponent(folder)+'&name='+encodeURIComponent(name)+'&uid='+uid+'&index='+k+'&total='+total,piece=blob.slice(k*CH,(k+1)*CH);
+  for(let a=0;;a++){try{r=await sendChunk(url,piece);break}catch(e){if(upMode=='raw'){upMode='json'}else if(a>=2)throw e}}}
+ const t=await r.text();let j;try{j=JSON.parse(t)}catch(e){throw new Error('upload: server said '+r.status)}if(j.error)throw new Error(j.error);return j.id}
 async function addSel(list){const items=list||[...D.sel.values()];if(!items.length)return;
  await Promise.all(items.filter(i=>!D.chk.has(i.key)).map(checkD));
  const dups=items.filter(i=>(D.chk.get(i.key)||{matches:[]}).matches.length);
  if(dups.length&&!await compareModal(dups))return;
  const folder=D.newf.trim()||D.folder;
- const specs=items.map(i=>{const m=(D.chk.get(i.key)||{matches:[]}).matches,ch=m.length?(D.choice.get(i.key)||'skip'):'keep';
-  return {source:i.source,key:i.key,dup:ch,replace:ch=='replace'?m.map(x=>x.id):[]}});
- let job;try{job=await api('discover/add',{items:specs,folder})}catch(e){toast('Could not start: '+e.message,5000);return}
- const byKey=Object.fromEntries(items.map(i=>[i.key,i]));
- const rows=el('div',{class:'arows'}),all=el('i',{}),cnt=el('span',{class:'acnt'},'Starting…'),foot=el('div',{class:'row',style:'justify-content:flex-end;margin-top:12px'});
- showModal(el('div',{class:'adlg'},el('div',{class:'ahead'},el('div',{class:'aico'},'⬇'),el('div',{},el('h2',{style:'margin:0'},'Adding to '+folder),cnt)),
-  el('div',{class:'abar'},all),rows,foot));
- const lab={queued:'Waiting',downloading:'Downloading',done:'Added',skipped:'Skipped',failed:'Failed'};
- const poll=async()=>{let j;try{j=await api('discover/job?id='+job.id)}catch(e){setTimeout(poll,1500);return}
-  const fin=j.items.filter(x=>x.state=='done'||x.state=='skipped'||x.state=='failed').length,n=j.items.length||1;
-  const part=j.items.reduce((t,x)=>t+(x.state=='downloading'&&x.total?x.got/x.total:0),0);
-  all.style.width=Math.min(100,Math.round((fin+part)/n*100))+'%';cnt.textContent=fin+' of '+n+(j.finished?' finished':' done');
-  rows.replaceChildren(...j.items.map(x=>{const i=byKey[x.key]||{},pct=x.total?Math.round(x.got/x.total*100):(x.state=='done'?100:0);
-   return el('div',{class:'arow '+x.state},el('img',{src:i.thumb||''}),
-    el('div',{class:'ainfo'},el('b',{},i.title||x.key),el('span',{class:'mut'},i.artist||''),
-     x.state=='downloading'||x.state=='queued'?el('div',{class:'abar sm'},el('i',{style:'width:'+pct+'%'})):(x.state=='failed'&&x.error?el('span',{class:'warn'},x.error):null)),
-    el('span',{class:'pill '+x.state},lab[x.state]||x.state))}));
-  if(!j.finished){setTimeout(poll,800);return}
-  const c=s=>j.items.filter(x=>x.state==s).length,ok=c('done'),sk=c('skipped'),fl=c('failed');
-  j.items.forEach(x=>{if(x.state!='failed'){D.sel.delete(x.key);D.chk.delete(x.key);D.choice.delete(x.key)}});
-  refreshFolders().then(()=>{drawDres()});if(ok){setFolder(j.folder)}
-  const msg=(ok?ok+' added to '+j.folder:'Nothing added')+(sk?', '+sk+' skipped':'')+(fl?', '+fl+' failed':'');
-  if(fl){foot.replaceChildren(el('button',{class:'pri',onclick:closeModal},'Close'));cnt.textContent=msg;toast(msg,6000)}
-  else{closeModal();toast('✓ '+msg,5000)}};
- poll()}
+ const spec=i=>{const m=(D.chk.get(i.key)||{matches:[]}).matches,ch=m.length?(D.choice.get(i.key)||'skip'):'keep';
+  return {source:i.source,key:i.key,dup:ch,replace:ch=='replace'?m.map(x=>x.id):[]}};
+ const all=items.map(i=>({i,sp:spec(i)})),st=Object.fromEntries(items.map(i=>[i.key,{state:'queued',got:0,total:0}]));
+ const srvItems=all.filter(x=>!x.i.client_fetch),cliItems=all.filter(x=>x.i.client_fetch);
+ const rows=el('div',{class:'arows'}),allbar=el('i',{}),cnt=el('span',{class:'acnt'},'Starting…'),foot=el('div',{class:'row',style:'justify-content:flex-end;margin-top:12px'}),fh=el('h2',{style:'margin:0'},'Adding to '+folder);
+ showModal(el('div',{class:'adlg'},el('div',{class:'ahead'},el('div',{class:'aico'},'⬇'),el('div',{},fh,cnt)),el('div',{class:'abar'},allbar),rows,foot));
+ const lab={queued:'Waiting',downloading:'Downloading',saving:'Saving',done:'Added',skipped:'Skipped',failed:'Failed'};
+ const draw=()=>{const ks=items.map(i=>st[i.key]),fin=ks.filter(x=>['done','skipped','failed'].includes(x.state)).length,n=ks.length||1;
+  const part=ks.reduce((t,x)=>t+(x.state=='downloading'&&x.total?x.got/x.total*.9:(x.state=='saving'?.95:0)),0);
+  allbar.style.width=Math.min(100,Math.round((fin+part)/n*100))+'%';cnt.textContent=fin+' of '+n+' done';
+  rows.replaceChildren(...items.map(i=>{const x=st[i.key],pct=x.state=='saving'?100:(x.total?Math.round(x.got/x.total*100):(x.state=='done'?100:0));
+   return el('div',{class:'arow '+(x.state=='saving'?'downloading':x.state)},el('img',{src:i.thumb||''}),
+    el('div',{class:'ainfo'},el('b',{},i.title||i.key),el('span',{class:'mut'},i.artist||''),
+     ['downloading','queued','saving'].includes(x.state)?el('div',{class:'abar sm'},el('i',{style:'width:'+pct+'%'})):(x.state=='failed'&&x.error?el('span',{class:'warn'},x.error):(x.note?el('span',{class:'mut'},x.note):null))),
+    el('span',{class:'pill '+(x.state=='saving'?'downloading':x.state)},lab[x.state]||x.state))}))};
+ draw();const tick=setInterval(draw,300);
+ const runServer=async(list,reduced)=>{if(!list.length)return;let job;
+  try{job=await api('discover/add',{items:list.map(x=>Object.assign({},x.sp,reduced?{reduced:true}:{})),folder})}catch(e){list.forEach(x=>{st[x.i.key]={state:'failed',got:0,total:0,error:'could not start: '+e.message}});return}
+  for(;;){let j;try{j=await api('discover/job?id='+job.id)}catch(e){await new Promise(r=>setTimeout(r,1500));continue}
+   j.items.forEach(x=>{const o=st[x.key];if(o){o.state=x.state;o.got=x.got;o.total=x.total;o.error=x.error;if(reduced&&x.state=='done')o.note='Downloaded at reduced size (the site would not give your browser the full file)'}});
+   if(j.finished)return;await new Promise(r=>setTimeout(r,800))}};
+ const runClient=async x=>{const o=st[x.i.key];if(x.sp.dup=='skip'){o.state='skipped';return}
+  try{o.state='downloading';const blob=await browserGet(x.i,o);o.state='saving';
+   const id=await browserUpload(blob,fileNameFor(x.i,'.jpg'),folder);await api('discover/finish',{source:x.i.source,key:x.i.key,id,replace:x.sp.replace});o.state='done'}
+  catch(e){clog('discover browser download failed for '+x.i.key+': '+e);o.state='queued';o.got=0;o.total=0;return x}};
+ const retry=[];
+ await Promise.all([runServer(srvItems),(async()=>{for(const x of cliItems){const r=await runClient(x);if(r)retry.push(r)}})()]);
+ if(retry.length){await runServer(retry,true)}
+ clearInterval(tick);draw();
+ const c=s=>items.filter(i=>st[i.key].state==s).length,ok=c('done'),sk=c('skipped'),fl=c('failed');
+ items.forEach(i=>{if(st[i.key].state!='failed'){D.sel.delete(i.key);D.chk.delete(i.key);D.choice.delete(i.key)}});
+ refreshFolders().then(()=>{drawDres()});if(ok){setFolder(folder.replace(/[^\w\- ]/g,'').trim())}
+ const msg=(ok?ok+' added to '+folder:'Nothing added')+(sk?', '+sk+' skipped':'')+(fl?', '+fl+' failed':'');
+ if(fl){foot.replaceChildren(el('button',{class:'pri',onclick:closeModal},'Close'));cnt.textContent=msg;toast(msg,6000)}
+ else{closeModal();toast('✓ '+msg,5000)}}
 
 /* full-screen preview with details */
 const bigImg=u=>u&&/width=\d+/.test(u)?u.replace(/width=\d+/,'width=2000'):u;
@@ -482,17 +508,17 @@ function previewD(i){const items=(D.data&&D.data.items||[]).filter(x=>!x.error),
   const c=D.chk.get(x.key),n=(c&&c.new)||{},dup=c&&c.matches&&c.matches.length;
   const row=(k,v)=>v?el('div',{class:'pkv'},el('span',{},k),el('b',{},v)):null;
   root.replaceChildren(
-   el('div',{class:'pvimg',onclick:close},el('img',{src:bigImg(x.thumb),onerror:function(){this.onerror=null;this.src=x.thumb}})),
+   el('div',{class:'pvimg',onclick:close},el('img',{src:x.preview||bigImg(x.thumb),onerror:function(){this.onerror=null;this.src=x.thumb}})),
    el('div',{class:'pvside'},
     el('div',{class:'row',style:'justify-content:space-between'},el('span',{class:'mut'},(cur+1)+' of '+items.length+'  ·  ← → to browse'),el('button',{onclick:close},'✕ Close')),
     el('h2',{style:'margin:6px 0 2px'},x.title),el('div',{class:'pva'},x.artist+(x.date?' · '+x.date:'')),
     el('div',{class:'pvb'},
      row('Size',(n.w||x.w)&&(n.h||x.h)?(n.w||x.w)+' × '+(n.h||x.h)+' px':(c?'unknown':'checking…')),row('File',n.bytes?mbs(n.bytes):(c?'unknown':'checking…')),
-     row('Source',n.source||'Reframed Gallery'),row('License','Free to download and use'),row('AI-extended',x.ai?'Yes, edges extended by AI':'Not flagged'),
+     row('Source',n.source||x.source),row('License',x.license||'Free to download and use'),row('Medium',x.medium),row('Credit',x.credit),x.source=='reframed'?row('AI-extended',x.ai?'Yes, edges extended by AI':'Not flagged'):null,
      row('Adds to',D.newf.trim()||D.folder)),
     dup?el('div',{class:'pvdup'},'⚠ Possible duplicate of '+c.matches.map(m=>m.name+' ('+m.folder+', '+dsz(m)+')').join('; ')):null,
     x.description?el('p',{class:'pvd'},x.description):null,
-    el('p',{},el('a',{href:x.url,target:'_blank',rel:'noopener'},'Open the page on Reframed Gallery ↗')),
+    el('p',{},el('a',{href:x.url,target:'_blank',rel:'noopener'},'Open the page on '+((D.srcs||[]).find(z=>z.id==x.source)||{name:'the source'}).name+' ↗')),
     el('div',{class:'row',style:'margin-top:auto'},
      el('button',{class:on?'':'pri',onclick:async()=>{await toggleD(x);draw()}},on?'✓ Selected — click to unselect':'Select'),
      el('button',{class:'pri',style:'background:#7fc58b;border-color:#7fc58b',onclick:()=>{close();addSel([x])}},'Add this one now'))));
