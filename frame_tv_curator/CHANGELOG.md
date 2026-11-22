@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.7
+- TV tab: Save & apply now moved to its own card above the status card.
+
 ## 0.9.6
 - Status panel: states such as "on", "off", "unavailable" are bold white too.
 

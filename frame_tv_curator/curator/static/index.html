@@ -557,8 +557,8 @@ function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceC
  put('t-set',[cards[0],cards[3],cards[5],cards[6],cards[7],mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);
- const [liveCard,...tvRest]=tvCards(s);
- put('t-tv',[el('div',{class:'tvwrap'},el('div',{class:'tvmain'},...tvRest,cards[2],mkSave()),el('aside',{class:'tvside'},liveCard))])}
+ const [actCard,liveCard,...tvRest]=tvCards(s);
+ put('t-tv',[el('div',{class:'tvwrap'},el('div',{class:'tvmain'},...tvRest,cards[2],mkSave()),el('aside',{class:'tvside'},actCard,liveCard))])}
 
 /* ---------- TV tab: connection, brightness, color temperature, companion light ---------- */
 const HAENT={};
@@ -683,8 +683,9 @@ function tvCards(s){
  // live status (shown in a sticky side column)
  entList('');
  const live=el('div',{class:'card'},el('h3',{},'What it is doing now'),el('div',{id:'ambstat',class:'mut'},'…'),
-  el('div',{class:'row'},el('button',{onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now'),
+  el('div',{class:'row'},
    el('button',{onclick:async ev=>{const b=ev.currentTarget;b.disabled=true;b.textContent='Refreshing…';await updAmb();b.disabled=false;b.textContent='Refresh status'}},'Refresh status')));
+ const act=el('div',{class:'card'},el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{await api('settings',s);await api('ambient_now',{});toast('Saved and applying…');setTimeout(updAmb,2500)}},'Save & apply now'),el('span',{class:'mut'},'Saves the settings on this tab and applies them to the TV now')));
  const updAmb=async()=>{const e=$('#ambstat');if(!e||$('#t-tv').hidden)return;try{const a=await api('ambient');
    const b=a.brightness||{},c=a.color_temp||{},l=a.light||{},pr=a.presence||{};
    const pill=(txt,cls)=>el('span',{class:'pill '+(cls||'')},txt);
@@ -701,7 +702,7 @@ function tvCards(s){
     a.error?el('div',{class:'warn'},'Problem: '+humanize(a.error)):null,
     el('div',{class:'mut',style:'font-size:12px'},'Updated '+new Date().toLocaleTimeString()))}catch(x){}};
  if(ambTimer)clearInterval(ambTimer);ambTimer=setInterval(updAmb,5000);setTimeout(updAmb,300);
- return [live,conn,pres,bright,ct,light]}
+ return [act,live,conn,pres,bright,ct,light]}
 const $$=x=>x;
 boot();
 </script></body></html>
