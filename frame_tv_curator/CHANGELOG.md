@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.11.1
-- Art Institute of Chicago downloads now use only the sizes the museum advertises (the original width halved again and again), choosing the largest that fits 3840 px wide. If the museum refuses that size, the browser tries the next smaller sizes before the add-on falls back to a reduced copy, and the dialog says which size you got.
+- Art Institute of Chicago downloads now use the same 3000 px best-fit size as the museum's own Download button (the largest it publishes; other sizes are refused). If that is refused, the browser tries 1686 px, then the add-on falls back to a reduced copy, and the dialog says which size you got.
 
 ## 0.11.0
 - Discover: second source, the **Art Institute of Chicago** (public domain, CC0). Pick the source at the top of the tab; filter by type (paintings, prints, drawings and watercolors, photographs, posters), search by title or artist, order by best match, A-Z by artist or shuffle.

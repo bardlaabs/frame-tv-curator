@@ -452,7 +452,7 @@ async function browserGet(i,st){let last='';
   try{const r=await fetch(u);if(!r.ok)throw new Error('the site answered '+r.status);
    st.total=+r.headers.get('Content-Length')||0;st.got=0;const rd=r.body.getReader(),parts=[];let got=0;
    for(;;){const x=await rd.read();if(x.done)break;parts.push(x.value);got+=x.value.length;st.got=got}
-   if(n){const m=u.match(/full\/(\d+),/);st.note='The site would not give the largest size, so this is '+(m?m[1]+' px wide':'a smaller size')}
+   if(n){st.note="The site would not give the 3000 px size, so this is a smaller copy"}
    return new Blob(parts,{type:'image/jpeg'})}
   catch(e){last=String(e.message||e)}}
  throw new Error(last||'download failed')}

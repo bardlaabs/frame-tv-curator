@@ -203,23 +203,23 @@ class AIC:
         th = r.get("thumbnail") or {}
         ow, oh = th.get("width") or 0, th.get("height") or 0
         w = h = None
-        sizes = []
+        # The museum only serves a short list of sizes. Its own Download button uses a
+        # 3000 px best-fit box ("!3000,3000"); other sizes are refused with 403.
+        def u(spec):
+            return "%s/%s/full/%s/0/default.jpg" % (self.IIIF, iid, spec)
         if ow and oh:
-            # the museum only serves the sizes it advertises: the original width halved again and again
-            sizes = sorted({int(ow / 2 ** k + 0.5) for k in range(0, 8) if ow / 2 ** k >= 60})
-            fit = [x for x in sizes if x <= 3840 and int(oh * x / ow + 0.5) <= 3300]
-            w = max(fit) if fit else min(sizes)
-            h = max(1, int(oh * w / ow + 0.5))
-        near = lambda t: max([x for x in sizes if x <= t] or sizes or [t])
+            sc = min(1.0, 3000.0 / max(ow, oh))
+            w, h = max(1, int(ow * sc + 0.5)), max(1, int(oh * sc + 0.5))
+        big = u("!3000,3000")
+        alts = [u("1686,")] if max(ow, oh) > 1686 else []
+        small, mid = u("843,"), u("1686,")
         desc = r.get("description") or r.get("short_description") or ""
         desc = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", desc))).strip()
         key = str(r["id"])
-        small = "%s/%s/full/%d,/0/default.jpg" % (self.IIIF, iid, near(843))
-        mid = "%s/%s/full/%d,/0/default.jpg" % (self.IIIF, iid, near(1686))
         d = {"source": self.id, "key": key, "url": self.home + "/artworks/" + key, "title": r.get("title") or "",
              "artist": r.get("artist_title") or "", "date": r.get("date_display") or "", "description": desc,
-             "image": "%s/%s/full/%d,/0/default.jpg" % (self.IIIF, iid, w) if w else small,
-             "image_alts": ["%s/%s/full/%d,/0/default.jpg" % (self.IIIF, iid, x) for x in sorted([x for x in sizes if 1000 <= x < (w or 0)], reverse=True)[:3]],
+             "image": big if w else small,
+             "image_alts": alts,
              "image_fallback": mid,
              "thumb": small, "preview": mid,
              "w": w, "h": h, "orig_w": ow or None, "orig_h": oh or None, "ai": False, "client_fetch": True,
