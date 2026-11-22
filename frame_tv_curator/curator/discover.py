@@ -202,6 +202,36 @@ def remote_bytes(url):
     return n
 
 
+_dims = {}
+
+
+def remote_dims(url):
+    """Pixel size of a remote JPEG/PNG from its first 128 KB (a range request), or (None, None)."""
+    if url in _dims:
+        return _dims[url]
+    wh = (None, None)
+    try:
+        from PIL import ImageFile
+        r = urllib.request.Request(url, headers={"User-Agent": UA, "Range": "bytes=0-131071"})
+        with _net:
+            _last[0] = time.time()
+        data = urllib.request.urlopen(r, timeout=30).read(131072)
+        p = ImageFile.Parser()
+        p.feed(data)
+        if p.image:
+            wh = p.image.size
+    except Exception as e:
+        log.info("dimension probe failed for %s: %s", url, e)
+    _dims[url] = wh
+    return wh
+
+
+def fill_dims(d):
+    if d.get("image") and not (d.get("w") and d.get("h")):
+        d["w"], d["h"] = remote_dims(d["image"])
+    return d
+
+
 def check(d, entries=None):
     """Library images that look like this candidate: the same picture (hash of the small preview) or the same title+artist."""
     from PIL import Image
@@ -217,6 +247,7 @@ def check(d, entries=None):
         _thumbcache[d["thumb"] or d["image"]] = dh
     t, a = norm(d["title"]), norm(d["artist"])
     nb = remote_bytes(d["image"])
+    fill_dims(d)
     out = []
     for e in entries:
         how = None
@@ -244,6 +275,7 @@ def _filename(d, ext):
 
 
 def sidecar_patch(d):
+    fill_dims(d)
     src = SOURCES[d["source"]]
     ai = d.get("ai")
     p = {"schema": "frame-art-sidecar/1", "kind": "art", "title": d["title"] or None,

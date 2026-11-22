@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.1
+- Discover: image width and height now come from the image itself (Reframed pages do not publish them), so duplicate comparisons and sidecars show the real pixel size.
+
 ## 0.10.0
 - New **Discover** tab. First source: Reframed Gallery (free, already 3840x2160). Search by title or artist, filter by artist, order A-Z / recently added / shuffle, preview, select several, pick a destination folder (or type a new one), add with download progress.
 - Everything the source publishes is saved in the sidecar: title, artist, date, description, source and page URL, license, size, and whether the image was AI-extended. The placard and Info tab show them.
