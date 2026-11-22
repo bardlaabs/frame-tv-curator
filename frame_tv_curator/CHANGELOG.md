@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.3
+- Editor Info tab: new Details section with Description, Source, Source link (with an open link), License and private Notes, plus a read-only line with the original size, where it came from and whether the edges were AI-extended. Everything is saved in the sidecar.
+
 ## 0.10.2
 - Fixed a stray "null" showing below lists on several screens (empty slots are now ignored everywhere).
 - Discover: the Add button now follows the destination folder as you change it.
