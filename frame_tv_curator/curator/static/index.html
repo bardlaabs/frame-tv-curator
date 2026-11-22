@@ -447,10 +447,15 @@ function compareModal(dups){return new Promise(res=>{
  showModal(el('h2',{},'Possible duplicates'),el('p',{class:'mut'},'These look like images already in your library. Compare the sizes and sources, then choose what to keep.'),...body,
   el('div',{class:'row'},el('button',{class:'pri',onclick:()=>{closeModal();res(true)}},'Continue'),el('button',{onclick:()=>{closeModal();res(false)}},'Cancel')))})}
 const fileNameFor=(i,ext)=>{const base=((i.artist?i.artist+' - ':'')+(i.title||'Untitled')).replace(/[^\w.\-,'() &]/g,'').trim().slice(0,120)||'artwork';return base+ext};
-async function browserGet(i,st){const r=await fetch(i.image);if(!r.ok)throw new Error('the site answered '+r.status);
- st.total=+r.headers.get('Content-Length')||0;const rd=r.body.getReader(),parts=[];let got=0;
- for(;;){const x=await rd.read();if(x.done)break;parts.push(x.value);got+=x.value.length;st.got=got}
- return new Blob(parts,{type:'image/jpeg'})}
+async function browserGet(i,st){let last='';
+ for(const [n,u] of [i.image,...(i.image_alts||[])].entries()){
+  try{const r=await fetch(u);if(!r.ok)throw new Error('the site answered '+r.status);
+   st.total=+r.headers.get('Content-Length')||0;st.got=0;const rd=r.body.getReader(),parts=[];let got=0;
+   for(;;){const x=await rd.read();if(x.done)break;parts.push(x.value);got+=x.value.length;st.got=got}
+   if(n){const m=u.match(/full\/(\d+),/);st.note='The site would not give the largest size, so this is '+(m?m[1]+' px wide':'a smaller size')}
+   return new Blob(parts,{type:'image/jpeg'})}
+  catch(e){last=String(e.message||e)}}
+ throw new Error(last||'download failed')}
 async function browserUpload(blob,name,folder){const CH=384*1024,total=Math.max(1,Math.ceil(blob.size/CH)),uid=Date.now().toString(36)+Math.random().toString(36).slice(2,8);let r;
  for(let k=0;k<total;k++){const url='api/upload_chunk?folder='+encodeURIComponent(folder)+'&name='+encodeURIComponent(name)+'&uid='+uid+'&index='+k+'&total='+total,piece=blob.slice(k*CH,(k+1)*CH);
   for(let a=0;;a++){try{r=await sendChunk(url,piece);break}catch(e){if(upMode=='raw'){upMode='json'}else if(a>=2)throw e}}}
