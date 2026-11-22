@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.12.0
+- Discover: The Metropolitan Museum of Art (public domain, CC0, no key needed). Browse by highlights or department, or search by keyword; originals are downloaded by the add-on at full size. Frames and non-public-domain objects are skipped, so a page can come up short.
+
 ## 0.11.2
 - Folder lists (chips, dropdowns) are sorted alphabetically, ignoring case.
 - The add-on creates the Art and Photos folders on first run if they do not exist (existing folders of any case are kept). Defaults now use Art and Photos.

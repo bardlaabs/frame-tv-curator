@@ -253,7 +253,79 @@ class AIC:
         return self._item(json.loads(r.read().decode("utf8", "replace"))["data"])
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC()}
+class Met:
+    """The Metropolitan Museum of Art open access (CC0). The API needs no key. Search returns only object ids, so each
+    result page costs one small request per object; objects that are not public domain or have no image are dropped."""
+    id = "met"
+    name = "The Metropolitan Museum of Art"
+    home = "https://www.metmuseum.org"
+    license = "CC0 1.0, public domain (The Met Open Access)"
+    client_fetch = False
+    blurb = ("Public-domain works from The Met, downloaded at the museum's full original size and kept whole (the mat fills the "
+             "rest). Pages can come up a little short because only public-domain objects with a picture are shown.")
+    sorts = [["relevance", "Best match"]]
+    types = [["highlights", "Highlights"], ["11", "European Paintings"], ["21", "Modern Art"], ["9", "Drawings and Prints"],
+             ["6", "Asian Art"], ["1", "American Decorative Arts"], ["19", "Photographs"], ["15", "Robert Lehman Collection"],
+             ["14", "Islamic Art"], ["10", "Egyptian Art"], ["13", "Greek and Roman Art"], ["17", "Medieval Art"], ["", "Everything"]]
+    has_artists = False
+    API = "https://collectionapi.metmuseum.org/public/collection/v1"
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    def _obj(self, oid):
+        key = str(oid)
+        if key in self.det:
+            return self.det[key]
+        try:
+            o = json.loads(_get("%s/objects/%s" % (self.API, key), 30, gap=0.05).read().decode("utf8", "replace"))
+        except Exception as e:
+            log.info("met object %s failed: %s", key, e)
+            return None
+        if not o.get("isPublicDomain") or not o.get("primaryImage") or (o.get("objectName") or "").lower() == "frame":
+            self.det[key] = None
+            return None
+        desc = ""
+        parts = [o.get("culture"), o.get("period"), o.get("dynasty")]
+        loc = ", ".join(x for x in parts if x)
+        d = {"source": self.id, "key": key, "url": o.get("objectURL") or ("%s/art/collection/search/%s" % (self.home, key)),
+             "title": o.get("title") or "", "artist": o.get("artistDisplayName") or "", "date": o.get("objectDate") or "",
+             "description": desc, "image": o["primaryImage"], "image_fallback": o.get("primaryImageSmall") or o["primaryImage"],
+             "thumb": o.get("primaryImageSmall") or o["primaryImage"], "preview": o.get("primaryImageSmall") or o["primaryImage"],
+             "w": None, "h": None, "ai": False, "client_fetch": False,
+             "medium": o.get("medium") or "", "credit": ("The Metropolitan Museum of Art, " + o["creditLine"]) if o.get("creditLine") else "The Metropolitan Museum of Art",
+             "license": self.license, "origin_note": loc}
+        self.det[key] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="highlights", **kw):
+        prm = {"hasImages": "true", "limit": per, "offset": min(page * per, 10000 - per)}
+        if q.strip():
+            prm["q"] = q.strip()
+        if type == "highlights":
+            prm["isHighlight"] = "true"
+        elif type:
+            prm["departmentId"] = type
+        if not q.strip() and not type:
+            prm["q"] = "*"
+        j = json.loads(_get(self.API.replace("/v1", "/v1.1") + "/search?" + urllib.parse.urlencode(prm), 40, gap=0.05).read().decode("utf8", "replace"))
+        ids = j.get("objectIDs") or []
+        with ThreadPoolExecutor(6) as ex:
+            objs = list(ex.map(self._obj, ids))
+        items = [x for x in objs if x]
+        return {"total": min(int(j.get("total") or 0), 10000), "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        d = self._obj(key)
+        if not d:
+            raise ValueError("not a public-domain Met object with an image")
+        return d
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met()}
 
 
 # ---------------- library matching ----------------
