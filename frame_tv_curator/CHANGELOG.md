@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.12.1
+- Discover: Cleveland Museum of Art (CC0, no key). Paintings, prints, drawings, photographs, textiles and sculpture at up to about 3400 px, with the museum's description and credit line.
+
 ## 0.12.0
 - Discover: The Metropolitan Museum of Art (public domain, CC0, no key needed). Browse by highlights or department, or search by keyword; originals are downloaded by the add-on at full size. Frames and non-public-domain objects are skipped, so a page can come up short.
 

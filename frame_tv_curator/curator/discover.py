@@ -325,7 +325,74 @@ class Met:
         return d
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met()}
+class Cleveland:
+    """Cleveland Museum of Art open access (CC0, no key). The "print" JPEG is up to about 3400 px on the long side."""
+    id = "cleveland"
+    name = "Cleveland Museum of Art"
+    home = "https://www.clevelandart.org"
+    license = "CC0 1.0, public domain (Cleveland Museum of Art Open Access)"
+    client_fetch = False
+    blurb = ("Open-access works from the Cleveland Museum of Art, downloaded at up to about 3400 px and kept whole "
+             "(the mat fills the rest).")
+    sorts = [["relevance", "Best match"]]
+    types = [["Painting", "Paintings"], ["Print", "Prints"], ["Drawing", "Drawings"], ["Photograph", "Photographs"],
+             ["Textile", "Textiles"], ["Sculpture", "Sculpture"], ["", "All types"]]
+    has_artists = False
+    API = "https://openaccess-api.clevelandart.org/api/artworks/"
+    FIELDS = "id,accession_number,title,creators,creation_date,images,technique,creditline,url,description,share_license_status"
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    def _item(self, r):
+        im = r.get("images") or {}
+        big = im.get("print") or im.get("web") or {}
+        web = im.get("web") or big
+        if not big.get("url"):
+            return None
+        def n(v):
+            try:
+                return int(float(v))
+            except Exception:
+                return None
+        cr = [c for c in (r.get("creators") or []) if c.get("role") in (None, "", "artist")] or (r.get("creators") or [])
+        artist = re.sub(r"\s*\(.*$", "", (cr[0].get("description") or "")).strip() if cr else ""
+        key = str(r["id"])
+        d = {"source": self.id, "key": key, "url": r.get("url") or ("https://clevelandart.org/art/" + str(r.get("accession_number"))),
+             "title": r.get("title") or "", "artist": artist, "date": r.get("creation_date") or "",
+             "description": re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", r.get("description") or ""))).strip(),
+             "image": big["url"], "image_fallback": web["url"], "thumb": web["url"], "preview": web["url"],
+             "w": n(big.get("width")), "h": n(big.get("height")), "ai": False, "client_fetch": False,
+             "medium": r.get("technique") or "",
+             "credit": "Cleveland Museum of Art" + (", " + r["creditline"] if r.get("creditline") else ""),
+             "license": self.license}
+        self.det[key] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="Painting", **kw):
+        prm = {"cc0": 1, "has_image": 1, "limit": per, "skip": page * per, "fields": self.FIELDS}
+        if q.strip():
+            prm["q"] = q.strip()
+        if type:
+            prm["type"] = type
+        j = json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 40, gap=0.25).read().decode("utf8", "replace"))
+        items = [x for x in (self._item(r) for r in j.get("data", [])) if x]
+        return {"total": int((j.get("info") or {}).get("total") or 0), "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        j = json.loads(_get(self.API + urllib.parse.quote(str(key)) + "?fields=" + self.FIELDS, 30).read().decode("utf8", "replace"))
+        d = self._item(j["data"])
+        if not d:
+            raise ValueError("no image for this object")
+        return d
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland()}
 
 
 # ---------------- library matching ----------------

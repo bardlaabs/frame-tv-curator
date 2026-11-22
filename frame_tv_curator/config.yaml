@@ -1,5 +1,5 @@
 name: Frame TV Curator
-version: "0.12.0"
+version: "0.12.1"
 slug: frame_tv_curator
 description: Curate, render and rotate art and photos on a Samsung Frame TV
 url: https://github.com/bardlaabs/frame-tv-curator
