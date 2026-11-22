@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.12.2
+- Discover: NASA Image Library (no key). Topics (nebulae, galaxies, James Webb, Hubble, Mars, the Moon, Earth, auroras, Saturn and Jupiter) or your own search; images under 1600 px wide are skipped, so pages can come up short.
+
 ## 0.12.1
 - Discover: Cleveland Museum of Art (CC0, no key). Paintings, prints, drawings, photographs, textiles and sculpture at up to about 3400 px, with the museum's description and credit line.
 

@@ -392,7 +392,69 @@ class Cleveland:
         return d
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland()}
+class NASA:
+    """NASA Image and Video Library (no key). NASA media is generally not copyrighted; images under 1600 px wide are skipped."""
+    id = "nasa"
+    name = "NASA Image Library"
+    home = "https://images.nasa.gov"
+    license = "NASA media, generally public domain (see nasa.gov/nasa-brand-center/images-and-media)"
+    client_fetch = False
+    blurb = ("Space and Earth images from NASA, at least 1600 px wide, kept whole (the mat fills the rest). "
+             "Choose a topic or type your own search; pages can come up short because small images are skipped.")
+    sorts = [["relevance", "Best match"]]
+    types = [["nebula", "Nebulae"], ["galaxy", "Galaxies"], ["James Webb Space Telescope", "James Webb"], ["Hubble", "Hubble"],
+             ["Mars", "Mars"], ["Moon", "The Moon"], ["Earth from space", "Earth from space"], ["aurora", "Auroras"],
+             ["Saturn", "Saturn and Jupiter"], ["", "Search only"]]
+    has_artists = False
+    API = "https://images-api.nasa.gov/search"
+    MIN_W = 1600
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    def _item(self, it):
+        data = (it.get("data") or [{}])[0]
+        orig = next((l for l in (it.get("links") or []) if l.get("rel") == "canonical" and l.get("href")), None)
+        thumb = next((l for l in (it.get("links") or []) if l.get("rel") == "preview"), None) or \
+            next((l for l in (it.get("links") or []) if "~small" in (l.get("href") or "")), None)
+        if not orig or int(orig.get("width") or 0) < self.MIN_W:
+            return None
+        nid = data.get("nasa_id") or ""
+        who = data.get("secondary_creator") or data.get("photographer") or data.get("center") or "NASA"
+        desc = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", data.get("description") or ""))).strip()
+        d = {"source": self.id, "key": nid, "url": "https://images.nasa.gov/details/" + urllib.parse.quote(nid),
+             "title": data.get("title") or nid, "artist": who, "date": (data.get("date_created") or "")[:10],
+             "description": desc, "image": orig["href"].replace("http://", "https://"),
+             "image_fallback": (thumb or orig)["href"], "thumb": (thumb or orig)["href"], "preview": (thumb or orig)["href"],
+             "w": int(orig.get("width") or 0) or None, "h": int(orig.get("height") or 0) or None, "ai": False, "client_fetch": False,
+             "medium": "Photograph", "credit": "NASA" + ((" / " + who) if who and who != "NASA" else ""), "license": self.license}
+        self.det[nid] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="nebula", **kw):
+        term = q.strip() or type or "space"
+        prm = {"q": term, "media_type": "image", "page": page + 1, "page_size": per}
+        j = json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 40, gap=0.25).read().decode("utf8", "replace"))
+        col = j.get("collection") or {}
+        items = [x for x in (self._item(i) for i in col.get("items", [])) if x]
+        total = int((col.get("metadata") or {}).get("total_hits") or 0)
+        return {"total": min(total, 9900), "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        j = json.loads(_get(self.API + "?" + urllib.parse.urlencode({"nasa_id": key, "media_type": "image"}), 30).read().decode("utf8", "replace"))
+        its = (j.get("collection") or {}).get("items") or []
+        d = self._item(its[0]) if its else None
+        if not d:
+            raise ValueError("NASA image not found or too small")
+        return d
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA()}
 
 
 # ---------------- library matching ----------------
