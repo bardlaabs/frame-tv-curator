@@ -570,6 +570,7 @@ const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 // status text with entity names in accent bold and numbers (with units) in bold
 const rich=s=>{const ph=[];let h=esc(s).replace(/\b[a-z_]+\.[a-z0-9_]+\b/g,m=>NAMES[m]?'\u0001'+String(ph.push(NAMES[m])-1).replace(/\d/g,d=>'abcdefghij'[d])+'\u0002':m);
  h=h.replace(/([+-]?\d+(?:\.\d+)?(?:\s?(?:%|lx|K|°|min))?)/g,'<b class="num">$1</b>');
+ h=h.replace(/\b(is|are) (on|off|home|away|unavailable|unknown)\b/g,'$1 <b class="num">$2</b>');
  return h.replace(/\u0001([a-j]+)\u0002/g,(m,i)=>'<b class="ent">'+esc(ph[+i.replace(/[a-j]/g,c=>'abcdefghij'.indexOf(c))])+'</b>')};
 const humanize=s=>String(s??'').replace(/\b[a-z_]+\.[a-z0-9_]+\b/g,m=>NAMES[m]||m);
 function hilite(s,ws){let h=s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));ws.forEach(w=>{if(w)h=h.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(?![^<]*>)','ig'),'<mark>$1</mark>')});return h}

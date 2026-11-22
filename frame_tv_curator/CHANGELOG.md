@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.6
+- Status panel: states such as "on", "off", "unavailable" are bold white too.
+
 ## 0.9.5
 - Entity pickers: every empty box now reads "Select…" (no more example ids that look like a chosen value); boxes widen to fit the full entity name.
 - Status panel: entity names are bold in the accent color and numbers/values are bold. When a mode needs an entity and none is chosen (or it is unavailable) the panel says so, e.g. "No entity chosen — using sun +31°".
