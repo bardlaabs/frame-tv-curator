@@ -20,3 +20,9 @@ Requirements: a Samsung Frame TV on the same network/VLAN as Home Assistant, a m
 ## Status
 
 Personal project, shared as-is. Tested on one Frame TV (2022 model). See [CHANGELOG](frame_tv_curator/CHANGELOG.md).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
+
+The add-on installs these libraries when its container is built (they are not part of this repository and keep their own licenses): Pillow (MIT-CMU), numpy (BSD-3-Clause), pillow-heif (BSD-3-Clause, bundles libheif under LGPL), samsungtvws (LGPL-3.0), paho-mqtt (EPL-2.0 / EDL-1.0), websocket-client (Apache-2.0) and requests (Apache-2.0).

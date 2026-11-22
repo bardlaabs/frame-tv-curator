@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.10
+- Added MIT license and third-party notes. No functional changes.
+
 ## 0.8.9
 - Art Mode on from a fully off TV runs in the background (Wake-on-LAN), so the button returns immediately.
 
