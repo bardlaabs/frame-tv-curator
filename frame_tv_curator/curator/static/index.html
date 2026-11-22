@@ -172,7 +172,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
   field('Position',d,'placard.position','select',{options:POS},onch),
   field('Size (scale)',d,'placard.scale','range',{min:.6,max:1.8,step:.05},onch),
   field('Card margin from edge (%)',d,'placard.margin_pct','range',{min:.5,max:8,step:.1},onch),
-  field('Fit text to the mat height',d,'placard.mat_fit','check',{},onch),
+  field('Auto-fit text to the mat height',d,'placard.mat_fit','check',{},onch),
   field('Layout when printed on the mat',d,'placard.mat_layout','select',{options:{one_line:'Single line',two_line:'Two lines',three_line:'Three lines'}},onch),
   field('Divider line (modern)',d,'placard.divider','check',{},onch)));
  const TINT_OPTS={'':'Fixed color (set below)',best:'Best contrast with the picture',accent:'Accent tint',complement:'Complement',dominant:'Dominant muted',deep_neutral:'Deep neutral',warm_white:'Warm gallery white'};
