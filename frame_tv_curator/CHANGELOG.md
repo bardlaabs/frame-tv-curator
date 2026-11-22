@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.4
+- TV tab: "What it is doing now" moved to a sticky right-hand column (on top on narrow screens) and reorganized into a labelled grid: TV, Brightness, Color temp., Presence, Light, each with a short detail line.
+- Entities are shown by friendly name everywhere (status panel, chips, pickers); the entity id appears as a second line in the dropdown and under the field. Search still matches name, id and state.
+
 ## 0.9.3
 - TV tab: Refresh status button on the "What it is doing now" panel.
 
