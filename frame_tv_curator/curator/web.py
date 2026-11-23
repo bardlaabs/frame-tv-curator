@@ -52,7 +52,7 @@ def library_list(folder, ids=None):
         except OSError:
             added = 0
         out.append({"id": i, "file": stem, "title": title, "name": title or stem,
-                    "artist": a.get("display") or a.get("name") or "", "year": _year(sc), "added": added,
+                    "artist": a.get("display") or a.get("name") or "", "medium": (sc.get("medium") or (sc.get("card_text") or {}).get("medium") or "").strip() if isinstance(sc.get("medium") or "", str) else "", "year": _year(sc), "added": added,
                     "flags": sc.get("flags") or {}, "has_display": bool(sc.get("display")), "low_res": library.is_low_res(i)})
     library.save_image_cache()
     return out

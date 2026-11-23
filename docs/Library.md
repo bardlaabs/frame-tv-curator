@@ -18,6 +18,9 @@ Open an image to crop, rotate, straighten, adjust its display look (mat, placard
 ## Sidecars
 Each image may have a `name.json` sidecar (schema `frame-art-sidecar/1`) holding metadata, edits, flags and per-image display overrides. Copy or back up images together with their sidecars.
 
+## Grouping
+Use **Group by** (next to Sort by) to show the grid under headings by year, decade, artist or medium. The chips above the grid jump to a group, and the heading stays at the top while you scroll its images. Sorting still applies inside each group; Undated/Unknown groups come last. The choice is remembered in your browser.
+
 ## Albums
 An album is a named collection of images from any folder; an image can be in several albums, and albums never move or copy files.
 - Create one with **+ Album** under the folder chips, then switch **Select** on, pick images (in any folder) and choose **+ Album...** in the bar at the bottom. In an album, **- Remove from album** takes the selected images out again.

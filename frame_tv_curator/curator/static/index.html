@@ -20,6 +20,7 @@ input[type=color]{padding:0;width:44px;height:30px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
 .card h3{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
 .row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}.row>label{min-width:140px;color:var(--mut)}
+.grid.grouped{display:block}.gsec{margin-bottom:18px}.ghd{position:sticky;top:58px;z-index:4;margin:0 0 8px;padding:6px 2px;background:var(--bg);border-bottom:1px solid var(--line);font-size:15px}.gnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.chip.sm{font-size:12px;padding:2px 8px;cursor:pointer}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;position:relative}
 .tile:hover{border-color:var(--acc)}.tile img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
@@ -287,12 +288,14 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
   el('button',{onclick:()=>openEditor(id)},'Edit details & look…'))}
 
 /* ---------- Library ---------- */
-const SORTS={name:'Title (or filename)',artist:'Artist',file:'Filename',date:'Artwork date',added:'Date added',fav:'Favorites first'};
+const SORTS={name:'Title (or filename)',artist:'Artist',medium:'Medium',file:'Filename',date:'Artwork date',added:'Date added',fav:'Favorites first'};
+const GROUPS={none:'No grouping',year:'Year',decade:'Decade',artist:'Artist',medium:'Medium'};
+let groupKey=(()=>{try{return localStorage.getItem('fc_group')||'none'}catch(e){return 'none'}})();if(!GROUPS[groupKey])groupKey='none';
 const sortPref=(()=>{try{return JSON.parse(localStorage.getItem('fc_sort')||'{}')}catch(e){return{}}})();
 let sortKey=sortPref.k||'name',sortDir=sortPref.d||1;
 const saveSort=()=>{try{localStorage.setItem('fc_sort',JSON.stringify({k:sortKey,d:sortDir}))}catch(e){}};
 function sortItems(items){const c=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
- const key={name:i=>i.name,artist:i=>i.artist,file:i=>i.file,date:i=>i.year,added:i=>i.added,fav:i=>(i.flags.favorite?0:i.flags.show_more?1:2)}[sortKey];
+ const key={name:i=>i.name,artist:i=>i.artist,medium:i=>i.medium,file:i=>i.file,date:i=>i.year,added:i=>i.added,fav:i=>(i.flags.favorite?0:i.flags.show_more?1:2)}[sortKey];
  return items.slice().sort((a,b)=>{const x=key(a),y=key(b);const nx=x===''||x==null,ny=y===''||y==null;if(nx!==ny)return nx?1:-1; // empties always last
   let r=typeof x=='number'&&typeof y=='number'?x-y:c(x,y);if(!r)r=c(a.name,b.name);return r*sortDir})}
 const EYE_SLASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2 0 3.7.6 5.1 1.5M22 12s-3.5 7-10 7c-2 0-3.7-.6-5.1-1.5"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
@@ -325,20 +328,31 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
  drop.addEventListener('drop',e=>upload([...e.dataTransfer.files],upl));
  const q=el('input',{type:'search',placeholder:'Filter by title, artist or filename…',style:'width:min(100%,320px)'});
  const sel=el('select',{},Object.entries(SORTS).map(([k,l])=>el('option',{value:k},l)));sel.value=sortKey;
+ const gsel=el('select',{title:'Group the grid under headings'},Object.entries(GROUPS).map(([k,l])=>el('option',{value:k},k=='none'?l:'Group by '+l.toLowerCase())));gsel.value=groupKey;
  const dir=el('button',{title:'Reverse order'},sortDir>0?'↑ A→Z':'↓ Z→A');
  const selBtn=el('button',{title:'Select several images to change them together'},selMode?'☑ Selecting (tap to finish)':'☐ Select');
  selBtn.onclick=()=>{selMode=!selMode;if(!selMode)selected.clear();renderLib()};
  const dupBtn=el('button',{title:'Look for images that are the same picture',onclick:()=>findDuplicates()},'🔍 Find duplicates');
- const bar=el('div',{class:'row',style:'margin-bottom:12px'},q,el('label',{style:'color:var(--mut)'},'Sort by'),sel,dir,selBtn,dupBtn,el('span',{class:'mut',id:'cnt'}));
+ const bar=el('div',{class:'row',style:'margin-bottom:12px'},q,el('label',{style:'color:var(--mut)'},'Sort by'),sel,dir,gsel,selBtn,dupBtn,el('span',{class:'mut',id:'cnt'}));
  const grid=el('div',{class:'grid'});root.append(chips,achips,albBar,drop,upl,bar,grid);
  const items=await api(curAlbum?'library?album='+encodeURIComponent(curAlbum):'library?folder='+encodeURIComponent(curFolder));
- const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f)));
-  $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
-  grid.replaceChildren(...list.slice(0,600).map(i=>
-  el('div',{class:'tile'+(i.flags.exclude?' ex':'')+(i.id==curStatus.current?' cur':'')+(selected.has(i.id)?' sel':''),onclick:function(){if(selMode){selected.has(i.id)?selected.delete(i.id):selected.add(i.id);this.classList.toggle('sel');drawBulk()}else openEditor(i.id)}},
+ const tile=i=>el('div',{class:'tile'+(i.flags.exclude?' ex':'')+(i.id==curStatus.current?' cur':'')+(selected.has(i.id)?' sel':''),onclick:function(){if(selMode){selected.has(i.id)?selected.delete(i.id):selected.add(i.id);this.classList.toggle('sel');drawBulk()}else openEditor(i.id)}},
    el('img',{loading:'lazy',src:'api/thumb?id='+encodeURIComponent(i.id)}),
    el('div',{class:'badges'},flagBtn(i,'favorite','fav','Favorite (shown more often)'),flagBtn(i,'show_more','more','Show more often'),flagBtn(i,'exclude','exc','Exclude from rotation'),i.has_display?el('i',{title:'This image has customized display settings'},'⚙'):null,i.low_res?el('i',{title:'Below 1920×1080 — may look soft on the TV'},'⚠'):null),
-   el('div',{class:'t'},el('b',{},i.name),el('span',{},(sortKey=='date'&&i.year?i.year+' · ':'')+(i.artist||(i.title?i.file:'')||'\u00a0'))))))};
+   el('div',{class:'t'},el('b',{},i.name),el('span',{},(sortKey=='date'&&i.year?i.year+' · ':'')+(i.artist||(i.title?i.file:'')||'\u00a0'))));
+ const gnav=el('div',{class:'gnav'});grid.before(gnav);
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f))).slice(0,600);
+  $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
+  if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
+  const gk={year:i=>i.year?String(i.year):'Undated',decade:i=>i.year?(Math.floor(i.year/10)*10)+'s':'Undated',artist:i=>i.artist||'Unknown artist',medium:i=>i.medium||'Unknown medium'}[groupKey];
+  const groups=new Map();list.forEach(i=>{const k=gk(i);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(i)});
+  const unk=k=>/^(Undated|Unknown)/.test(k),num=groupKey=='year'||groupKey=='decade';
+  const keys=[...groups.keys()].sort((a,b)=>unk(a)!=unk(b)?(unk(a)?1:-1):(num?(parseInt(a)-parseInt(b)):String(a).localeCompare(String(b),undefined,{sensitivity:'base'}))*sortDir);
+  grid.classList.add('grouped');
+  const secs=keys.map(k=>el('section',{class:'gsec'},el('h4',{class:'ghd'},k,el('span',{class:'mut'},' ('+groups.get(k).length+')')),el('div',{class:'grid'},groups.get(k).map(tile))));
+  grid.replaceChildren(...secs);
+  gnav.replaceChildren(...keys.map((k,n)=>el('span',{class:'chip sm',title:groups.get(k).length+' images',onclick:()=>secs[n].scrollIntoView({behavior:'smooth',block:'start'})},k)))};
+ gsel.onchange=()=>{groupKey=gsel.value;try{localStorage.setItem('fc_group',groupKey)}catch(e){}draw()};
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
  q.oninput=dbounce(draw,150);draw();drawBulk();window._libList=()=>sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];

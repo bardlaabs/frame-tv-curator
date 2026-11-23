@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.15.0
+- Library: group the grid under sticky headings by year, decade, artist or medium, with a row of jump chips to scroll to a group (Group by next to Sort by; remembered). New Sort by Medium. Undated and unknown groups go last.
+
 ## 0.14.0
 - Albums: named collections of images from any folder (an image can be in several). Create them in the Library (+ Album), add selected images with "+ Album...", and use an album as the rotation source (Settings > Pick from > An album) or in a schedule (Show > An album). Albums follow images that are moved to another folder and drop images that are deleted.
 
