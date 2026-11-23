@@ -503,7 +503,7 @@ const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
- D.srcs.sort(byName);D.srcs.forEach(x=>{if(x.types)x.types.sort(byName)});
+ D.srcs.sort(byName);D.srcs.forEach(x=>{if(x.types)x.types.sort(byName)});D.srcs.unshift({id:'__all',name:'Search all sources',blurb:'Type words in Search and every source is asked; the first few results from each are shown together (labelled with their source). Pick a single source to browse it page by page.',sorts:[['rel','Relevance']],types:[],has_artists:false});
  try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{shape:sv.shape||'any',source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;saveDisc();drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
  const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value;saveDisc()}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
@@ -536,7 +536,16 @@ const shapeOf=i=>{if(!(i.w&&i.h))return null;const a=i.w/i.h;return a>=1.65&&a<=
 const shapeOk=i=>{if(!D.shape||D.shape=='any')return true;const s=shapeOf(i);return s===null||s==D.shape};
 const saveDisc=()=>ls.set('fc_disc',JSON.stringify({shape:D.shape||'any',source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album}));
 const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
+async function loadAll(box){const words=(D.q||'').trim();
+ if(!words){D.data=null;box.replaceChildren(el('p',{class:'mut'},'Type a word or two in Search to look in every source at once.'));return}
+ const real=D.srcs.filter(x=>x.id!='__all'),per=6;
+ const res=await Promise.allSettled(real.map(m=>api('discover/search?'+new URLSearchParams({source:m.id,type:'',q:words,artist:'',sort:(m.sorts[0]||[''])[0],page:0}))));
+ const lists=res.map((r,k)=>r.status=='fulfilled'?(r.value.items||[]).filter(i=>!i.error).slice(0,per).map(i=>Object.assign({_sn:real[k].name},i)):[]);
+ const out=[];for(let n=0;n<per;n++)lists.forEach(l=>{if(l[n])out.push(l[n])});
+ const bad=res.map((r,k)=>r.status!='fulfilled'?real[k].name:null).filter(Boolean);
+ D.data={items:out,total:out.length,per:Math.max(out.length,1),page:0,note:real.map((m,k)=>m.name+': '+lists[k].length).join(' · ')+(bad.length?' · could not reach: '+bad.join(', '):'')};drawDres()}
 async function loadDisc(){const box=$('#dres');if(!box)return;saveDisc();box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
+ if(D.source=='__all'){try{await loadAll(box)}catch(e){box.replaceChildren(el('p',{class:'warn'},'Could not load: '+e.message))}return}
  try{D.data=await api('discover/search?'+new URLSearchParams({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page}));drawDres()}
  catch(e){box.replaceChildren(el('p',{class:'warn'},'Could not load: '+e.message))}}
 function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,pages=Math.max(1,Math.ceil(r.total/r.per));
@@ -544,7 +553,7 @@ function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,
   el('span',{},el('button',{disabled:r.page<=0,onclick:()=>{D.page--;loadDisc()}},'← Prev'),' ',el('button',{disabled:r.page+1>=pages,onclick:()=>{D.page++;loadDisc()}},'Next →')));
  const shown=r.items.filter(shapeOk),hid=r.items.length-shown.length,unk=shown.filter(i=>!i.error&&!shapeOf(i)).length,
   note=D.shape&&D.shape!='any'?el('p',{class:'mut'},'Shape filter: '+hid+' of '+r.items.length+' on this page hidden'+(unk?' · '+unk+' shown because the source does not publish their size':'')+'.'):null;
- box.replaceChildren(nav,note,shown.length?el('div',{class:'grid'},shown.map(dcard)):el('p',{class:'mut'},r.items.length?'Nothing on this page has that shape. Try the next page or another shape.':'Nothing matches.'),pages>1?nav.cloneNode(true):null);
+ box.replaceChildren(nav,r.note?el('p',{class:'mut'},r.note):null,note,shown.length?el('div',{class:'grid'},shown.map(dcard)):el('p',{class:'mut'},r.items.length?'Nothing on this page has that shape. Try the next page or another shape.':'Nothing matches.'),pages>1?nav.cloneNode(true):null);
  if(pages>1){const n2=box.lastChild;n2.querySelectorAll('button').forEach((b,i)=>b.onclick=i==0?()=>{if(D.page>0){D.page--;loadDisc()}}:()=>{if(D.page+1<pages){D.page++;loadDisc()}})}
  drawDbar()}
 function dcard(i){if(i.error)return el('div',{class:'tile'},el('div',{class:'t'},el('b',{},i.key),el('span',{class:'warn'},i.error)));
@@ -552,7 +561,7 @@ function dcard(i){if(i.error)return el('div',{class:'tile'},el('div',{class:'t'}
  return el('div',{class:'tile'+(on?' sel':''),onclick:()=>toggleD(i)},el('img',{src:i.thumb,loading:'lazy',onerror:function(){if(i.source=='smithsonian'){const t=this.closest('.tile');if(t)t.remove()}}}),
   el('button',{class:'pv',title:'Preview full screen with details',onclick:e=>{e.stopPropagation();previewD(i)}},'⤢'),
   on?el('span',{class:'ck'},'✓'):null,
-  el('div',{class:'t'},el('b',{title:i.title},i.title),el('span',{},i.artist+(i.date?' · '+i.date:'')),
+  el('div',{class:'t'},el('b',{title:i.title},i.title),el('span',{},i.artist+(i.date?' · '+i.date:'')),i._sn?el('span',{class:'mut'},i._sn):null,
    el('span',{},(i.w&&i.h?i.w+'×'+i.h:'')+(i.ai?' · AI-extended':'')),
    on&&c===undefined?el('span',{class:'mut'},'checking your library…'):(dup?el('span',{class:'warn',style:'color:#e5a24a'},'⚠ Possible duplicate'+(c.matches.length>1?' ('+c.matches.length+')':'')):null)))}
 async function checkD(i){try{D.chk.set(i.key,await api('discover/check',{source:i.source,key:i.key}))}catch(e){D.chk.set(i.key,{matches:[],new:{}})}}

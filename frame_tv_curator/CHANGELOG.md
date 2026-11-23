@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.27.0
+
+- Discover: **Search all sources** (first item in the Source list) searches every source for your words and shows the first six results from each, labelled by source.
+
 ## 0.26.0
 
 - **Blurred background** framing choice: the whole picture on top of a soft, darkened, blurred copy of itself that fills the screen (good for portrait pictures). Display tab > Framing, also per image.

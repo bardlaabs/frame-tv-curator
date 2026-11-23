@@ -24,6 +24,15 @@ CC BY and CC BY-SA pictures (Commons) need credit; the artist and license are sa
 
 Some sources can show fewer than 24 pictures on a page because only suitable files are listed (public domain, with an image, large enough).
 
+### Search all sources
+
+The first item in the **Source** list, **Search all sources**, looks for your words in every source at once and shows the first six results from each, mixed together with the source's name on each card. Use it to see where a subject exists (for example "lighthouse" or "Hokusai"), then pick that source to browse it fully with its types and paging. Notes:
+
+- You need to type something in Search; with nothing typed it shows a hint.
+- Only the first page from each source is shown, and every source uses its own "all types" setting.
+- Sources that cannot be reached are named under the results; the others still show.
+- The Shape filter and the Add button work as usual. Pictures are added with the same checks and credits as from the single source.
+
 ## Add pictures, step by step
 
 1. Open the **Discover** tab.
