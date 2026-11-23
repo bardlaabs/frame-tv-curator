@@ -45,7 +45,7 @@ The card is 522 x 152 pixels and uses only black, white and red, so it works on 
 
 ![Long title](images/epaper-gallery-long.png)
 
-**A photograph** shows its title and date (the e-paper card has a line for the medium, which photographs do not have, and it does not print the place name):
+**A photograph** shows its title, its date and the place it was taken (where the card would print the medium for art):
 
 | Gallery | Inverted | Grid |
 |---|---|---|

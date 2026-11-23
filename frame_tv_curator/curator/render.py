@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.13"
+VERSION = "1.14"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -714,6 +714,8 @@ def render_epaper(sc, style="gallery", size=None):
     w, h = size or EPAPER["size"]
     BL, WH, RD = (0, 0, 0), (255, 255, 255), EPAPER["red"]
     artist, title, date, medium, credit = card_fields(sc)
+    if sc.get("kind") == "photo":          # a photo's medium is always "photograph": print where it was taken instead
+        medium = card_location(sc) or medium
     inv = style == "inverted"
     bg, fg = (BL, WH) if inv else (WH, BL)
     im = Image.new("RGB", (w, h), bg)

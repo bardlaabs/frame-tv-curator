@@ -111,6 +111,9 @@ save_img("colorbars", R.render_colorbars())
 Wd, Hd = grid.size
 save_img("calibration-hidden-3pct", grid.crop((int(Wd * .03), int(Hd * .03), Wd - int(Wd * .03), Hd - int(Hd * .03))))
 OV4 = {"top": 4, "right": 4, "bottom": 4, "left": 4}
+# framing mode: a 3:2 photo kept whole (mat fills the sides) vs filled to 16:9
+go("framing-whole", {"framing": "whole", "mat": dict(enabled=True, color="#efece4", width_pct=6), "placard": {"enabled": False}}, src=SAMPLE_PHOTO)
+go("framing-fill", {"framing": "fill", "mat": dict(enabled=True, color="#efece4", width_pct=6), "placard": {"enabled": False}}, src=SAMPLE_PHOTO)
 go("overscan-none-placard", {"placard": {"enabled": True, "position": "bottom-right"}}, crop=BR)
 go("overscan-placard-mode", {"overscan": dict(OV4, mode="placard"), "placard": {"enabled": True, "position": "bottom-right"}}, crop=BR)
 go("overscan-inset-4pct", {"overscan": dict(OV4, mode="inset")})

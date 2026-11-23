@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.1
+
+- E-paper card: photographs now print the place they were taken (where art prints its medium).
+
 ## 0.25.0
 
 - **Matte style** presets (Classic gallery, Modern, Shadow box, Panoramic) at the top of the Mat settings, on the Display tab and in each picture's editor. They fill in width, shape, texture, liner, bevel and shadow; you can adjust everything afterwards.
