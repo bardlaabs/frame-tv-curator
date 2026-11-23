@@ -466,10 +466,11 @@ class Commons:
              "to 3840 px wide and kept whole. Only public domain, CC0, CC BY and CC BY-SA files are shown, and the "
              "artist and license are saved with each one. Pages can come up short because other files are skipped.")
     sorts = [["relevance", "Best match"]]
-    types = [["Ukiyo-e", "Ukiyo-e prints"], ["Christmas postcards", "Christmas postcards"], ["Easter postcards", "Easter postcards"],
-             ["Halloween postcards", "Halloween postcards"], ["Vintage posters", "Vintage posters"],
-             ["Art Nouveau posters", "Art Nouveau posters"], ["Google Art Project", "Google Art Project paintings"],
-             ["Pop art", "Pop art"], ["Digital art", "Digital art"], ["", "Search all of Commons"]]
+    types = [["kw:ukiyo-e woodblock print", "Ukiyo-e prints"], ["Christmas postcards", "Christmas postcards"],
+             ["Easter postcards", "Easter postcards"], ["Halloween postcards", "Halloween postcards"],
+             ["kw:vintage travel poster", "Vintage travel posters"], ["kw:art nouveau poster", "Art Nouveau posters"],
+             ["kw:Google Art Project painting", "Google Art Project paintings"], ["kw:pop art", "Pop art"],
+             ["kw:digital art", "Digital art"], ["", "Search all of Commons"]]
     has_artists = False
     API = "https://commons.wikimedia.org/w/api.php"
     MIN_W = 1600
@@ -478,6 +479,7 @@ class Commons:
 
     def __init__(self):
         self.det = {}
+        self.skip = {}
 
     def artists(self):
         return []
@@ -492,13 +494,16 @@ class Commons:
         mv = lambda k: self._txt((md.get(k) or {}).get("value"))
         lic = mv("LicenseShortName")
         if not lic or self.BAD.search(lic) or not self.OK.search(lic):
+            self.skip["license:" + lic[:30]] = self.skip.get("license:" + lic[:30], 0) + 1
             return None
         if mv("Restrictions") and "trademark" not in mv("Restrictions").lower():
+            self.skip["restricted"] = self.skip.get("restricted", 0) + 1
             return None
         if (ii.get("mime") or "") not in ("image/jpeg", "image/png"):
             return None
         w, h = int(ii.get("width") or 0), int(ii.get("height") or 0)
         if w < self.MIN_W:
+            self.skip["small"] = self.skip.get("small", 0) + 1
             return None
         title = re.sub(r"^File:|\.[A-Za-z]{3,4}$", "", p.get("title") or "").replace("_", " ")
         big = ii.get("thumburl") or ii.get("url")
@@ -517,17 +522,19 @@ class Commons:
         return d
 
     def search(self, q="", artist="", sort="relevance", page=0, per=24, type="Ukiyo-e", **kw):
-        term = (q.strip() + " " if q.strip() else "") + ('deepcategory:"%s" ' % type if type else "") + "filetype:bitmap"
+        term = (q.strip() + " " if q.strip() else "") + ((type[3:] + " " if type.startswith("kw:") else type + " " if ":" in type else 'incategory:"%s" ' % type) if type else "") + "filetype:bitmap filew:>%d" % (self.MIN_W - 1)
         prm = {"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6, "gsrsearch": term.strip(),
                "gsrlimit": per, "gsroffset": page * per, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
                "iiurlwidth": 3840, "iiextmetadatafilter": "LicenseShortName|Artist|ObjectName|ImageDescription|DateTimeOriginal|Restrictions",
                "uselang": "en"}
         j = json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 40, gap=1.0).read().decode("utf8", "replace"))
+        self.skip = {}
         pages = sorted(((j.get("query") or {}).get("pages") or {}).values(), key=lambda p: p.get("index", 0))
         items = [x for x in (self._item(p) for p in pages) if x]
         more = bool(j.get("continue"))
         total = (page + 1) * per + (per if more else 0)
-        return {"total": total, "page": page, "per": per, "items": items}
+        return {"total": total, "page": page, "per": per, "items": items, "skipped": self.skip, "seen": len(pages),
+                "api": {k: j[k] for k in ("error", "warnings", "continue", "batchcomplete") if k in j}, "term": term.strip()}
 
     def detail(self, key):
         if key in self.det:

@@ -154,7 +154,7 @@ def make(engine):
                 if p == "/api/discover/search":
                     from concurrent.futures import ThreadPoolExecutor
                     src = discover.SOURCES[q.get("source", "reframed")]
-                    r = src.search(q.get("q", ""), q.get("artist", ""), q.get("sort", "az"), int(q.get("page") or 0), int(q.get("per") or 24), type=q.get("type", "Painting"))
+                    r = src.search(q.get("q", ""), q.get("artist", ""), q.get("sort", "az"), int(q.get("page") or 0), int(q.get("per") or 24), type=urllib.parse.parse_qs(u.query, keep_blank_values=True).get("type", ["Painting"])[0])
                     if "items" in r:
                         return self._send(200, r)
                     def one(k):

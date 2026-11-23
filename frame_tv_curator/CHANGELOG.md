@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.16.5
+
+- Wikimedia Commons: category presets replaced by keyword searches that return many more pictures (ukiyo-e, vintage travel and Art Nouveau posters, Google Art Project, pop art, digital art; Christmas, Easter and Halloween postcards stay category based); small files are filtered out by Commons itself.
+
+## 0.16.4
+
+- Discover: fixed "All types" / "Search only" choices (an empty type was replaced by the default, so Cleveland "All types", Art Institute "All" and Commons "Search all" were still filtering to paintings).
+
+## 0.16.3
+
+- Wikimedia Commons: search results include the API status and the search text used, for troubleshooting.
+
+## 0.16.2
+
+- Wikimedia Commons: search results report how many files were skipped and why (license, size), to tune the category presets.
+
+## 0.16.1
+
+- Wikimedia Commons: category presets match files directly in the category (deepcategory pulled in unrelated pictures); a preset may also be a full search clause such as `deepcategory:"Name"`.
+
 ## 0.16.0
 
 - Discover: new source Wikimedia Commons. Category presets (ukiyo-e, Christmas, Easter and Halloween postcards, vintage and Art Nouveau posters, Google Art Project, pop art, digital art) or free search; only public domain, CC0, CC BY and CC BY-SA files at least 1600 px wide; saves artist, license and file page; one request per second.
