@@ -505,7 +505,7 @@ function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,
  drawDbar()}
 function dcard(i){if(i.error)return el('div',{class:'tile'},el('div',{class:'t'},el('b',{},i.key),el('span',{class:'warn'},i.error)));
  const on=D.sel.has(i.key),c=D.chk.get(i.key),dup=c&&c.matches&&c.matches.length;
- return el('div',{class:'tile'+(on?' sel':''),onclick:()=>toggleD(i)},el('img',{src:i.thumb,loading:'lazy'}),
+ return el('div',{class:'tile'+(on?' sel':''),onclick:()=>toggleD(i)},el('img',{src:i.thumb,loading:'lazy',onerror:function(){if(i.source=='smithsonian'){const t=this.closest('.tile');if(t)t.remove()}}}),
   el('button',{class:'pv',title:'Preview full screen with details',onclick:e=>{e.stopPropagation();previewD(i)}},'⤢'),
   on?el('span',{class:'ck'},'✓'):null,
   el('div',{class:'t'},el('b',{title:i.title},i.title),el('span',{},i.artist+(i.date?' · '+i.date:'')),

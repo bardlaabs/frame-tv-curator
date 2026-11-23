@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.4
+
+- Smithsonian: some records (many in the Portrait Gallery) list a picture the Smithsonian's image server no longer has; their cards are now hidden when the thumbnail fails to load instead of showing a broken image (page counts can still include them).
+
 ## 0.20.3
 
 - Footer: every page now shows the installed add-on version at the bottom.
