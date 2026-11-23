@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.1
+
+- Library: grouping by artist now merges name variants (e.g. "Winslow Homer" with and without nationality and dates) into one group.
+
 ## 0.15.0
 - Library: group the grid under sticky headings by year, decade, artist or medium, with a row of jump chips to scroll to a group (Group by next to Sort by; remembered). New Sort by Medium. Undated and unknown groups go last.
 

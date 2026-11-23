@@ -344,7 +344,7 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
  const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f))).slice(0,600);
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
-  const gk={year:i=>i.year?String(i.year):'Undated',decade:i=>i.year?(Math.floor(i.year/10)*10)+'s':'Undated',artist:i=>i.artist||'Unknown artist',medium:i=>i.medium||'Unknown medium'}[groupKey];
+  const gk={year:i=>i.year?String(i.year):'Undated',decade:i=>i.year?(Math.floor(i.year/10)*10)+'s':'Undated',artist:i=>{let a=(i.artist||'').split('\n')[0].replace(/\s*\(.*$/,'').replace(/\s+/g,' ').trim();return a||'Unknown artist'},medium:i=>i.medium||'Unknown medium'}[groupKey];
   const groups=new Map();list.forEach(i=>{const k=gk(i);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(i)});
   const unk=k=>/^(Undated|Unknown)/.test(k),num=groupKey=='year'||groupKey=='decade';
   const keys=[...groups.keys()].sort((a,b)=>unk(a)!=unk(b)?(unk(a)?1:-1):(num?(parseInt(a)-parseInt(b)):String(a).localeCompare(String(b),undefined,{sensitivity:'base'}))*sortDir);
