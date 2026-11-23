@@ -87,6 +87,7 @@ See [Display defaults](Display-Defaults) for the full table with pictures. In sh
 | Width (% of height) | 6 | 4-12 | Mat thickness. |
 | Mat shape | Even | Even, Proportional | Trim the picture slightly (even) or keep it whole (proportional). |
 | Texture | Flat | Flat, Paper, Linen | Grain on the mat. |
+| Framing mode | Whole artwork | Whole artwork, Fill the screen | Fill the screen crops a non-16:9 picture to 16:9 with no mat; Whole artwork keeps all of it. Can be set per image. |
 | Non-16:9 images | Mat fills the sides | Mat fills the sides, Black bars inside, Even mat black outside | Handling of pictures that are not 16:9. |
 | Use an inner liner | Off | Off, or On for a framed look | Thin second mat around the picture. |
 | Liner color | `#2b2b2b` | any color | Liner color. |

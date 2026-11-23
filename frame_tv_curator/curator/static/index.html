@@ -159,14 +159,17 @@ function field(label,obj,path,kind,o={},onch){
  else{inp=el('input',{type:'text',style:'width:min(100%,340px)'});inp.value=cur??'';inp.onchange=()=>ch(inp.value)}
  const rowEl=el('div',{class:'row'},el('label',{},label),inp);rowEl._set=inp._set;return rowEl}
 
-const TEMPL={};const SECNAME={placard:'placard',mat:'mat',liner:'liner',bevel:'bevel & lighting'};
+const TEMPL={};const SECNAME={framing:'framing',placard:'placard',mat:'mat',liner:'liner',bevel:'bevel & lighting'};
 const POS={'bottom-right':'Bottom right','bottom-left':'Bottom left','bottom-center':'Bottom center','top-right':'Top right','top-left':'Top left','top-center':'Top center'};
 function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in place
- d.placard??={};d.mat??={};d.mat.bevel??={};d.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},d.mat.liner||{});
+ d.placard??={};d.mat??={};d.mat.bevel??={};d.framing??='whole';d.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},d.mat.liner||{});
  const root=el('div'),swatch=el('div',{class:'sw'});
  const inhRow=sec=>{if(!opts.inherit)return null;const cb=el('input',{type:'checkbox'});cb.checked=!opts.inherit.use[sec];
   cb.onchange=()=>{opts.inherit.use[sec]=!cb.checked;root.applyInherit();opts.inherit.onChange&&opts.inherit.onChange(sec,cb.checked)};
   return el('div',{class:'row'},el('label',{},'Customize the '+SECNAME[sec]+' for this image'),cb,el('span',{class:'mut',id:'inhnote-'+sec}))};
+ const ff=el('fieldset',{},el('legend',{},'Framing'),inhRow('framing'),el('div',{class:'inh-framing'},
+  field('Framing mode',d,'framing','select',{options:{whole:'Whole artwork (keep all of it; mat or bars fill the rest)',fill:'Fill the screen (crop to 16:9, no mat)'},native:true},onch),
+  el('p',{class:'mut'},'Fill the screen trims a picture that is not 16:9 so it covers the whole TV; nothing is changed in the file, and the mat settings are ignored while it is on. Whole artwork never crops (apart from the even-mat trim).')));
  const fp=el('fieldset',{},el('legend',{},'Placard'),
   field('Show placard',d,'placard.enabled','check',{},onch),inhRow('placard'),el('div',{class:'inh-placard'},
   field('Template',d,'placard.template','select',{options:TEMPL},onch),
@@ -198,8 +201,8 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
   field('Light direction (° clockwise from top)',d,'mat.bevel.light_angle','range',{min:0,max:359,step:5},onch),
   field('Light elevation',d,'mat.bevel.elevation','range',{min:15,max:85,step:1},onch),
   field('Cast shadow',d,'mat.bevel.shadow','range',{min:0,max:100,step:1},onch)));
- root.append(fp,fm,fl,fb);
- root.applyInherit=()=>{if(!opts.inherit)return;for(const sec of ['placard','mat','liner','bevel']){const use=!!opts.inherit.use[sec];root.querySelectorAll('.inh-'+sec).forEach(n=>{n.style.opacity=use?.45:1;n.style.pointerEvents=use?'none':'auto'});const nt=root.querySelector('#inhnote-'+sec);if(nt)nt.textContent=use?'Using the default '+SECNAME[sec]+' settings (shown dimmed; change them in the Display tab). Tick Customize to override them for this image. The on/off box above still applies to this image.':'This image has its own '+SECNAME[sec]+' settings. Untick Customize to go back to the defaults.'}};
+ root.append(ff,fp,fm,fl,fb);
+ root.applyInherit=()=>{if(!opts.inherit)return;for(const sec of ['framing','placard','mat','liner','bevel']){const use=!!opts.inherit.use[sec];root.querySelectorAll('.inh-'+sec).forEach(n=>{n.style.opacity=use?.45:1;n.style.pointerEvents=use?'none':'auto'});const nt=root.querySelector('#inhnote-'+sec);if(nt)nt.textContent=use?'Using the default '+SECNAME[sec]+' settings (shown dimmed; change them in the Display tab). Tick Customize to override them for this image. The on/off box above still applies to this image.':'This image has its own '+SECNAME[sec]+' settings. Untick Customize to go back to the defaults.'}};
  root.setSuggestions=list=>{swatch.replaceChildren(...list.map(s=>el('span',{title:'edge contrast '+s.edge_contrast,onclick:()=>{colorRow._set(s.color)}},el('i',{style:'background:'+s.color}),s.name)))};
  return root}
 
@@ -661,10 +664,10 @@ async function openEditor(id){
   edit:Object.assign({rotate:0,straighten:0,crop:null},sc.edit||{}),
   geo:{lat:(sc.location&&sc.location.lat!=null)?String(sc.location.lat):'',lon:(sc.location&&sc.location.lon!=null)?String(sc.location.lon):'',name:(sc.location&&sc.location.name)||''}};
  const leaves=(o,pre)=>Object.entries(o||{}).flatMap(([k,v])=>v&&typeof v=='object'&&!Array.isArray(v)?leaves(v,pre+k+'.'):[pre+k]);
- const SEC={placard:{test:p=>p.startsWith('placard.'),en:'placard.enabled'},
+ const SEC={framing:{test:p=>p=='framing',en:null},placard:{test:p=>p.startsWith('placard.'),en:'placard.enabled'},
   mat:{test:p=>p.startsWith('mat.')&&!p.startsWith('mat.bevel.')&&!p.startsWith('mat.liner.'),en:'mat.enabled'},
   liner:{test:p=>p.startsWith('mat.liner.'),en:'mat.liner.enabled'},bevel:{test:p=>p.startsWith('mat.bevel.'),en:'mat.bevel.enabled'}};
- const base=()=>{const b=dm({placard:S.display.placard,mat:S.display.mat},{});b.placard??={};b.mat??={};b.mat.bevel??={};b.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},b.mat.liner||{});return b};
+ const base=()=>{const b=dm({placard:S.display.placard,mat:S.display.mat,framing:S.display.framing||'whole'},{});b.placard??={};b.mat??={};b.mat.bevel??={};b.mat.liner=Object.assign({enabled:false,color:'#2b2b2b',width_pct:0.8},b.mat.liner||{});return b};
  ed.touched=new Set(leaves(sc.display||{},''));ed.use={};
  for(const k in SEC)ed.use[k]=![...ed.touched].some(p=>SEC[k].test(p)&&p!=SEC[k].en);
  const modal=$('#modal'),box=$('#mbox');box.replaceChildren();modal.classList.add('on');
@@ -803,7 +806,7 @@ function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceC
   if(s.source.mode=='folder')src.append(field('Folder',s,'source.folder','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}));
   else if(s.source.mode=='album'){s.source.album??=albumList[0]?.id;src.append(albumList.length?field('Album',s,'source.album','select',{native:true,options:Object.fromEntries(albumList.map(a=>[a.id,a.name+' ('+a.count+')']))}):el('p',{class:'mut'},'No albums yet. Create one in the Library (+ Album), then pick it here.'))}
   else{s.source.mix??={};folderList.forEach(f=>{s.source.mix[f.name]??=0;src.append(field(f.name+' weight',s,'source.mix.'+f.name,'range',{min:0,max:100,step:5}))})}};drawSrc();
- const gd={placard:s.display.placard,mat:s.display.mat,overscan:Object.assign({top:0,right:0,bottom:0,left:0,mode:'placard'},s.display.overscan||{}),srgb:s.display.srgb!==false};s.display=gd;
+ const gd={framing:s.display.framing||'whole',placard:s.display.placard,mat:s.display.mat,overscan:Object.assign({top:0,right:0,bottom:0,left:0,mode:'placard'},s.display.overscan||{}),srgb:s.display.srgb!==false};s.display=gd;
  const cards=[
   el('div',{class:'card'},el('h3',{},'Image source'),src,field('Rotation enabled',s,'enabled','check'),
    field('Change every',s,'rotation.value','num',{min:1}),field('Unit',s,'rotation.unit','select',{options:{minutes:'minutes',hours:'hours',days:'days'}}),

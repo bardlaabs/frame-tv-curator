@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0
+
+- **Framing mode** (Display tab, and per image with Customize): **Whole artwork** keeps the whole picture with a mat or bars (as before); **Fill the screen** crops a non-16:9 picture to 16:9 with no mat. Originals are never changed.
+
 ## 0.21.0
 
 - Discover: new **Shape** filter next to Order: Any shape, Fits the screen (16:9, no mat needed), Landscape (mat at the sides), Wide / panoramic (mat top and bottom), Square-ish, Portrait. It hides pictures of other shapes on the current page and says how many were hidden; pictures whose size the source does not publish (The Met, Getty) are always shown. The choice is remembered with the rest of Discover's state.

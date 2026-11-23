@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.12"
+VERSION = "1.13"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -18,6 +18,7 @@ FONTS = os.path.join(HERE, "fonts")
 # ------------------------------------------------------------------ defaults
 DEFAULTS = {
     "fit": "contain",
+    "framing": "whole",          # whole = keep the whole artwork (mat or bars fill the rest) | fill = crop to 16:9, no mat
     "mat": {
         "auto_tint": "",             # "" = use the color below; else pick the mat color from the picture (see TINTS)
         "enabled": False, "color": "#efece4", "width_pct": 6.0, "texture": "flat",
@@ -365,6 +366,8 @@ def compose(img, disp):
     """Mat + picture on a 3840x2160 canvas. Returns (canvas, geometry)."""
     mat = disp["mat"]
     img = ImageOps.exif_transpose(img).convert("RGB")
+    if disp.get("framing") == "fill":
+        return ImageOps.fit(img, (W, H), Image.LANCZOS), None     # Fill the screen: crop to 16:9, no mat
     if not mat["enabled"]:
         if disp.get("fit") == "fill":
             return ImageOps.fit(img, (W, H), Image.LANCZOS), None

@@ -56,6 +56,15 @@ Layout samples (the mat strip, close up):
 |---|---|
 | ![Printed on the mat](images/placard-on-mat.jpg) | ![Auto-fit](images/placard-on-mat-autofit.jpg) |
 
+## Framing: whole artwork or fill the screen
+
+**Framing mode** (Display tab, first card) decides what happens to a picture that is not 16:9:
+
+- **Whole artwork** (default) keeps all of the picture. A mat or black bars fill the leftover space, as set under Mats.
+- **Fill the screen** crops the picture to 16:9 so it covers the whole TV, with no mat. The mat settings are ignored while it is on.
+
+The crop is centered, and it is only made in the rendered copy sent to the TV; the file is never changed. To choose which part is kept, use the editor's Crop tab (a crop you set there is applied first). In an image's editor, tick **Customize the framing for this image** to give just that picture its own mode, for example Fill the screen for a landscape photo and Whole artwork for everything else.
+
 ## Mats
 
 ![Mat settings](images/ui-display-mat.png)

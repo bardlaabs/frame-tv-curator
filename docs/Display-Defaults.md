@@ -24,6 +24,7 @@ The **Display** tab holds the **default look**: how every picture is rendered un
 | Mat | Width | 6 % of the picture height |
 | Mat | Shape | Even on all sides |
 | Mat | Texture | Flat |
+| Framing | Framing mode | Whole artwork |
 | Mat | Non-16:9 pictures | Mat fills the sides |
 | Inner liner | Use an inner liner | Off |
 | Inner liner | Color / width | `#2b2b2b` / 0.8 % |
