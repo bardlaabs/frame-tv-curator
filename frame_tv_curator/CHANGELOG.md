@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.3
+
+- Dropdown lists are now alphabetical (case-insensitive): the Discover source list, each source's Type list (for example the Smithsonian museums), the artist list and the album lists.
+
 ## 0.20.2
 
 - Smithsonian: the search now asks only for CC0 images, so the counts, pages and cards match what you can actually add (before, most results were silently dropped and a page could show one record out of 24).

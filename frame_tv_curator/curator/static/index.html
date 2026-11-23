@@ -208,7 +208,8 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
  renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
-async function refreshFolders(){try{albumList=await api('albums')}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
+const byName=(a,b)=>String(a.name??a[1]??'').localeCompare(String(b.name??b[1]??''),undefined,{sensitivity:'base'});
+async function refreshFolders(){try{albumList=(await api('albums')).sort(byName)}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
  ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc();if(b.dataset.t=='lib')renderLib()});
 
@@ -470,6 +471,7 @@ const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
+ D.srcs.sort(byName);D.srcs.forEach(x=>{if(x.types)x.types.sort(byName)});
  try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;saveDisc();drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
  const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value;saveDisc()}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
@@ -480,7 +482,7 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  const buildCtl=()=>{const m=curSrc();blurb.textContent=m.blurb||'';
   const kids=[el('label',{},'Search'),q];
   if(m.has_artists){const asel=el('select',{onchange:()=>{D.artist=asel.value;D.page=0;loadDisc()}},el('option',{value:''},'All artists'));
-   api('discover/artists?source='+m.id).then(l=>{l.forEach(a=>asel.append(el('option',{value:a.slug},a.name+' ('+a.count+')')));asel.value=D.artist}).catch(()=>{});kids.push(el('label',{},'Artist'),asel)}
+   api('discover/artists?source='+m.id).then(l=>{l.sort(byName).forEach(a=>asel.append(el('option',{value:a.slug},a.name+' ('+a.count+')')));asel.value=D.artist}).catch(()=>{});kids.push(el('label',{},'Artist'),asel)}
   if((m.types||[]).length){const tsel=el('select',{onchange:()=>{D.type=tsel.value;D.page=0;loadDisc()}},m.types.map(([v,l])=>el('option',{value:v},l)));tsel.value=D.type;kids.push(el('label',{},'Type'),tsel)}
   const ssel=el('select',{onchange:()=>{D.sort=ssel.value;D.page=0;loadDisc()}},m.sorts.map(([v,l])=>el('option',{value:v},l)));ssel.value=D.sort;kids.push(el('label',{},'Order'),ssel);
   ctl.replaceChildren(...kids);loadDisc()};
