@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.14"
+VERSION = "1.15"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -366,6 +366,16 @@ def compose(img, disp):
     """Mat + picture on a 3840x2160 canvas. Returns (canvas, geometry)."""
     mat = disp["mat"]
     img = ImageOps.exif_transpose(img).convert("RGB")
+    if disp.get("framing") == "blur":
+        # whole picture on top of a blurred, slightly darkened copy of itself that fills the screen (portrait pictures look intentional)
+        from PIL import ImageFilter
+        small = ImageOps.fit(img, (W // 8, H // 8), Image.BILINEAR).filter(ImageFilter.GaussianBlur(6))
+        canvas = small.resize((W, H), Image.BICUBIC)
+        canvas = Image.eval(canvas, lambda v: int(v * 0.55))
+        im = ImageOps.contain(img, (W, H), Image.LANCZOS)
+        pos = ((W - im.width) // 2, (H - im.height) // 2)
+        canvas.paste(im, pos)
+        return canvas, {"img_box": (*pos, pos[0] + im.width, pos[1] + im.height), "mat": False}
     if disp.get("framing") == "fill":
         return ImageOps.fit(img, (W, H), Image.LANCZOS), None     # Fill the screen: crop to 16:9, no mat
     if not mat["enabled"]:

@@ -187,8 +187,8 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
   cb.onchange=()=>{opts.inherit.use[sec]=!cb.checked;root.applyInherit();opts.inherit.onChange&&opts.inherit.onChange(sec,cb.checked)};
   return el('div',{class:'row'},el('label',{},'Customize the '+SECNAME[sec]+' for this image'),cb,el('span',{class:'mut',id:'inhnote-'+sec}))};
  const ff=el('fieldset',{},el('legend',{},'Framing'),inhRow('framing'),el('div',{class:'inh-framing'},
-  field('Framing mode',d,'framing','select',{options:{whole:'Whole artwork (keep all of it; mat or bars fill the rest)',fill:'Fill the screen (crop to 16:9, no mat)'},native:true},onch),
-  el('p',{class:'mut'},'Fill the screen trims a picture that is not 16:9 so it covers the whole TV; nothing is changed in the file, and the mat settings are ignored while it is on. Whole artwork never crops (apart from the even-mat trim).')));
+  field('Framing mode',d,'framing','select',{options:{whole:'Whole artwork (keep all of it; mat or bars fill the rest)',fill:'Fill the screen (crop to 16:9, no mat)',blur:'Whole artwork on a blurred background (no mat)'},native:true},onch),
+  el('p',{class:'mut'},'Fill the screen trims a picture that is not 16:9 so it covers the whole TV; nothing is changed in the file, and the mat settings are ignored while it is on. Whole artwork on a blurred background keeps all of it and fills the sides with a soft blurred copy (good for portrait pictures; no mat). Whole artwork never crops (apart from the even-mat trim).')));
  const fp=el('fieldset',{},el('legend',{},'Placard'),
   field('Show placard',d,'placard.enabled','check',{},onch),inhRow('placard'),el('div',{class:'inh-placard'},
   field('Template',d,'placard.template','select',{options:TEMPL},onch),

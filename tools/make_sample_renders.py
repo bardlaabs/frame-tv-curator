@@ -111,6 +111,10 @@ save_img("colorbars", R.render_colorbars())
 Wd, Hd = grid.size
 save_img("calibration-hidden-3pct", grid.crop((int(Wd * .03), int(Hd * .03), Wd - int(Wd * .03), Hd - int(Hd * .03))))
 OV4 = {"top": 4, "right": 4, "bottom": 4, "left": 4}
+# a portrait picture (a tall crop of the 3:2 sample) on a blurred background
+_ph = Image.open(SAMPLE_PHOTO); _pw = int(_ph.height * 2 / 3)
+_ph.crop(((_ph.width - _pw) // 2, 0, (_ph.width + _pw) // 2, _ph.height)).save(os.path.join(TMP, "portrait.jpg"))
+go("framing-blur", {"framing": "blur", "placard": {"enabled": False}}, src=os.path.join(TMP, "portrait.jpg"))
 # framing mode: a 3:2 photo kept whole (mat fills the sides) vs filled to 16:9
 go("framing-whole", {"framing": "whole", "mat": dict(enabled=True, color="#efece4", width_pct=6), "placard": {"enabled": False}}, src=SAMPLE_PHOTO)
 go("framing-fill", {"framing": "fill", "mat": dict(enabled=True, color="#efece4", width_pct=6), "placard": {"enabled": False}}, src=SAMPLE_PHOTO)

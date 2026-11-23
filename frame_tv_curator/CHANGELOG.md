@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.26.0
+
+- **Blurred background** framing choice: the whole picture on top of a soft, darkened, blurred copy of itself that fills the screen (good for portrait pictures). Display tab > Framing, also per image.
+
 ## 0.25.1
 
 - E-paper card: photographs now print the place they were taken (where art prints its medium).

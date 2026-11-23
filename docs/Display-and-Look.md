@@ -62,6 +62,9 @@ Layout samples (the mat strip, close up):
 
 - **Whole artwork** (default) keeps all of the picture. A mat or black bars fill the leftover space, as set under Mats.
 - **Fill the screen** crops the picture to 16:9 so it covers the whole TV, with no mat. The mat settings are ignored while it is on.
+- **Whole artwork on a blurred background** keeps all of the picture and fills the sides with a soft, darkened, blurred copy of it. It suits portrait pictures. No mat is drawn.
+
+![A portrait picture on a blurred background](images/framing-blur.jpg)
 
 | Whole artwork | Fill the screen |
 |---|---|
