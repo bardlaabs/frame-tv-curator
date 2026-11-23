@@ -210,7 +210,7 @@ async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=aw
  renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
 async function refreshFolders(){try{albumList=await api('albums')}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
- ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc()});
+ ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc();if(b.dataset.t=='lib')renderLib()});
 
 /* ---------- Now playing ---------- */
 async function poll(){try{const t0=Date.now();curStatus=await api('status');curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;

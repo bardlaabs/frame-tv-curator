@@ -3,6 +3,7 @@
 ## 0.20.1
 
 - Library: the **Move…** dialogs (selected images, and the single-image editor) now offer a dropdown of your existing folders (with counts) plus a box for a new folder, instead of typing a name.
+- Library: switching back to the Library tab now reloads the folders and pictures, so art you just added in Discover appears (in the folder you added it to).
 - Discover: remembers the last source, type, search text, artist, order, page, destination folder and album, and comes back to them when you return to the tab or reload the page (kept in this browser).
 
 ## 0.20.0
