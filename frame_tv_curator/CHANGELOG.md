@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.0
+
+- **Identify with Claude:** new add-on option `anthropic_key` (password field, kept by Home Assistant) and a Settings > AI page (on/off, model Haiku or Sonnet, monthly limit default $10). Press Identify with AI in a picture's Info tab, or on a Library selection, to fill empty artist, title, date, medium, description and mood. Existing values are never overwritten.
+
 ## 0.30.0
 
 - **Weather nudge** (Settings > Moods and appearance > Weather): pick a Home Assistant weather entity (automatic finds `weather.weather_home` or the first one), and pictures whose mood fits the current weather are picked more often. Strength and the weather-to-mood mapping are adjustable. Nothing is excluded; with no entity or no moods it does nothing.

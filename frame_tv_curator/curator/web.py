@@ -157,6 +157,9 @@ def make(engine):
                     out.sort(key=lambda x: x["id"])
                     return self._send(200, out)
                 if p == "/api/settings": return self._send(200, engine.settings.get())
+                if p == "/api/ai_status":
+                    from . import ai
+                    return self._send(200, ai.status(engine.settings.get()))
                 if p == "/api/weather_entities":
                     from . import weather
                     ents = weather.entities(); cfg = engine.settings.get().get("weather") or {}
@@ -355,6 +358,13 @@ def make(engine):
                     if not ent or not ent.startswith("select.") or opt is None: return self._send(400, {"ok": False, "message": "entity and option required"})
                     ha.call("select", "select_option", {"entity_id": ent, "option": str(opt)})
                     return self._send(200, {"ok": True, "message": "set to %s" % opt})
+                if p == "/api/ai_identify":
+                    from . import ai
+                    st = engine.settings.get()
+                    r = ai.identify(b["id"], st)
+                    if r.get("ok") and b.get("apply"):
+                        r["filled"] = ai.apply(b["id"], r["fields"], r.get("model", ""), bool(b.get("overwrite")))
+                    return self._send(200, r)
                 if p == "/api/mood_rename":
                     return self._send(200, {"ok": True, "changed": library.rename_mood(b.get("from"), b.get("to"))})
                 if p == "/api/notify_test":

@@ -125,7 +125,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 <span style="flex:1"></span><span id="tvs" class="pill mut"></span></header>
 <main>
 <div id="subnav" class="subnav" hidden></div>
-<section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disc" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section><section id="t-alerts" hidden></section><section id="t-prefs" hidden></section>
+<section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disc" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section><section id="t-alerts" hidden></section><section id="t-prefs" hidden></section><section id="t-ai" hidden></section>
 </main>
 <div id="foot" class="mut" style="padding:18px 20px 26px;text-align:center;font-size:12px"></div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div><div id="toast"></div>
@@ -256,7 +256,7 @@ async function boot(){api('version').then(v=>{$('#foot').textContent='Frame TV C
  renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')showTab(t=='disp'||t=='tv'?t:t)}poll();setInterval(poll,5000);setInterval(tick,1000)}
 const byName=(a,b)=>String(a.name??a[1]??'').localeCompare(String(b.name??b[1]??''),undefined,{sensitivity:'base'});
 async function refreshFolders(){try{albumList=(await api('albums')).sort(byName)}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
-const SUBS=[['set','General'],['disp','Display'],['tv','TV'],['alerts','Notifications'],['prefs','Moods and appearance']],SUBIDS=SUBS.map(x=>x[0]);
+const SUBS=[['set','General'],['disp','Display'],['tv','TV'],['alerts','Notifications'],['prefs','Moods and appearance'],['ai','AI']],SUBIDS=SUBS.map(x=>x[0]);
 function showTab(t){if(SUBIDS.includes(t)&&t!='set')ls.set('fc_sub',t);const top=SUBIDS.includes(t)?'set':t,sub=top=='set'?(t!='set'?t:(ls.get('fc_sub')||'set')):null;
  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.t==top));ls.set('fc_tab',top);
  ['now','lib','disc','sched',...SUBIDS].forEach(k=>{const e=$('#t-'+k);if(e)e.hidden=!(top=='set'?k==sub:k==top)});
@@ -486,11 +486,17 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
  b.replaceChildren(el('b',{},selected.size+' selected'),el('button',{onclick:()=>{(window._libList?window._libList():[]).forEach(i=>selected.add(i.id));renderLib()}},'All shown'),el('button',{onclick:()=>{selected.clear();renderLib()}},'None'),
   fl('favorite',true,'★ Favorite'),fl('favorite',false,'☆ Un-favorite'),fl('show_more',true,'＋ Show more'),fl('show_more',false,'Show normally'),fl('exclude',true,'Exclude (hide)'),fl('exclude',false,'Include'),
   el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
+  el('button',{title:'Ask Claude to fill in empty info for the selected pictures (keeps anything already filled)',onclick:()=>bulkAI()},'✨ Identify with AI'),
   el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),el('button',{onclick:()=>bulkTag(true)},'\uff0b Tag\u2026'),el('button',{onclick:()=>bulkTag(false)},'\u2212 Tag\u2026'),
   curAlbum?el('button',{onclick:async()=>{if(!selected.size)return;await api('album',{action:'remove',id:curAlbum,ids:[...selected]});toast('Removed from the album');selected.clear();renderLib()}},'\u2212 Remove from album'):null,
   el('button',{onclick:()=>{if(!selected.size){toast('Select some images first');return}pickFolder('Move '+selected.size+' image'+(selected.size==1?'':'s')+' to a folder',f=>bulk({move_to:f},'Moved'))}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+async function bulkAI(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}
+ const st=await api('ai_status');if(!st.key||!st.enabled){toast(!st.key?'Add your Anthropic key first (add-on Configuration tab), then turn AI on in Settings > AI':'Turn AI identification on in Settings > AI',8000);return}
+ if(!confirm('Ask Claude about '+ids.length+' picture(s)? About one cent each with the cheapest model; this month you have used $'+st.spent.toFixed(2)+' of $'+st.limit.toFixed(2)+'. Only empty fields are filled.'))return;
+ let done=0,fail='';for(const id of ids){toast('Identifying '+(done+1)+' of '+ids.length+'…',60000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){fail=r.error;break}done++}
+ toast(fail?('Stopped after '+done+': '+fail):('Identified '+done+' picture(s)'),8000);selected.clear();renderLib()}
 async function bulkTag(add){if(!selected.size){toast('Select some images first');return}
  const v=prompt((add?'Add':'Remove')+' which tag(s) on the '+selected.size+' selected image(s)? (separate several with commas)');if(!v)return;
  const tags=v.split(',').map(t=>t.trim()).filter(Boolean);if(!tags.length)return;
@@ -773,7 +779,7 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),el('div',{class:'row'},el('button',{title:'Ask Claude to fill in the empty fields (artist, title, date, medium, description, mood). Fields you already filled are kept.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first, then identify');return}toast('Asking Claude…',30000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){toast(r.error,8000);return}toast(r.filled.length?('Filled: '+r.filled.join(', ')):'Nothing new to fill in',5000);openEditor(id)}},'\u2728 Identify with AI')),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
   isPhoto?geoP():null,
@@ -882,6 +888,14 @@ async function openViewer(id,disp,edit){
 /* ---------- Settings ---------- */
 const WCOND=['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','lightning','lightning-rainy','snowy','snowy-rainy','fog','hail','windy','windy-variant','exceptional'];
 const WDEF={sunny:'joyful, playful, energetic, bold','clear-night':'calm, mysterious, contemplative, serene',partlycloudy:'serene, calm, nostalgic',cloudy:'contemplative, melancholy, calm',rainy:'melancholy, contemplative, romantic, mysterious',pouring:'melancholy, dramatic, mysterious',lightning:'dramatic, bold, mysterious','lightning-rainy':'dramatic, bold, mysterious',snowy:'serene, calm, nostalgic, contemplative','snowy-rainy':'melancholy, serene, contemplative',fog:'mysterious, calm, melancholy',hail:'dramatic, bold',windy:'energetic, dramatic, bold','windy-variant':'energetic, dramatic, bold',exceptional:'dramatic, bold'};
+function aiCard(s){s.ai=s.ai||{enabled:false,model:'claude-haiku-5-5',monthly_limit_usd:10,prices:{}};const info=el('p',{class:'mut'},'Checking…');
+ api('ai_status').then(r=>{info.textContent=(r.key?'Key found. ':'No key yet. ')+'This month: $'+r.spent.toFixed(2)+' spent of your $'+r.limit.toFixed(2)+' limit ('+r.calls+' picture'+(r.calls==1?'':'s')+'). Costs are estimates.'+(r.key?'':' Add it where shown below.')}).catch(()=>{info.textContent='Could not read AI status.'});
+ return el('div',{class:'card'},el('h3',{},'Identify pictures with Claude'),
+  el('p',{class:'mut'},'Claude looks at a picture and fills in empty fields: artist, title, date, medium, description and mood (from your Moods list). It only names an artist or title when it recognizes the work, and never overwrites what you typed. It does not search the web for matches.'),info,
+  field('Turn on AI identification',s,'ai.enabled','check'),
+  field('Model',s,'ai.model','select',{options:{'claude-haiku-5-5':'Haiku 5.5 (cheapest, good for bulk)','claude-sonnet-5-5':'Sonnet 5.5 (better at obscure art)'},native:true}),
+  field('Monthly spending limit (US dollars, 0 = none)',s,'ai.monthly_limit_usd','num',{min:0,max:1000,step:1}),
+  el('p',{class:'mut'},'Your key is NOT entered here. Put it in Home Assistant: Settings > Add-ons > Frame TV Curator > Configuration > Anthropic key, then Save and restart the add-on. Home Assistant stores it, masks it, and it never goes into this page, your settings or the backups. Create the key at console.anthropic.com and give it a spend limit there too.'))}
 function weatherCard(s){s.weather=s.weather||{enabled:false,entity:'',strength:50,map:{}};s.weather.map=s.weather.map||{};
  const box=el('div',{});const info=el('p',{class:'mut'},'Checking the weather…');
  api('weather_entities').then(r=>{const ents=r.entities||[];const sel=el('select',{onchange:()=>{s.weather.entity=sel.value}},el('option',{value:''},'Automatic ('+(r.auto||'none found')+')'),...ents.map(e=>el('option',{value:e.entity},e.name+' ('+e.entity+')')));sel.value=s.weather.entity||'';
@@ -957,6 +971,7 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
  const byT=t=>cards.find(c=>c&&c.querySelector&&c.querySelector('h3')&&c.querySelector('h3').textContent==t);
  put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Logging'),byT('Backups'),mkSave()]);
  put('t-alerts',[byT('Notifications'),mkSave()]);
+ put('t-ai',[aiCard(s),mkSave()]);
  put('t-prefs',[byT('Appearance'),byT('Moods'),weatherCard(s),mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);

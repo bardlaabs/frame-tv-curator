@@ -32,7 +32,7 @@ jobs:
           # wiki links have no .md extension
           sed -i -E 's/\]\(([A-Za-z0-9_-]+)\.md(#[^)]*)?\)/](\1\2)/g' wiki/*.md
           # sidebar in reading order (same order as the table on Home); any page not listed goes at the end
-          order="Features Getting-Started Library Display-and-Look Display-Defaults Settings-Reference Rotation-and-Schedules TV-Tab Optional-Ambient Optional-Presence Discover Optional-Extras Sidecar-Files Troubleshooting"
+          order="Features Getting-Started Library Display-and-Look Display-Defaults Settings-Reference Rotation-and-Schedules TV-Tab Optional-Ambient Optional-Presence Discover Optional-Extras AI-Identification Sidecar-Files Troubleshooting"
           {
             echo "**[Home](Home)**"; echo
             for n in $order; do

@@ -33,6 +33,7 @@ DEFAULT_SETTINGS = {
     "log_level": "",
     "moods": ["calm", "serene", "joyful", "playful", "dramatic", "bold", "melancholy", "mysterious", "romantic", "nostalgic", "energetic", "contemplative"],
     "weather": {"enabled": False, "entity": "", "strength": 50, "map": {}},
+    "ai": {"enabled": False, "model": "claude-haiku-5-5", "monthly_limit_usd": 10.0, "prices": {}},
     "notify": {"enabled": False, "service": "", "minutes": 15, "on_recovery": True},
     "birdframe": {"enabled": False, "every_n": 10, "every_minutes": 0, "duration_minutes": 10, "source": "live",
                   "folder": "birds", "host": "local-birdframe-local", "port": 8099},
