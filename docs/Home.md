@@ -24,3 +24,5 @@ Frame TV Curator is a Home Assistant add-on that curates, renders and rotates ar
 | [Troubleshooting](Troubleshooting) | Common problems and fixes |
 
 Everything in "Optional" is off by default. The add-on works with only the minimal setup.
+
+> **Where things are (0.29.0):** the top bar has Now Playing, Library, Discover, Schedules and Settings. **Settings** has a sub-menu: General, Display, TV, Notifications and Moods and appearance. Pages below that say "Display tab" or "TV tab" mean those Settings pages.

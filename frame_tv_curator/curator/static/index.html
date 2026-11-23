@@ -118,12 +118,14 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 .tvi-s{font-size:clamp(12px,1.8vw,16px);opacity:.75}
 .tvi-n{font-size:12px;opacity:.55;margin-top:6px}
 .tvi-stand{width:22%;height:10px;background:linear-gradient(#2a2c33,#17181c);border-radius:0 0 8px 8px}
+.subnav[hidden]{display:none}.subnav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px 0}.subnav button{background:var(--panel);border:1px solid var(--line);color:var(--mut);padding:7px 12px;border-radius:8px;font:inherit;cursor:pointer}.subnav button.on{background:var(--panel2);color:var(--fg);border-color:var(--acc)}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
-<nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
+<nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="sched">Schedules</button><button data-t="set">Settings</button></nav>
 <span style="flex:1"></span><span id="tvs" class="pill mut"></span></header>
 <main>
-<section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disc" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section>
+<div id="subnav" class="subnav" hidden></div>
+<section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disc" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section><section id="t-alerts" hidden></section><section id="t-prefs" hidden></section>
 </main>
 <div id="foot" class="mut" style="padding:18px 20px 26px;text-align:center;font-size:12px"></div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div><div id="toast"></div>
@@ -251,11 +253,16 @@ let S={},albumList=[],curAlbum=null,curTag='',curMood='',folderList=[],curFolder
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){api('version').then(v=>{$('#foot').textContent='Frame TV Curator v'+v.version+' · github.com/bardlaabs/frame-tv-curator'}).catch(()=>{});const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
- renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
+ renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')showTab(t=='disp'||t=='tv'?t:t)}poll();setInterval(poll,5000);setInterval(tick,1000)}
 const byName=(a,b)=>String(a.name??a[1]??'').localeCompare(String(b.name??b[1]??''),undefined,{sensitivity:'base'});
 async function refreshFolders(){try{albumList=(await api('albums')).sort(byName)}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
- ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc();if(b.dataset.t=='lib')renderLib()});
+const SUBS=[['set','General'],['disp','Display'],['tv','TV'],['alerts','Notifications'],['prefs','Moods and appearance']],SUBIDS=SUBS.map(x=>x[0]);
+function showTab(t){if(SUBIDS.includes(t)&&t!='set')ls.set('fc_sub',t);const top=SUBIDS.includes(t)?'set':t,sub=top=='set'?(t!='set'?t:(ls.get('fc_sub')||'set')):null;
+ document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x.dataset.t==top));ls.set('fc_tab',top);
+ ['now','lib','disc','sched',...SUBIDS].forEach(k=>{const e=$('#t-'+k);if(e)e.hidden=!(top=='set'?k==sub:k==top)});
+ const sn=$('#subnav');sn.hidden=top!='set';if(top=='set'){sn.replaceChildren(...SUBS.map(([k,l])=>el('button',{class:k==(SUBIDS.includes(sub)?sub:'set')?'on':'',onclick:()=>{ls.set('fc_sub',k);showTab(k==='set'?'set':k)}},l)))}
+ if(top=='now')renderNow();if(top=='disc')renderDisc();if(top=='lib')renderLib()}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 
 /* ---------- Now playing ---------- */
 let _lastMode;async function poll(){try{const t0=Date.now();const pm=curStatus.tv_mode;curStatus=await api('status');if(_lastMode!==undefined&&curStatus.tv_mode!==_lastMode&&!$('#t-now').hidden)renderNow();_lastMode=curStatus.tv_mode;curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
@@ -936,7 +943,9 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
   el('p',{class:'mut'},'Photos from phones and cameras are often tagged Display P3 or Adobe RGB. The TV assumes sRGB, so without conversion those can look over- or under-saturated. Untagged images are used as they are. Changing this re-renders images as they come up.'));
  const put=(id,list)=>$('#'+id).replaceChildren(...list.filter(Boolean));
  const byT=t=>cards.find(c=>c&&c.querySelector&&c.querySelector('h3')&&c.querySelector('h3').textContent==t);
- put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Notifications'),byT('Appearance'),byT('Moods'),byT('Logging'),byT('Backups'),mkSave()]);
+ put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Logging'),byT('Backups'),mkSave()]);
+ put('t-alerts',[byT('Notifications'),mkSave()]);
+ put('t-prefs',[byT('Appearance'),byT('Moods'),mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);
  const [actCard,liveCard,...tvRest]=tvCards(s);

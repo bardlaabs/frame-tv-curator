@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.29.0
+
+- **Settings sub-menu:** Settings now has General, Display, TV, Notifications and Moods and appearance pages. The Display and TV tabs moved inside Settings, so the top bar has five tabs. It reopens on the page you were last on.
+
 ## 0.28.0
 
 - **Fix:** notifications (0.23.0) failed with "name 'ha' is not defined"; they now send.

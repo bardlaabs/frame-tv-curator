@@ -53,7 +53,12 @@ try:
                 pg.evaluate("t=>{const f=document.querySelector('#foot');if(f)f.textContent='Frame TV Curator '+t+' · github.com/bardlaabs/frame-tv-curator'}", VERSION_LABEL)
 
         def tab(t, wait=1200):
-            pg.click('nav button[data-t="%s"]' % t); pg.wait_for_timeout(wait)
+            if t in ("disp", "tv", "alerts", "prefs"):
+                pg.evaluate("t=>showTab(t)", t)
+            else:
+                pg.evaluate("()=>localStorage.setItem('fc_sub','set')")
+                pg.click('nav button[data-t="%s"]' % t)
+            pg.wait_for_timeout(wait)
 
         def page(name, full=False):
             label(); pg.screenshot(path=os.path.join(OUT, name + ".png"), full_page=full); print(name)
