@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.5
+
+- Text fields in the editor: the page behind a window (Now Playing redraws when the TV rotates or its status changes, every few seconds) no longer redraws while a window is open or you are typing in a field, and catches up right afterward. This is meant to stop selections from being cleared mid-edit. Text in fields and windows is also explicitly selectable, and keyboard shortcuts of the full-screen preview ignore keys typed in a text field.
+
 ## 0.34.4
 
 - The "Back to the matches" button now also appears when one museum record was matched automatically (the other candidates are kept so you can go back and pick a different one), including in batches.
