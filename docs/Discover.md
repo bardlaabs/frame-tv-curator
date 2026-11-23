@@ -25,3 +25,7 @@ Next to **Add to folder** is **and album**. Pick an album there and everything y
 ## Smithsonian
 
 Open-access art and design from the Smithsonian museums (CC0, at least 1600 px wide). It needs a free API key: request one at https://api.data.gov/signup/, paste it into the add-on Configuration (Smithsonian API key), save and restart the add-on. Pick a museum from the Type menu or search all of them.
+
+## Getty Museum
+
+Open Content from the J. Paul Getty Museum (CC0, no key): choose Paintings, Drawings, Prints, Photographs or All types, or search by title or artist. Images are fetched at up to 3840 px on the long side through the Getty's IIIF image server. The accession number goes into the credit line.

@@ -643,7 +643,97 @@ class Smithsonian:
         return d
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA(), "commons": Commons(), "smithsonian": Smithsonian()}
+class Getty:
+    """J. Paul Getty Museum (Open Content, CC0), through its public SPARQL endpoint and IIIF image server. No key.
+    Objects marked CC0 with an "Object Overall Image" are listed; images are fetched at up to 3840 px."""
+    id = "getty"
+    name = "Getty Museum"
+    home = "https://www.getty.edu/art/collection/"
+    license = "CC0 (Getty Open Content)"
+    client_fetch = False
+    blurb = ("Open Content images from the J. Paul Getty Museum (CC0): paintings, drawings, prints and photographs, "
+             "fetched at up to 3840 px. Search by title or artist, or browse a type.")
+    sorts = [["relevance", "Museum order"]]
+    types = [["300033618", "Paintings"], ["300033973", "Drawings"], ["300041273", "Prints"], ["300046300", "Photographs"], ["", "All types"]]
+    has_artists = False
+    EP = "https://data.getty.edu/museum/collection/sparql"
+    IIIF = "https://media.getty.edu/iiif/image/"
+    PRE = ("PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ")
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    @staticmethod
+    def _esc(t):
+        return re.sub(r'[\\"\n\r]', " ", t or "").strip().lower()
+
+    def _where(self, type="", q="", uuid=""):
+        w = ("?obj a crm:E22_Human-Made_Object ; rdfs:label ?label ; "
+             "crm:P67i_is_referred_to_by <http://creativecommons.org/publicdomain/zero/1.0/> ; crm:P138i_has_representation ?v . "
+             "?v rdfs:label ?vl ; crm:P1_is_identified_by ?asset . "
+             'FILTER(STRSTARTS(?vl, "Object Overall Image") && STRENDS(STR(?asset), "/id/asset")) ')
+        if type and type.isdigit():
+            w += "?obj crm:P2_has_type <http://vocab.getty.edu/aat/%s> . " % type
+        if uuid:
+            w += 'FILTER(STR(?obj) = "https://data.getty.edu/museum/collection/object/%s") ' % re.sub(r"[^0-9a-f-]", "", uuid)
+        opt = "OPTIONAL { ?obj crm:P108i_was_produced_by ?pr . OPTIONAL { ?pr crm:P14_carried_out_by ?a . ?a rdfs:label ?artist } " \
+              "OPTIONAL { ?pr crm:P4_has_time-span ?ts . OPTIONAL { ?ts crm:P82a_begin_of_the_begin ?bd } } } "
+        if q.strip():
+            t = self._esc(q)
+            w += opt + 'FILTER(CONTAINS(LCASE(?label), "%s") || CONTAINS(LCASE(COALESCE(?artist, "")), "%s")) ' % (t, t)
+        else:
+            w += opt
+        return w
+
+    def _run(self, query):
+        u = self.EP + "?" + urllib.parse.urlencode({"query": self.PRE + query})
+        j = json.loads(_get(u, 90, headers={"Accept": "application/sparql-results+json"}, gap=1.0).read().decode("utf8", "replace"))
+        return j.get("results", {}).get("bindings", [])
+
+    def _item(self, b):
+        g = lambda k: (b.get(k) or {}).get("value", "")
+        uuid = g("obj").rsplit("/", 1)[-1]
+        iid = g("asset").split("/iiif/image/", 1)[-1].split("/", 1)[0]
+        lab = g("label")
+        m = re.match(r"^(.*?)\s*\(([^()]+)\)\s*$", lab)
+        title, acc = (m.group(1), m.group(2)) if m else (lab, "")
+        base = self.IIIF + iid
+        d = {"source": self.id, "key": uuid, "url": "https://data.getty.edu/museum/collection/object/" + uuid,
+             "title": title or "Untitled", "artist": g("artist"), "date": g("bd")[:4].lstrip("0") if g("bd") else "",
+             "description": "", "image": base + "/full/!3840,3840/0/default.jpg",
+             "image_fallback": base + "/full/!2730,2730/0/default.jpg", "thumb": base + "/full/400,/0/default.jpg",
+             "preview": base + "/full/!1200,1200/0/default.jpg", "w": None, "h": None, "ai": False, "client_fetch": False,
+             "medium": "", "credit": "J. Paul Getty Museum" + (", " + acc if acc else ""), "license": self.license}
+        self.det[uuid] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="300033618", **kw):
+        sel = ("SELECT ?obj (SAMPLE(?label) AS ?label) (SAMPLE(?asset) AS ?asset) (SAMPLE(?artist) AS ?artist) (SAMPLE(?bd) AS ?bd) WHERE { %s } "
+               "GROUP BY ?obj ORDER BY ?obj LIMIT %d OFFSET %d") % (self._where(type, q), per, page * per)
+        rows = self._run(sel)
+        items = [self._item(b) for b in rows]
+        total = page * per + len(items) + (per if len(items) >= per else 0)
+        try:
+            c = self._run("SELECT (COUNT(DISTINCT ?obj) AS ?n) WHERE { %s }" % self._where(type, q))
+            total = int(c[0]["n"]["value"])
+        except Exception as e:
+            log.info("getty count failed: %s", e)
+        return {"total": total, "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        rows = self._run("SELECT ?obj (SAMPLE(?label) AS ?label) (SAMPLE(?asset) AS ?asset) (SAMPLE(?artist) AS ?artist) "
+                         "(SAMPLE(?bd) AS ?bd) WHERE { %s } GROUP BY ?obj" % self._where(uuid=key))
+        if not rows:
+            raise ValueError("Getty object not found or not Open Content")
+        return self._item(rows[0])
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA(), "commons": Commons(), "smithsonian": Smithsonian(), "getty": Getty()}
 
 
 # ---------------- library matching ----------------

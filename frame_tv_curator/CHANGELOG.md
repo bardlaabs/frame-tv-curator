@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.0
+
+- Discover: new **Getty Museum** source (Open Content, CC0; no key). Paintings, drawings, prints, photographs or all types, searchable by title or artist, fetched through Getty's IIIF image server at up to 3840 px.
+
 ## 0.19.2
 
 - Presence: the add-on now remembers across restarts that it turned the TV off for an absence, so an add-on update or restart while you are away no longer leaves the TV off when you return.
