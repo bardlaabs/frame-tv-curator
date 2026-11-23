@@ -42,4 +42,6 @@ def active_rule(rules, t=None):
 def source_of(rule):
     if rule.get("kind") == "images":
         return {"mode": "images", "images": rule.get("images") or [], "rule": rule.get("id") or rule.get("name")}
+    if rule.get("kind") == "album":
+        return {"mode": "album", "album": rule.get("album") or "", "rule": rule.get("id") or rule.get("name")}
     return {"mode": "folder", "folder": rule.get("folder") or "Art", "rule": rule.get("id") or rule.get("name")}

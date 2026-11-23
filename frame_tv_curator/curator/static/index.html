@@ -202,12 +202,12 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
  return root}
 
 /* ---------- state ---------- */
-let S={},folderList=[],curFolder=null,curStatus={};
+let S={},albumList=[],curAlbum=null,folderList=[],curFolder=null,curStatus={};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
  renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
-async function refreshFolders(){folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
+async function refreshFolders(){try{albumList=await api('albums')}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
  ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc()});
 
@@ -308,11 +308,18 @@ const FLAGLBL={favorite:'★ Favorite',show_more:'＋ Show more',exclude:EYE_SLA
 function flagChip(obj,k,after){const c=el('span',{class:'ch'+(obj[k]?' on':''),style:'display:inline-flex;align-items:center;gap:5px'});c.innerHTML=FLAGLBL[k];c.querySelector('svg')?.setAttribute('style','width:15px;height:15px');
  c.onclick=()=>after(k,c);return c}
 async function renderLib(){const root=$('#t-lib');root.replaceChildren();await refreshFolders();
- const chips=el('div',{class:'chips'},folderList.map(f=>el('span',{class:'chip'+(f.name==curFolder?' on':''),onclick:()=>{setFolder(f.name);renderLib()}},f.name+' ('+f.count+')')),
-  el('button',{onclick:async()=>{const n=prompt('New folder name');if(!n)return;const r=await api('folder',{name:n});setFolder(r.folder);renderLib()}},'+ Folder'));
+ if(curAlbum&&!albumList.some(a=>a.id==curAlbum))curAlbum=null;
+ const chips=el('div',{class:'chips'},folderList.map(f=>el('span',{class:'chip'+(!curAlbum&&f.name==curFolder?' on':''),onclick:()=>{curAlbum=null;setFolder(f.name);renderLib()}},f.name+' ('+f.count+')')),
+  el('button',{onclick:async()=>{const n=prompt('New folder name');if(!n)return;const r=await api('folder',{name:n});curAlbum=null;setFolder(r.folder);renderLib()}},'+ Folder'));
+ const achips=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Albums'),albumList.map(a=>el('span',{class:'chip'+(a.id==curAlbum?' on':''),onclick:()=>{curAlbum=a.id;selected.clear();renderLib()}},'\u25a3 '+a.name+' ('+a.count+')')),
+  el('button',{onclick:async()=>{const n=prompt('New album name');if(!n)return;const r=await api('album',{action:'create',name:n});curAlbum=r.id;renderLib()}},'+ Album'));
+ const curA=albumList.find(a=>a.id==curAlbum);
+ const albBar=curA?el('div',{class:'row',style:'margin-bottom:8px'},el('b',{},'Album: '+curA.name),el('span',{class:'mut'},'Select images in any folder and use \u201c\uff0b Album\u2026\u201d to add them. Use this album as the rotation source in Settings, or in a schedule.'),
+  el('button',{onclick:async()=>{const n=prompt('Rename album',curA.name);if(!n)return;await api('album',{action:'rename',id:curA.id,name:n});renderLib()}},'Rename'),
+  el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:async()=>{if(!confirm('Delete the album \u201c'+curA.name+'\u201d? The images themselves are not deleted.'))return;await api('album',{action:'delete',id:curA.id});curAlbum=null;renderLib()}},'Delete album')):null;
  const upl=el('div',{id:'upl'});
  const fin=el('input',{type:'file',multiple:true,accept:'image/*,.heic,.heif',hidden:true,onchange:e=>{upload([...e.target.files],upl);e.target.value=''}});
- const drop=el('div',{class:'drop'},'Drop images here (JPEG, PNG, HEIC from Apple Photos…) or ',el('label',{class:'btn',style:'display:inline-block'},'choose files',fin),' — uploading into “'+curFolder+'”');
+ const drop=curAlbum?el('div'):el('div',{class:'drop'},'Drop images here (JPEG, PNG, HEIC from Apple Photos…) or ',el('label',{class:'btn',style:'display:inline-block'},'choose files',fin),' — uploading into “'+curFolder+'”');
  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
  drop.addEventListener('drop',e=>upload([...e.dataTransfer.files],upl));
@@ -323,8 +330,8 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
  selBtn.onclick=()=>{selMode=!selMode;if(!selMode)selected.clear();renderLib()};
  const dupBtn=el('button',{title:'Look for images that are the same picture',onclick:()=>findDuplicates()},'🔍 Find duplicates');
  const bar=el('div',{class:'row',style:'margin-bottom:12px'},q,el('label',{style:'color:var(--mut)'},'Sort by'),sel,dir,selBtn,dupBtn,el('span',{class:'mut',id:'cnt'}));
- const grid=el('div',{class:'grid'});root.append(chips,drop,upl,bar,grid);
- const items=await api('library?folder='+encodeURIComponent(curFolder));
+ const grid=el('div',{class:'grid'});root.append(chips,achips,albBar,drop,upl,bar,grid);
+ const items=await api(curAlbum?'library?album='+encodeURIComponent(curAlbum):'library?folder='+encodeURIComponent(curFolder));
  const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f)));
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   grid.replaceChildren(...list.slice(0,600).map(i=>
@@ -335,7 +342,7 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
  q.oninput=dbounce(draw,150);draw();drawBulk();window._libList=()=>sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):('folder '+(r.folder||'Art')));
+function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):r.kind=='album'?('album '+((albumList.find(a=>a.id==r.album)||{}).name||'?')):('folder '+(r.folder||'Art')));
  if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
  if(r.date_from||r.date_to)p.push((r.date_from||r.date_to)+(r.date_to&&r.date_to!=r.date_from?' to '+r.date_to:''));return '· '+p.join(' · ')+(r.enabled===false?' · OFF':'')}
 function imagePicker(rule){rule.images??=[];const box=el('div'),cnt=el('span',{class:'mut'}),grid=el('div',{class:'grid',style:'max-height:320px;overflow:auto;margin-top:8px'});
@@ -347,8 +354,8 @@ function imagePicker(rule){rule.images??=[];const box=el('div'),cnt=el('span',{c
  sel.onchange=load;box.append(el('div',{class:'row'},el('label',{},'Pick from folder'),sel,cnt),grid);load();return box}
 function scheduleEditor(s,ix){const r=s.schedules[ix];r.days??=[];
  const dayChips=el('div',{class:'chips2'});const mkd=()=>dayChips.replaceChildren(...DAYN.map((n,d)=>el('span',{class:'ch'+(r.days.includes(d)?' on':''),onclick:()=>{const k=r.days.indexOf(d);if(k>=0)r.days.splice(k,1);else r.days.push(d);mkd()}},n)));mkd();
- const what=el('div');const drawWhat=()=>what.replaceChildren(r.kind=='images'?imagePicker(r):field('Folder',r,'folder','select',{options:Object.fromEntries(folderList.map(f=>[f.name,f.name])),native:true}));
- const kindF=field('Show',r,'kind','select',{options:{images:'Specific images',folder:'A whole folder'}},()=>drawWhat());drawWhat();
+ const what=el('div');const drawWhat=()=>{if(r.kind=='album')r.album??=albumList[0]?.id;what.replaceChildren(r.kind=='images'?imagePicker(r):r.kind=='album'?(albumList.length?field('Album',r,'album','select',{options:Object.fromEntries(albumList.map(x=>[x.id,x.name+' ('+x.count+')'])),native:true}):el('p',{class:'mut'},'No albums yet. Create one in the Library (+ Album).')):field('Folder',r,'folder','select',{options:Object.fromEntries(folderList.map(f=>[f.name,f.name])),native:true}))};
+ const kindF=field('Show',r,'kind','select',{options:{images:'Specific images',folder:'A whole folder',album:'An album'}},()=>drawWhat());drawWhat();
  showModal(el('h2',{},'Schedule'),field('Name',r,'name','text'),field('Enabled',r,'enabled','check'),kindF,what,
   el('div',{class:'row'},el('label',{},'Days (none = every day)'),dayChips),
   field('From time (HH:MM, blank = all day)',r,'time_from','text'),field('To time (HH:MM)',r,'time_to','text'),
@@ -370,9 +377,18 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
  b.replaceChildren(el('b',{},selected.size+' selected'),el('button',{onclick:()=>{(window._libList?window._libList():[]).forEach(i=>selected.add(i.id));renderLib()}},'All shown'),el('button',{onclick:()=>{selected.clear();renderLib()}},'None'),
   fl('favorite',true,'★ Favorite'),fl('favorite',false,'☆ Un-favorite'),fl('show_more',true,'＋ Show more'),fl('show_more',false,'Show normally'),fl('exclude',true,'Exclude (hide)'),fl('exclude',false,'Include'),
   el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
+  el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),
+  curAlbum?el('button',{onclick:async()=>{if(!selected.size)return;await api('album',{action:'remove',id:curAlbum,ids:[...selected]});toast('Removed from the album');selected.clear();renderLib()}},'\u2212 Remove from album'):null,
   el('button',{onclick:()=>{const f=prompt('Move the selected images to which folder? (existing or new)',curFolder);if(f)bulk({move_to:f},'Moved')}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+function bulkAlbum(){if(!selected.size){toast('Select some images first');return}
+ const o={id:albumList[0]?.id||'',name:''};
+ showModal(el('h2',{},'Add '+selected.size+' image'+(selected.size==1?'':'s')+' to an album'),
+  albumList.length?field('Album',o,'id','select',{native:true,options:Object.fromEntries(albumList.map(a=>[a.id,a.name+' ('+a.count+')']))}):null,
+  field(albumList.length?'Or a new album':'New album name',o,'name','text'),
+  el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{let id=o.id;if((o.name||'').trim()){id=(await api('album',{action:'create',name:o.name})).id}if(!id){toast('Pick or name an album');return}
+   await api('album',{action:'add',id,ids:[...selected]});closeModal();toast('Added to the album');selected.clear();renderLib()}},'Add'),el('button',{onclick:closeModal},'Cancel')))}
 function bulkInfo(){const ct={artist:'',date:'',medium:'',location:'',credit:''};
  showModal(el('h2',{},'Set info on '+selected.size+' images'),el('p',{class:'mut'},'Only the boxes you fill in are changed; blank boxes leave each image as it is.'),
   ...Object.keys(ct).map(k=>field(k[0].toUpperCase()+k.slice(1),ct,k,'text')),
@@ -700,8 +716,9 @@ async function openViewer(id,disp,edit){
 
 /* ---------- Settings ---------- */
 function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceChildren();const s=clone(S);
- const src=el('div');const drawSrc=()=>{src.replaceChildren(field('Pick from',s,'source.mode','select',{options:{folder:'One folder',mix:'Weighted mix of folders'}},drawSrc));
+ const src=el('div');const drawSrc=()=>{src.replaceChildren(field('Pick from',s,'source.mode','select',{options:{folder:'One folder',mix:'Weighted mix of folders',album:'An album'}},drawSrc));
   if(s.source.mode=='folder')src.append(field('Folder',s,'source.folder','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}));
+  else if(s.source.mode=='album'){s.source.album??=albumList[0]?.id;src.append(albumList.length?field('Album',s,'source.album','select',{native:true,options:Object.fromEntries(albumList.map(a=>[a.id,a.name+' ('+a.count+')']))}):el('p',{class:'mut'},'No albums yet. Create one in the Library (+ Album), then pick it here.'))}
   else{s.source.mix??={};folderList.forEach(f=>{s.source.mix[f.name]??=0;src.append(field(f.name+' weight',s,'source.mix.'+f.name,'range',{min:0,max:100,step:5}))})}};drawSrc();
  const gd={placard:s.display.placard,mat:s.display.mat,overscan:Object.assign({top:0,right:0,bottom:0,left:0,mode:'placard'},s.display.overscan||{}),srgb:s.display.srgb!==false};s.display=gd;
  const cards=[

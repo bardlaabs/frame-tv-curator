@@ -7,6 +7,7 @@ A Home Assistant add-on that curates, renders and rotates art and photos on a Sa
 - Shuffle-bag rotation with favorites, "show more", exclude, folders, and schedules (weekday, time window, yearly date ranges)
 - Renders 3840x2160 images with mats, bevel, liner, placards, overscan correction and optional sRGB conversion
 - Non-destructive crop / rotate / straighten kept in sidecar files; originals never change
+- Albums (named collections) usable as a rotation source or schedule
 - Library tools: EXIF and place-name prefill, bulk actions, duplicate finder, low-resolution warnings, quick flag buttons
 - TV tab: Art Mode and power control (with Wake-on-LAN), ambient art brightness and color temperature (lux sensor, entity, sun, or manual), companion light
 - Discover: add public-domain art from museum collections (Reframed, Art Institute of Chicago, The Met, Cleveland, NASA)

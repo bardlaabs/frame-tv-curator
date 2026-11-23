@@ -40,9 +40,9 @@ def _year(sc):
             return int(m.group())
     return None
 
-def library_list(folder):
+def library_list(folder, ids=None):
     out = []
-    for i in library.images(folder):
+    for i in (ids if ids is not None else library.images(folder)):
         sc = library.load_sidecar(i)
         a = sc.get("artist") or {}
         stem = os.path.splitext(os.path.basename(i))[0]
@@ -116,7 +116,14 @@ def make(engine):
                     return self._send(200, out)
                 if p == "/api/settings": return self._send(200, engine.settings.get())
                 if p == "/api/folders": return self._send(200, library.folders())
-                if p == "/api/library": return self._send(200, library_list(q["folder"]))
+                if p == "/api/library":
+                    if q.get("album"):
+                        from . import albums
+                        return self._send(200, library_list(None, albums.images(q["album"])))
+                    return self._send(200, library_list(q["folder"]))
+                if p == "/api/albums":
+                    from . import albums
+                    return self._send(200, albums.listing())
                 if p == "/api/sidecar":
                     w, h = Image.open(library.abspath(q["id"])).size
                     return self._send(200, {"sidecar": library.load_sidecar(q["id"]), "low_res": w < 1920 or h < 1080,
@@ -234,6 +241,17 @@ def make(engine):
                     if e and (e.get("crop") or e.get("rotate") or abs(float(e.get("straighten") or 0)) > 0.01): sc["edit"] = e
                     else: sc.pop("edit", None)
                     library.save_sidecar(b["id"], sc); return self._send(200, sc.get("edit") or {})
+                if p == "/api/album":       # {action: create|rename|delete|add|remove, id, name, ids}
+                    from . import albums
+                    a = b.get("action")
+                    if a == "create": aid = albums.create(b.get("name"))
+                    else: aid = b.get("id")
+                    if a == "rename": albums.rename(aid, b.get("name"))
+                    elif a == "delete": albums.delete(aid)
+                    elif a == "add": albums.add(aid, b.get("ids") or [])
+                    elif a == "remove": albums.remove(aid, b.get("ids") or [])
+                    engine.invalidate_next()
+                    return self._send(200, {"id": aid, "albums": albums.listing()})
                 if p == "/api/bulk":              # {ids, flags:{favorite..}, card_text:{artist..}, move_to, delete}
                     done = 0; ids = list(b.get("ids") or [])
                     for i in ids:
@@ -255,6 +273,10 @@ def make(engine):
                                     dst_folder = library.create_folder(b["move_to"]); src = library.abspath(i)
                                     fn = os.path.basename(src); dst = os.path.join(library.abspath(dst_folder), fn)
                                     os.replace(src, dst)
+                                    try:
+                                        from . import albums
+                                        albums.remap(i, dst_folder + "/" + fn)
+                                    except Exception: pass
                                     sp = os.path.splitext(src)[0] + ".json"
                                     if os.path.exists(sp): os.replace(sp, os.path.splitext(dst)[0] + ".json")
                             done += 1

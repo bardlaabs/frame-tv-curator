@@ -17,6 +17,9 @@ def source_ids(src):
     if src.get("mode") == "images":
         import os
         return [i for i in (src.get("images") or []) if os.path.exists(library.abspath(i))]
+    if src.get("mode") == "album":
+        from . import albums
+        return albums.images(src.get("album") or "")
     if src.get("mode") == "mix":
         ids = []
         for f in (src.get("mix") or {}):
@@ -27,6 +30,8 @@ def source_ids(src):
 def source_key(src):
     if src.get("mode") == "images":
         return "images:" + str(src.get("rule"))
+    if src.get("mode") == "album":
+        return "album:" + str(src.get("album"))
     if src.get("mode") == "mix":
         return "mix:" + ",".join(sorted((src.get("mix") or {}).keys()))
     return "folder:" + src.get("folder", "Art")

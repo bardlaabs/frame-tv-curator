@@ -256,6 +256,11 @@ def delete_image(img_id):
     sp = sidecar_path(img_id)
     if os.path.exists(sp):
         os.replace(sp, os.path.splitext(dst)[0] + ".json")
+    try:
+        from . import albums
+        albums.forget(img_id)
+    except Exception:
+        pass
     return dst
 
 # ---- files dropped into the folders from outside the add-on (SMB, scripts, sync tools) ----

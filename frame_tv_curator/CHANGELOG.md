@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.14.0
+- Albums: named collections of images from any folder (an image can be in several). Create them in the Library (+ Album), add selected images with "+ Album...", and use an album as the rotation source (Settings > Pick from > An album) or in a schedule (Show > An album). Albums follow images that are moved to another folder and drop images that are deleted.
+
 ## 0.13.0
 - TV picture cache (TV tab, off by default): keep the last N pictures and your favorites on the TV. A kept picture that is shown again is selected in a couple of seconds instead of being uploaded again, and stays on the TV (My Photos) even if Home Assistant is down. A changed look or edit uploads a fresh copy. Includes a Clear cached pictures button.
 - NASA credit line no longer repeats "NASA".
