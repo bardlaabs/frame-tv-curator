@@ -98,6 +98,50 @@ go("placard-on-mat-autofit", {"mat": {"enabled": True, "color": "#efece4", "widt
                               "placard": {"enabled": True, "placement": "mat", "template": "modern_minimal", "mat_fit": True}},
    crop=(2240, 1560, 3840, 2160))
 
+
+# --- test patterns and overscan examples
+def save_img(name, im, size=(1280, 720)):
+    im.resize(size, Image.LANCZOS).save(os.path.join(OUT, name + ".jpg"), quality=88, optimize=True)
+    print(name)
+
+grid = R.render_calibration()
+save_img("calibration-grid", grid)
+save_img("colorbars", R.render_colorbars())
+# what a TV that hides 3 % on every side would show: the 0, 1 and 2 outlines are gone, 3 is the outermost visible
+Wd, Hd = grid.size
+save_img("calibration-hidden-3pct", grid.crop((int(Wd * .03), int(Hd * .03), Wd - int(Wd * .03), Hd - int(Hd * .03))))
+OV4 = {"top": 4, "right": 4, "bottom": 4, "left": 4}
+go("overscan-none-placard", {"placard": {"enabled": True, "position": "bottom-right"}}, crop=BR)
+go("overscan-placard-mode", {"overscan": dict(OV4, mode="placard"), "placard": {"enabled": True, "position": "bottom-right"}}, crop=BR)
+go("overscan-inset-4pct", {"overscan": dict(OV4, mode="inset")})
+
+# --- hero images for the README and the Features page
+go("hero-classical", {"mat": {"enabled": True, "color": "#e9e4d8", "width_pct": 9, "auto_tint": "warm_white",
+                              "liner": {"enabled": True, "color": "#8a2f2f", "width_pct": 0.7}},
+                      "placard": {"enabled": True, "placement": "mat", "template": "classical_editorial"}})
+go("hero-modern", {"mat": {"enabled": True, "width_pct": 7, "auto_tint": "deep_neutral"},
+                   "placard": {"enabled": True, "template": "modern_minimal"}})
+
+# before / after, and a grid of looks, for the README
+def label(im, text):
+    d = ImageDraw.Draw(im); f = R.font("kumbh", 30, 700)
+    w = int(d.textlength(text, font=f)) + 28
+    d.rounded_rectangle((16, 16, 16 + w, 66), radius=10, fill=(0, 0, 0, 170) if im.mode == "RGBA" else (20, 20, 24))
+    d.text((30, 41), text, font=f, fill=(255, 255, 255), anchor="lm")
+    return im
+
+orig = Image.open(SAMPLE_WIDE).convert("RGB").resize((1280, 720), Image.LANCZOS)
+framed = Image.open(os.path.join(OUT, "hero-classical.jpg")).convert("RGB")
+ba = Image.new("RGB", (2570, 720), (255, 255, 255))
+ba.paste(label(orig, "Original file (never changed)"), (0, 0)); ba.paste(label(framed, "What the TV shows"), (1290, 0))
+ba.resize((1600, 448), Image.LANCZOS).save(os.path.join(OUT, "before-after.jpg"), quality=88, optimize=True); print("before-after")
+tiles = [Image.open(os.path.join(OUT, n + ".jpg")).convert("RGB").resize((640, 360), Image.LANCZOS)
+         for n in ("hero-classical", "hero-modern", "tint-dominant", "default-look")]
+grid = Image.new("RGB", (1290, 730), (255, 255, 255))
+for i, t in enumerate(tiles):
+    grid.paste(t, ((i % 2) * 650, (i // 2) * 370))
+grid.save(os.path.join(OUT, "looks-grid.jpg"), quality=88, optimize=True); print("looks-grid")
+
 # --- mat placards: one, two and three line layouts (bottom strip of the mat, 1600x900 crop)
 for lay in ("one_line", "two_line", "three_line"):
     go("placard-mat-" + lay.replace("_", "-"),

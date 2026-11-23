@@ -30,7 +30,7 @@ Off by default. When on, the add-on keeps the last N pictures (default 5, includ
 - **Clear cached pictures** removes them all from the TV.
 
 ## Overscan / TV edge
-See [Display and look](Display-and-Look#overscan) for the step-by-step calibration.
+See [Display and look](Display-and-Look#overscan-the-calibration-grid-and-the-color-bars) for the sample patterns, how to read the numbers, and how to turn the grid and color bars on and off.
 
 ## Presence, brightness, color and companion light
 

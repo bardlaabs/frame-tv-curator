@@ -4,6 +4,10 @@ Pictures are rendered at 3840 x 2160 before they go to the TV. This page shows w
 
 All samples below are made from one generated sample picture, so the only change between them is the setting being shown.
 
+> **Nothing here changes your picture files.** The mat, inner liner (second mat), bevel, placard, overscan correction, crop, rotate and straighten are all applied while the add-on renders the picture for the TV. Your original file is never touched, and the settings live in the small sidecar file beside it ([Sidecar files](Sidecar-Files)). Turn any option off, or delete the sidecar, and you are back to the original.
+
+![Original and framed](images/before-after.jpg)
+
 ## Placards
 
 ![Placard settings](images/ui-display-placard.png)
@@ -124,19 +128,66 @@ The bevel is the angled cut edge of the mat opening, lit from a direction you ch
 |---|---|
 | ![No bevel](images/mat-nobevel.jpg) | ![Strong bevel](images/mat-bevel-strong.jpg) |
 
-## Overscan
+## Overscan, the calibration grid and the color bars
 
 ![Overscan settings](images/ui-tv-overscan.png)
 
-Some TVs hide a thin strip around the edge. To measure it:
+**What overscan is.** Some TVs scale the picture slightly so that a thin strip around the edge falls off-screen. For art it matters when a placard or the edge of a mat sits right at the border and gets clipped. The add-on can compensate, but it needs to know how much your TV hides on each side.
 
-1. Open the **TV** tab, **Overscan / TV edge** card.
-2. Click **Show calibration grid on TV**.
-3. On each side, read the outermost number you can fully see and enter it as **Top %**, **Right %**, **Bottom %** and **Left %**.
-4. Choose how to compensate: **Keep picture full-screen** (the card and mat text move inside the visible area) or **Shrink the whole picture into the visible area**.
-5. Click **Save settings**.
+**What the add-on can do about it** (the **How to compensate** setting, `overscan.mode`):
+- **Keep picture full-screen; keep the card and mat text inside the visible area** (`placard`, the default): the picture is unchanged, only the placard text is moved in from the hidden edge.
+- **Shrink the whole picture into the visible area** (`inset`): the whole rendered image, mat included, is scaled down and centered on black so that none of it is hidden.
 
-![Shrink the whole picture into the visible area (3 % on every side)](images/overscan-inset.jpg)
+| No correction | Placard mode, 4 % | Inset mode, 4 % |
+|---|---|---|
+| ![No correction](images/overscan-none-placard.jpg) | ![Placard mode](images/overscan-placard-mode.jpg) | ![Inset mode](images/overscan-inset-4pct.jpg) |
+
+The first two are close-ups of the lower-right corner: in placard mode the card moves in from the edge. The third is the whole picture.
+
+### Measure your TV, step by step
+
+1. Put the TV in **Art Mode** (the grid is shown as a picture).
+2. Open the **TV** tab, **Overscan / TV edge** card.
+3. Click **Show calibration grid on TV**. After a few seconds the TV shows this pattern:
+
+   ![Calibration grid](images/calibration-grid.jpg)
+
+   The grid is a set of nested outlines, one every 1 % of the screen, numbered 0 (red, the very edge of the picture) to 10. The number is the percentage of the screen that lies between that outline and the edge.
+4. Stand at your normal viewing distance. For each of the four sides separately, find the **outermost outline whose line you can see completely**, and note its number. If you can see the red 0 line along a side, that side is 0.
+5. Enter the four numbers as **Top %**, **Right %**, **Bottom %** and **Left %**.
+6. Choose **How to compensate**, click **Save settings**, then press **Resend art** on Now Playing to see the result.
+
+**Worked example.** Suppose the TV hides a little of the picture. You look at the grid and the screen shows this (the outlines 0, 1 and 2 are cut off, and 3 is the first one you can see in full on all four sides):
+
+![What a TV that hides 3 percent shows](images/calibration-hidden-3pct.jpg)
+
+Enter 3 for all four sides. The numbers do not have to match: it is common for the left and right to differ, or for the top and bottom to differ, so read every side on its own.
+
+Tips for reading the numbers:
+- The numbers are written along each outline, so you can read a side without counting lines. The top and bottom numbers are spread along the edge, the left and right numbers run down it.
+- If you are unsure between two numbers, choose the larger one. A little extra margin costs nothing.
+- Measure with the TV set the way you normally use it; if you change its picture size or zoom setting later, measure again.
+- You only need to measure once per TV. Per-image overrides are possible too ([Per-image looks](#per-image-looks)), but the TV edge does not change from picture to picture.
+
+### Turn overscan correction on and off
+- **On:** enter any non-zero number and save. Placard mode only affects pictures that show a placard; inset mode affects every picture.
+- **Off:** set all four numbers back to 0 and save. (Factory default is 0 with placard mode, which does nothing.)
+- The correction is part of the render, so it is applied to the next picture shown. Press **Resend art** to apply it to the current one.
+
+### The SMPTE color bars
+
+The same card has **Show SMPTE color bars on TV**. It sends a standard test pattern (75 % color bars with a reverse-blue strip and a PLUGE row) that you can use to check the TV's color, black level and contrast in Art Mode:
+
+![SMPTE color bars](images/colorbars.jpg)
+
+- The seven bars should be clearly separate: gray, yellow, cyan, green, magenta, red and blue.
+- In the dark strip at the bottom right, the three narrow bars are slightly darker and lighter than black. If you cannot tell the darkest one from pure black, the screen is too dark; if the black area looks gray, it is too bright. This is the check to use when setting [art brightness](Optional-Ambient).
+- Colors that look tinted point at the color temperature setting.
+
+### Turn the patterns on and off
+- **On:** click **Show calibration grid on TV** or **Show SMPTE color bars on TV** on the TV tab. The Now Playing tab then shows a banner saying a test pattern is on the TV.
+- **Off:** press **Next** or **Resend art** on the Now Playing tab, or just wait: rotation resumes by itself at the next change time (the patterns only hold rotation for one interval).
+- The patterns are generated each time; they are never saved in your library and never get a sidecar.
 
 ## sRGB conversion
 

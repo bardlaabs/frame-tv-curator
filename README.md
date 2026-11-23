@@ -4,9 +4,23 @@
 
 A Home Assistant add-on that curates, renders and rotates art and photos on a Samsung **The Frame** TV.
 
+![A framed picture: mat, inner liner, bevel and museum placard](docs/images/hero-classical.jpg)
+
+**Your original pictures are never changed.** Mats, inner mats, bevels, placards, overscan correction, crop, rotate and straighten are applied only when a picture is rendered for the TV, and your choices are stored in a small sidecar file beside each image.
+
+![Original file on the left, what the TV shows on the right](docs/images/before-after.jpg)
+
+| Now Playing | Library |
+|---|---|
+| ![Now Playing](docs/images/ui-now-playing.png) | ![Library](docs/images/ui-library.png) |
+
+| Display looks | Discover free art |
+|---|---|
+| ![Looks](docs/images/looks-grid.jpg) | ![Discover](docs/images/ui-discover.png) |
+
 - Shuffle-bag rotation with favorites, "show more", exclude, folders, and schedules (weekday, time window, yearly date ranges)
 - Renders 3840x2160 images with mats, bevel, liner, placards, overscan correction and optional sRGB conversion
-- Non-destructive crop / rotate / straighten kept in sidecar files; originals never change
+- Non-destructive crop / rotate / straighten, mats, inner mats and placards, all kept in sidecar files; originals never change ([sidecar format](docs/Sidecar-Files.md))
 - Albums (named collections) usable as a rotation source or schedule
 - Library tools: EXIF and place-name prefill, bulk actions, duplicate finder, low-resolution warnings, quick flag buttons
 - TV tab: Art Mode and power control (with Wake-on-LAN), ambient art brightness and color temperature (lux sensor, entity, sun, or manual), companion light
@@ -41,7 +55,7 @@ Everything below is off by default and falls back to a manual value if an entity
 | Color temperature | TV tab | Follow the sun, an entity (for example Adaptive Lighting) or a manual Kelvin value |
 | Companion light | TV tab | A light that follows the TV's brightness and color |
 | Mats, placards, auto-fit | Display tab, per-image Customize | Frame the picture and show title/artist |
-| Overscan | Display tab | Keep placards visible on TVs that crop the edge |
+| Overscan and test patterns | TV tab | Measure the TV's hidden edge with a calibration grid, keep placards visible, check color with SMPTE bars |
 | Schedules | Schedules tab | Holiday and time-of-day source rules |
 | Discover | Library > Discover | Add public-domain museum art with metadata |
 | Bird Frame interleave | Settings | Mix bird photos into the rotation |

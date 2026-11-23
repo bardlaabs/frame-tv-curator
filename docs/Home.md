@@ -2,6 +2,10 @@
 
 Frame TV Curator is a Home Assistant add-on that curates, renders and rotates art and photos on a Samsung **The Frame** TV.
 
+![Original file and what the TV shows](images/before-after.jpg)
+
+**Your original pictures are never changed.** Mats, inner mats, bevels, placards, overscan correction, crop, rotate and straighten are all applied when the picture is rendered for the TV, and your choices are stored in a small sidecar file beside each image ([details](Sidecar-Files)).
+
 | Page | What it covers |
 |---|---|
 | [Features](Features) | Everything it can do, in one list |
@@ -16,6 +20,7 @@ Frame TV Curator is a Home Assistant add-on that curates, renders and rotates ar
 | [Optional: presence](Optional-Presence) | Turn the TV off when nobody is around |
 | [Optional: Discover](Discover) | Find and add public-domain art from museums |
 | [Optional: Bird Frame and e-paper](Optional-Extras) | Interleaved bird photos and the e-paper card |
+| [Sidecar files (technical)](Sidecar-Files) | Where data lives, what is in every file, how renders are made |
 | [Troubleshooting](Troubleshooting) | Common problems and fixes |
 
 Everything in "Optional" is off by default. The add-on works with only the minimal setup.

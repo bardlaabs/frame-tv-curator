@@ -2,6 +2,32 @@
 
 Everything Frame TV Curator can do, in one list. Follow the links for step-by-step instructions.
 
+![Original file and what the TV shows](images/before-after.jpg)
+
+> **Non-destructive by design.** Mats, inner mats (liners), bevels, placards, overscan correction, crop, rotate and straighten never change your picture files. They are applied when a picture is rendered for the TV, and your choices live in a small sidecar file beside each image. Turn an option off and the original is exactly as it was. ([Sidecar files](Sidecar-Files))
+
+## Highlights
+
+**A gallery look, not just a slideshow.** Mats with an inner liner and a cut bevel, color picked from the picture, and a museum-style placard:
+
+![Four looks](images/looks-grid.jpg)
+
+**Placards that fit the mat.** Print the artist, title, date and medium on the mat in one, two or three lines (the strip below is the bottom of the mat, close up):
+
+![Three-line mat placard](images/placard-mat-three-line.jpg)
+
+**Browse and control it from one place.** Now Playing shows what is on the TV, what is next and what the TV is doing:
+
+![Now Playing](images/ui-now-playing.png)
+
+**Find free art without leaving the add-on.** Discover searches public-domain collections and fills in the artist, title, date and credit for you:
+
+![Discover](images/ui-discover.png)
+
+**A big, fast library.** Group, tag, flag and preview your pictures, with a full-screen preview and keyboard shortcuts:
+
+![Library](images/ui-library.png)
+
 ## Picking and rotating pictures
 - **Shuffle-bag rotation** shows every picture once before any repeats, so the TV never gets stuck on the same few. ([Rotation](Rotation-and-Schedules))
 - **Favorites and Show more** make chosen pictures appear more often, while **Exclude** keeps a picture out of rotation entirely.
@@ -15,7 +41,7 @@ Everything Frame TV Curator can do, in one list. Follow the links for step-by-st
 
 ## Library and organizing
 - **Folders on your media share** map to simple subfolders, and files you drop in appear within a minute.
-- **Non-destructive sidecars** keep titles, edits, flags and display settings in a small file beside each image, so originals never change.
+- **Non-destructive sidecars** keep titles, edits, flags and display settings in a small file beside each image, so originals never change. ([Sidecar files](Sidecar-Files))
 - **Search, sort and group** the grid by title, artist, year, decade or medium, with sticky headings and jump chips.
 - **Albums** are named collections that can mix images from any folder.
 - **Tags** are your own words for finding pictures, with filter chips, search and bulk add or remove.
@@ -30,6 +56,8 @@ Everything Frame TV Curator can do, in one list. Follow the links for step-by-st
 - **EXIF prefill and place names** fill in the date, camera and a readable location for photos with GPS data.
 
 ## Editing a picture
+All editing is non-destructive: your edits are saved as instructions in the sidecar and applied at render time, so the original file is never rewritten.
+
 - **Crop** lets you choose the part of a picture to show, in 16:9 or any shape.
 - **Rotate and straighten** fix a tilted or sideways picture without touching the original.
 - **Info and Details** store title, artist, date, medium, credit, description, source link, license, tags and private notes.
@@ -65,7 +93,7 @@ Everything Frame TV Curator can do, in one list. Follow the links for step-by-st
 - **Brightness steadiness** stops the TV from flickering between two neighboring brightness steps.
 - **Art color temperature** can be fixed, follow the sun or follow a lamp or an Adaptive Lighting switch.
 - **Companion light** turns a lamp on and off with the TV and can match its brightness and warmth.
-- **Calibration grid and color bars** help you measure overscan and check the picture.
+- **Calibration grid and SMPTE color bars** can be sent to the TV to measure its hidden edge and to check its color and black level. ([Overscan and test patterns](Display-and-Look#overscan-the-calibration-grid-and-the-color-bars))
 
 ## Presence
 - **Presence on/off** turns the TV off after everyone has left and back on to Art Mode when someone returns. ([Presence](Optional-Presence))

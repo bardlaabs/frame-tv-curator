@@ -32,6 +32,8 @@ Browse, search and manage your images. Folders map to subfolders of `frame/` on 
 - **Eye-slash** = exclude from rotation.
 
 ## Editing an image
+Editing is non-destructive. Crop, rotate, straighten, titles and look settings are saved in the image's sidecar and applied only when the picture is rendered for the TV. The original file is never rewritten.
+
 
 1. Click a picture's tile to open the editor.
 2. The **Info** tab holds the text and details; **Display** holds the per-picture look; **Crop** holds crop, rotate and straighten.
@@ -47,7 +49,7 @@ The editor lets you crop, rotate, straighten, adjust its display look (mat, plac
 - Duplicate finder and low-resolution warnings.
 
 ## Sidecars
-Each image may have a `name.json` sidecar (schema `frame-art-sidecar/1`) holding metadata, edits, flags and per-image display overrides. Copy or back up images together with their sidecars.
+Each image may have a `name.json` sidecar (schema `frame-art-sidecar/1`) holding metadata, edits, flags and per-image display overrides. Copy or back up images together with their sidecars. **Editing is non-destructive:** crop, rotate, straighten and every look option are stored in the sidecar and applied only when the picture is rendered for the TV; the image file is never rewritten. The full file layout is on the [Sidecar files](Sidecar-Files) page.
 
 ## Grouping
 Use **Group by** (next to Sort by) to show the grid under headings by year, decade, artist or medium. The chips above the grid jump to a group, and the heading stays at the top while you scroll its images. Sorting still applies inside each group; Undated/Unknown groups come last. The choice is remembered in your browser.

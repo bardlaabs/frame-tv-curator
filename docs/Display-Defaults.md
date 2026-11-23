@@ -1,5 +1,7 @@
 # Display defaults
 
+> Defaults and per-image overrides are non-destructive: they are applied only when a picture is rendered for the TV, and per-image choices are stored in the sidecar ([Sidecar files](Sidecar-Files)). The image file itself is never changed.
+
 The **Display** tab holds the **default look**: how every picture is rendered unless that picture has its own settings. This page lists each default, what it does and how to change it.
 
 ![The Display tab](images/ui-display.png)

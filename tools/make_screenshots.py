@@ -64,7 +64,6 @@ try:
             pg.locator("%s %s" % (scope, kind)).filter(has_text=text).first.screenshot(path=os.path.join(OUT, name + ".png")); print(name)
 
         # --- whole tabs
-        tab("now"); page("ui-now-playing", True)
         tab("lib"); page("ui-library")
         tab("disc", 2500)
         pg.locator("#t-disc .tile").nth(1).click(); pg.locator("#t-disc .tile").nth(3).click(); pg.wait_for_timeout(400)
@@ -120,6 +119,20 @@ try:
         for t, nm in [("Display", "ui-editor-display"), ("Crop", "ui-editor-crop")]:
             pg.get_by_text(t, exact=True).last.click(); pg.wait_for_timeout(1500)
             label(); pg.screenshot(path=os.path.join(OUT, nm + ".png")); print(nm)
+
+        # --- Now Playing with a framed picture on the "TV" (done last: it changes the demo settings, which are put back afterwards)
+        import json as _json
+        def post(path, body):
+            rq = urllib.request.Request(BASE + "api/" + path, _json.dumps(body).encode(), {"Content-Type": "application/json"})
+            return _json.load(urllib.request.urlopen(rq, timeout=60))
+        orig = _json.load(urllib.request.urlopen(BASE + "api/settings"))["display"]
+        post("settings", {"display": {"mat": {"enabled": True, "color": "#e9e4d8", "width_pct": 8, "auto_tint": "warm_white",
+                                              "liner": {"enabled": True, "color": "#8a2f2f", "width_pct": 0.7}},
+                                      "placard": {"enabled": True, "placement": "mat", "template": "classical_editorial"}}})
+        post("show", {"id": "Art/Evening_Over_the_Lake.jpg"})
+        pg.goto(BASE); pg.wait_for_timeout(2500)
+        tab("now", 2500); page("ui-now-playing", True)
+        post("settings", {"display": orig})
         b.close()
 finally:
     srv.terminate()
