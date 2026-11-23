@@ -711,7 +711,7 @@ class Getty:
         d = {"source": self.id, "key": uuid, "url": "https://data.getty.edu/museum/collection/object/" + uuid,
              "title": title or "Untitled", "artist": g("artist"), "date": g("bd")[:4].lstrip("0") if g("bd") else "",
              "description": "", "image": base + "/full/!3840,3840/0/default.jpg",
-             "image_fallback": base + "/full/!2730,2730/0/default.jpg", "thumb": base + "/full/400,/0/default.jpg",
+             "image_fallback": base + "/full/!2730,2730/0/default.jpg", "image_more": [base + "/full/max/0/default.jpg"], "thumb": base + "/full/400,/0/default.jpg",
              "preview": base + "/full/!1200,1200/0/default.jpg", "w": None, "h": None, "ai": False, "client_fetch": False,
              "medium": "", "credit": "J. Paul Getty Museum" + (", " + acc if acc else ""), "license": self.license}
         self.det[uuid] = d
@@ -886,7 +886,15 @@ def finish(source, key, img_id, replace=()):
 
 
 def _download(url, job_item):
-    r = _get(url, 120)
+    urls = [u for u in (url if isinstance(url, (list, tuple)) else [url]) if u]
+    for n, u in enumerate(urls):
+        try:
+            r = _get(u, 120)
+            break
+        except urllib.error.HTTPError as e:           # for example an IIIF size larger than the image: try the next size
+            if n + 1 >= len(urls):
+                raise
+            log.info("download %s failed (%s), trying the next size", u, e)
     total = int(r.headers.get("Content-Length") or 0)
     job_item["total"] = total
     buf = io.BytesIO()
@@ -906,7 +914,8 @@ def _run(job, specs, folder):
                 continue
             d = SOURCES[sp["source"]].detail(sp["key"])
             it["state"] = "downloading"
-            data, ctype = _download(d.get("image_fallback") if sp.get("reduced") and d.get("image_fallback") else d["image"], it)
+            data, ctype = _download(d.get("image_fallback") if sp.get("reduced") and d.get("image_fallback") else
+                                    [d["image"]] + ([d["image_fallback"]] if d.get("image_fallback") else []) + list(d.get("image_more") or []), it)
             im = Image.open(io.BytesIO(data)); im.load()
             ext = ".png" if "png" in ctype.lower() or d["image"].lower().endswith(".png") else ".jpg"
             img_id = library.save_upload(folder, _filename(d, ext), data)

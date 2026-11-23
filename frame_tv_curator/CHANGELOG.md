@@ -2,6 +2,8 @@
 
 ## 0.20.3
 
+- Footer: every page now shows the installed add-on version at the bottom.
+- Getty: downloads no longer fail (HTTP 400) for images smaller than 3840 px; it tries 3840, then 2730, then the full size. Any source can now list fallback sizes.
 - Smithsonian: thumbnails and previews now use the ids.si.edu small "thumb" and "screen" versions (before, the full file was requested for every card, which made pages crawl), and records whose media is hosted elsewhere use the link the API gives for it.
 - Dropdown lists are now alphabetical (case-insensitive): the Discover source list, each source's Type list (for example the Smithsonian museums), the artist list and the album lists.
 

@@ -76,6 +76,22 @@ def chunk_upload(q, data):
     img_id = library.save_upload(q["folder"], q["name"], blob)
     return {"id": img_id, "low_res": library.low_res(img_id), "duplicate_of": library.duplicate_of(img_id)}
 
+_VER = []
+
+
+def _addon_version():
+    """The installed add-on version, from the Supervisor (cached once found)."""
+    if _VER:
+        return _VER[0]
+    try:
+        r = urllib.request.Request("http://supervisor/addons/self/info", headers={"Authorization": "Bearer " + os.environ.get("SUPERVISOR_TOKEN", "")})
+        v = json.loads(urllib.request.urlopen(r, timeout=5).read().decode())["data"]["version"]
+        _VER.append(v)
+        return v
+    except Exception:
+        return "unknown"
+
+
 def make(engine):
     class H(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -98,6 +114,8 @@ def make(engine):
             p = u.path.rstrip("/") or "/"
             try:
                 if p == "/api/status": return self._send(200, engine.status())
+                if p == "/api/version":
+                    return self._send(200, {"version": _addon_version()})
                 if p == "/api/health":
                     import time as _t
                     chk = {}

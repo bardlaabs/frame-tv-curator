@@ -93,6 +93,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 <main>
 <section id="t-now"></section><section id="t-lib" hidden></section><section id="t-disc" hidden></section><section id="t-disp" hidden></section><section id="t-sched" hidden></section><section id="t-tv" hidden></section><section id="t-set" hidden></section>
 </main>
+<div id="foot" class="mut" style="padding:18px 20px 26px;text-align:center;font-size:12px"></div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div><div id="toast"></div>
 <script>
 const $=(s,r=document)=>r.querySelector(s);
@@ -206,7 +207,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
 let S={},albumList=[],curAlbum=null,curTag='',folderList=[],curFolder=null,curStatus={};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
-async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
+async function boot(){api('version').then(v=>{$('#foot').textContent='Frame TV Curator v'+v.version+' · github.com/bardlaabs/frame-tv-curator'}).catch(()=>{});const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
  renderNow();renderLib();renderSet();{const t=ls.get('fc_tab');if(t&&t!='now')document.querySelector('nav button[data-t="'+t+'"]')?.click()}poll();setInterval(poll,5000);setInterval(tick,1000)}
 const byName=(a,b)=>String(a.name??a[1]??'').localeCompare(String(b.name??b[1]??''),undefined,{sensitivity:'base'});
 async function refreshFolders(){try{albumList=(await api('albums')).sort(byName)}catch(e){albumList=[]}folderList=(await api('folders')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
