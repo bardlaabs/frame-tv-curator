@@ -800,6 +800,15 @@ function tvCards(s){
   entityField('Media player entity',s,'tv.entity','media_player',{ph:'media_player.frametv'}),
   field('TV MAC address (for Wake-on-LAN when the TV is fully off)',s,'tv.mac','text'),
   el('div',{class:'row'},...[['art_on','Art Mode on'],['art_off','Art Mode off'],['power_off','Power off']].map(([a,l])=>el('button',{onclick:async()=>{toast('Sending…');const r=await api('tv',{action:a});toast(r.message,5000)}},l))));
+ // TV-side cache
+ s.tv.cache??={enabled:false,keep_recent:5,keep_favorites:true,max_favorites:10};const TCC=s.tv.cache,tcbox=el('div'),tcstat=el('div',{class:'mut'});
+ const drawTCS=async()=>{try{const r=await api('tv_cache');tcstat.replaceChildren(r.enabled?(r.entries.length?('On the TV now: '+r.entries.map(e=>(e.fav?'★ ':'')+e.id.split('/').pop().replace(/\.[^.]+$/,'')).join(' · ')):'Nothing cached yet; pictures are kept as they are shown.'):'Off: only the current picture is kept on the TV.')}catch(e){}};
+ const drawTC=()=>{fillKids(tcbox,field('Keep pictures on the TV',TCC,'enabled','check',{},drawTC),
+  TCC.enabled?num('Recent pictures to keep (including the current one)',TCC,'keep_recent',1,50):null,
+  TCC.enabled?field('Also keep favorites (the star flag)',TCC,'keep_favorites','check',{},drawTC):null,
+  TCC.enabled&&TCC.keep_favorites?num('Most favorites to keep',TCC,'max_favorites',0,100):null,
+  TCC.enabled?el('p',{class:'mut'},'A kept picture that is shown again is selected on the TV in a couple of seconds instead of being uploaded again, and it stays on the TV (browse it from the TV\u2019s Art Store > My Photos) if Home Assistant is down. Changing a picture\u2019s look or edits uploads a fresh copy. Save to apply.'):null)};drawTC();drawTCS();
+ const tvcache=el('div',{class:'card'},el('h3',{},'TV picture cache'),tcbox,tcstat,el('div',{class:'row'},el('button',{onclick:async()=>{if(!confirm('Remove the cached pictures from the TV? The picture showing now stays until the next change.'))return;toast('Removing…');const r=await api('tv_cache_clear',{});toast('Removed '+r.removed+' picture(s) from the TV');drawTCS()}},'Clear cached pictures'),el('button',{onclick:drawTCS},'Refresh')));
  // brightness
  const B=A.brightness,bd=el('div');
  const drawB=()=>{fillKids(bd,
@@ -894,7 +903,7 @@ function tvCards(s){
     a.error?el('div',{class:'warn'},'Problem: '+humanize(a.error)):null,
     el('div',{class:'mut',style:'font-size:12px'},'Updated '+new Date().toLocaleTimeString()))}catch(x){}};
  if(ambTimer)clearInterval(ambTimer);ambTimer=setInterval(updAmb,5000);setTimeout(updAmb,300);
- return [act,live,conn,pres,bright,ct,light]}
+ return [act,live,conn,tvcache,pres,bright,ct,light]}
 const $$=x=>x;
 boot();
 </script></body></html>

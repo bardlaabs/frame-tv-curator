@@ -60,9 +60,9 @@ class Engine:
                     st = self.state.get()
                     self._act("pushing", "Sending \u201c%s\u201d to the TV" % name)
                     t0 = time.time()
-                    cid = self.tv.push(jpg, st.get("tv_ids", []))
-                    log.info("pushed %s in %.1fs", img_id, time.time() - t0)
-                    d = self.state.get(); d["tv_ids"] = [cid]; self.state.data = d; self.state.save()
+                    cid, info = self._tv_push(jpg, img_id, sc)
+                    log.info("%s %s in %.1fs%s", "reused on TV:" if info.get("reused") else "pushed", img_id, time.time() - t0,
+                             (" (cache %d)" % info["cached"]) if info.get("cached") is not None else "")
                     result["tv"] = "pushed"
                     self.last_error = None
                 except Exception as e:
@@ -106,6 +106,35 @@ class Engine:
             d["history"] = h[-100:]
             d["pos"] = len(d["history"]) - 1
         self.state.data = d; self.state.save()
+
+    def _tv_push(self, jpg, img_id, sc=None):
+        """Send a rendered picture to the TV, with or without the TV-side cache. Returns (content_id, info)."""
+        st = self.state.get()
+        cc = (self.settings.get().get("tv") or {}).get("cache") or {}
+        cache = st.get("tv_cache") or []
+        if cc.get("enabled"):
+            fav = bool(((sc or {}).get("flags") or {}).get("favorite"))
+            cid, cache, info = self.tv.push_cached(jpg, img_id, fav, cache, cc, st.get("tv_ids", []))
+            d = self.state.get(); d["tv_cache"] = cache; d["tv_ids"] = []
+        else:
+            cid = self.tv.push(jpg, list(st.get("tv_ids", [])) + [e["cid"] for e in cache])
+            info = {"reused": False, "cached": None}
+            d = self.state.get(); d["tv_cache"] = []; d["tv_ids"] = [cid]
+        self.state.data = d; self.state.save()
+        return cid, info
+
+    def tv_cache_status(self):
+        st = self.state.get()
+        cc = (self.settings.get().get("tv") or {}).get("cache") or {}
+        return {"enabled": bool(cc.get("enabled")),
+                "entries": [{"id": e["id"], "ts": e.get("ts"), "fav": bool(e.get("fav"))} for e in sorted(st.get("tv_cache") or [], key=lambda e: -e.get("ts", 0))]}
+
+    def tv_cache_clear(self):
+        with self.lock:
+            st = self.state.get()
+            n = self.tv.clear_cache([e["cid"] for e in st.get("tv_cache") or []])
+            d = self.state.get(); d["tv_cache"] = []; self.state.data = d; self.state.save()
+            return {"removed": n}
 
     def _push_pattern(self, kind, name, img, detail):
         with self.lock:

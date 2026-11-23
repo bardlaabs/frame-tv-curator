@@ -1,5 +1,5 @@
 """Samsung Frame push: upload -> select -> delete previous (Art Mode API)."""
-import os, time, logging, threading
+import os, time, logging, threading, hashlib
 from . import config, ha
 log = logging.getLogger("tv")
 
@@ -52,6 +52,67 @@ class TV:
                 except Exception as e:
                     log.warning("delete %s failed: %s", old, e)
             return cid
+
+    def push_cached(self, jpeg_path, img_id, fav, cache, cc, legacy_ids=()):
+        """Like push(), but keeps recent (and favorite) pictures on the TV and reuses them: a picture already on the TV with
+        the same rendered bytes is just selected again. Returns (content_id, new_cache, info)."""
+        data = open(jpeg_path, "rb").read()
+        sha = hashlib.sha1(data).hexdigest()
+        now = time.time()
+        if self.dry:
+            log.info("[dry-run] would cache-push %s (%d cached)", img_id, len(cache))
+            return "DRY-%d" % len(data), cache, {"reused": False, "deleted": 0, "cached": len(cache)}
+        with self.lock:
+            art = self._art()
+            try:
+                on_tv = {x.get("content_id") for x in (art.available() or [])}
+            except Exception as e:
+                log.warning("could not list the TV's pictures: %s", e)
+                on_tv = None
+            cache = [e for e in cache if on_tv is None or e.get("cid") in on_tv]
+            hit = next((e for e in cache if e["id"] == img_id and e.get("sha") == sha), None)
+            stale = [e for e in cache if e["id"] == img_id and e is not hit]
+            reused = False
+            if hit:
+                try:
+                    art.select_image(hit["cid"], show=True)
+                    cid, reused = hit["cid"], True
+                    hit["ts"], hit["fav"] = now, bool(fav)
+                except Exception as e:
+                    log.warning("cached picture would not show (%s); uploading again", e)
+                    cache.remove(hit)
+                    hit = None
+            if not hit:
+                cid = art.upload(data, matte="none", portrait_matte="none", file_type="JPEG")
+                art.select_image(cid, show=True)
+                cache.append({"id": img_id, "cid": cid, "sha": sha, "ts": now, "fav": bool(fav)})
+            drop = [e["cid"] for e in stale] + [c for c in legacy_ids if c != cid]
+            cache = [e for e in cache if e not in stale]
+            keep_fav = int(cc.get("max_favorites") or 0) if cc.get("keep_favorites", True) else 0
+            favs = sorted([e for e in cache if e.get("fav") and e["cid"] != cid], key=lambda e: -e["ts"])[:keep_fav]
+            rest = sorted([e for e in cache if e not in favs and e["cid"] != cid], key=lambda e: -e["ts"])
+            recent = rest[:max(0, int(cc.get("keep_recent") or 1) - 1)]
+            keep = [e for e in cache if e["cid"] == cid] + favs + recent
+            drop += [e["cid"] for e in cache if e not in keep]
+            for old in drop:
+                try:
+                    art.delete(old)
+                except Exception as e:
+                    log.warning("delete %s failed: %s", old, e)
+            return cid, keep, {"reused": reused, "deleted": len(drop), "cached": len(keep)}
+
+    def clear_cache(self, cids):
+        if self.dry or not cids:
+            return 0
+        n = 0
+        with self.lock:
+            art = self._art()
+            for c in cids:
+                try:
+                    art.delete(c); n += 1
+                except Exception as e:
+                    log.warning("delete %s failed: %s", c, e)
+        return n
 
     def probe(self):
         """Art Mode settings the TV reports: {brightness:{value,min,max}, color_temperature:{...}, sensor}. Cached by the caller."""

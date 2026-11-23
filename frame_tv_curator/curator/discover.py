@@ -430,7 +430,7 @@ class NASA:
              "description": desc, "image": orig["href"].replace("http://", "https://"),
              "image_fallback": (thumb or orig)["href"], "thumb": (thumb or orig)["href"], "preview": (thumb or orig)["href"],
              "w": int(orig.get("width") or 0) or None, "h": int(orig.get("height") or 0) or None, "ai": False, "client_fetch": False,
-             "medium": "Photograph", "credit": "NASA" + ((" / " + who) if who and who != "NASA" else ""), "license": self.license}
+             "medium": "Photograph", "credit": who if who.upper().startswith("NASA") else "NASA / " + who, "license": self.license}
         self.det[nid] = d
         return d
 

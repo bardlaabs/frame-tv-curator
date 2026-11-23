@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0
+- TV picture cache (TV tab, off by default): keep the last N pictures and your favorites on the TV. A kept picture that is shown again is selected in a couple of seconds instead of being uploaded again, and stays on the TV (My Photos) even if Home Assistant is down. A changed look or edit uploads a fresh copy. Includes a Clear cached pictures button.
+- NASA credit line no longer repeats "NASA".
+
 ## 0.12.2
 - Discover: NASA Image Library (no key). Topics (nebulae, galaxies, James Webb, Hubble, Mars, the Moon, Earth, auroras, Saturn and Jupiter) or your own search; images under 1600 px wide are skipped, so pages can come up short.
 

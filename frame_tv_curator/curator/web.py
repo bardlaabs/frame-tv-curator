@@ -97,6 +97,7 @@ def make(engine):
             try:
                 if p == "/api/status": return self._send(200, engine.status())
                 if p == "/api/ambient": return self._send(200, dict(engine.ambient.status(), presence=engine.presence.status()))
+                if p == "/api/tv_cache": return self._send(200, engine.tv_cache_status())
                 if p == "/api/tv_probe": return self._send(200, engine.ambient.probe(force=True))
                 if p == "/api/ha_state":
                     ent = q.get("entity", "")
@@ -264,6 +265,8 @@ def make(engine):
                 if p == "/api/tv":
                     ok, msg = engine.tv.control(b.get("action"))
                     return self._send(200, {"ok": ok, "message": msg})
+                if p == "/api/tv_cache_clear":
+                    return self._send(200, engine.tv_cache_clear())
                 if p == "/api/tv_apply":
                     ok, msg = engine.tv.apply_art(brightness=b.get("brightness"), color_temp=b.get("color_temp"), sensor_off=b.get("sensor_off"))
                     engine.ambient.poke() if b.get("repoke") else None
