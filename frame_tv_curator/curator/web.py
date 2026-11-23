@@ -3,6 +3,8 @@ import os, io, json, logging, mimetypes, hashlib, tempfile, urllib.parse, urllib
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from PIL import Image
 from . import ha, library, render, store, config, discover
+import time as _time0
+START_TS = _time0.time()
 log = logging.getLogger("web")
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 THUMBS = os.path.join(config.ROOT, "_thumbs")
@@ -96,6 +98,27 @@ def make(engine):
             p = u.path.rstrip("/") or "/"
             try:
                 if p == "/api/status": return self._send(200, engine.status())
+                if p == "/api/health":
+                    import time as _t
+                    chk = {}
+                    def _w(d):
+                        try:
+                            f = os.path.join(d, ".health_%d" % os.getpid()); open(f, "w").write("x"); os.remove(f); return True
+                        except Exception:
+                            return False
+                    chk["data_writable"] = _w(config.DATA)
+                    chk["share_writable"] = _w(config.ROOT)
+                    bad = []
+                    for n in ("settings.json", "state.json", "albums.json"):
+                        fp = os.path.join(config.DATA, n)
+                        if os.path.exists(fp):
+                            try: json.load(open(fp))
+                            except Exception: bad.append(n)
+                    chk["bad_json"] = bad
+                    chk["uptime_s"] = int(_t.time() - START_TS)
+                    chk["rotation_error"] = engine.last_error
+                    chk["ok"] = chk["data_writable"] and chk["share_writable"] and not bad
+                    return self._send(200 if chk["ok"] else 503, chk)
                 if p == "/api/ambient": return self._send(200, dict(engine.ambient.status(), presence=engine.presence.status()))
                 if p == "/api/tv_cache": return self._send(200, engine.tv_cache_status())
                 if p == "/api/tv_probe": return self._send(200, engine.ambient.probe(force=True))

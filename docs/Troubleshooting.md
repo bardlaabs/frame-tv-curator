@@ -7,3 +7,7 @@
 - **Colors look off**: check the sRGB setting in Display.
 - **Placard cut off**: adjust Overscan.
 - **Discover add fails**: try again; if a museum refuses the large size the add-on falls back to a smaller copy and tells you.
+
+## Health check
+
+Open `/api/health` (through the add-on's panel address) to see a quick self-check: whether the add-on can write its data folder and the picture share, whether its settings, state and album files can be read, how long it has been running, and the last rotation error. It answers with an error status (503) when something is wrong, so a Home Assistant REST sensor can watch it.

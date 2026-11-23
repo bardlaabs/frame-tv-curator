@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.2
+
+- New health check: `/api/health` reports whether the add-on can write its data and the picture share, whether its data files are readable, uptime and the last rotation error (HTTP 503 if something is wrong). Handy for a Home Assistant REST sensor or a dashboard.
+
 ## 0.18.1
 
 - TV brightness: new "Steadiness" setting (default 0.3; 0 turns it off). The brightness only moves to a new TV step when the target is clearly past the halfway point, which stops it flickering between two neighboring steps around a threshold.
