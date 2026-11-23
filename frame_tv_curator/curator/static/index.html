@@ -338,7 +338,8 @@ function flagBtn(i,k,cls,tip){const b=el('button',{class:'fb '+cls+(i.flags[k]?'
 const FLAGLBL={favorite:'★ Favorite',show_more:'＋ Show more',exclude:EYE_SLASH+' Exclude'};
 function flagChip(obj,k,after){const c=el('span',{class:'ch'+(obj[k]?' on':''),style:'display:inline-flex;align-items:center;gap:5px'});c.innerHTML=FLAGLBL[k];c.querySelector('svg')?.setAttribute('style','width:15px;height:15px');
  c.onclick=()=>after(k,c);return c}
-async function renderLib(){const root=$('#t-lib');root.replaceChildren();await refreshFolders();
+let _libTok=0;
+async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChildren();await refreshFolders();if(tok!==_libTok)return;
  if(curAlbum&&!albumList.some(a=>a.id==curAlbum))curAlbum=null;
  const chips=el('div',{class:'chips'},folderList.map(f=>el('span',{class:'chip'+(!curAlbum&&f.name==curFolder?' on':''),onclick:()=>{curAlbum=null;setFolder(f.name);renderLib()}},f.name+' ('+f.count+')')),
   el('button',{onclick:async()=>{const n=prompt('New folder name');if(!n)return;const r=await api('folder',{name:n});curAlbum=null;setFolder(r.folder);renderLib()}},'+ Folder'));
@@ -364,6 +365,7 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
  const bar=el('div',{class:'row',style:'margin-bottom:12px'},q,el('label',{style:'color:var(--mut)'},'Sort by'),sel,dir,gsel,selBtn,dupBtn,el('span',{class:'mut',id:'cnt'}));
  const grid=el('div',{class:'grid'});root.append(chips,achips,albBar,drop,upl,bar,grid);
  const items=await api(curAlbum?'library?album='+encodeURIComponent(curAlbum):'library?folder='+encodeURIComponent(curFolder));
+ if(tok!==_libTok)return;
  const tile=i=>el('div',{class:'tile'+(i.flags.exclude?' ex':'')+(i.id==curStatus.current?' cur':'')+(selected.has(i.id)?' sel':''),onclick:function(){if(selMode){selected.has(i.id)?selected.delete(i.id):selected.add(i.id);this.classList.toggle('sel');drawBulk()}else openEditor(i.id)}},
    el('img',{loading:'lazy',src:'api/thumb?id='+encodeURIComponent(i.id)}),
    el('div',{class:'badges'},expBtn(i),flagBtn(i,'favorite','fav','Favorite (shown more often)'),flagBtn(i,'show_more','more','Show more often'),flagBtn(i,'exclude','exc','Exclude from rotation'),i.has_display?el('i',{title:'This image has customized display settings'},'⚙'):null,i.low_res?el('i',{title:'Below 1920×1080 — may look soft on the TV'},'⚠'):null),

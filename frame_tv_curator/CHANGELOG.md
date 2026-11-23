@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.5
+
+- Library: fixed the folder buttons, add block and picture tiles sometimes showing twice. Two refreshes of the Library could overlap (for example right after switching tabs); the newer one now wins and the older one stops.
+
 ## 0.20.4
 
 - Smithsonian: some records (many in the Portrait Gallery) list a picture the Smithsonian's image server no longer has; their cards are now hidden when the thumbnail fails to load instead of showing a broken image (page counts can still include them).
