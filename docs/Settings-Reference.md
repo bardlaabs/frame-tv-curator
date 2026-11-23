@@ -238,3 +238,11 @@ Stored in each picture's sidecar and edited in the image editor.
 
 - **Appearance:** Auto follows the device, or force Light or Dark. It is remembered in this browser only.
 - **Moods:** the list offered in a picture's Info tab and used by the Library's Mood filter. Add a mood, rename one (every picture using it is updated), or remove it from the list (pictures keep their mood text). Press Save settings to keep add and remove changes.
+
+## Weather nudge (0.30.0)
+
+Settings > Moods and appearance > **Weather**. Turn on **Nudge by the weather**, choose a weather entity (Automatic uses `weather.weather_home`, then `weather.home`, then the first weather entity) and a strength. When the entity reports a condition (sunny, rainy, fog and so on), that percentage of picks favors pictures whose **mood** is in the list for that condition; the other picks are random as usual. Edit the lists under **Which moods fit which weather**. Pictures with no mood are never penalized and nothing is excluded.
+
+## Schedule crops (0.30.0)
+
+In a schedule, **Use this saved crop** names one of the saved crops you made in a picture's Crop tab. While the schedule is active, pictures that have a crop with that name are shown with it; other pictures show as usual.

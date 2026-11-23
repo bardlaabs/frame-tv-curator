@@ -32,6 +32,7 @@ DEFAULT_SETTINGS = {
     "schedules": [],
     "log_level": "",
     "moods": ["calm", "serene", "joyful", "playful", "dramatic", "bold", "melancholy", "mysterious", "romantic", "nostalgic", "energetic", "contemplative"],
+    "weather": {"enabled": False, "entity": "", "strength": 50, "map": {}},
     "notify": {"enabled": False, "service": "", "minutes": 15, "on_recovery": True},
     "birdframe": {"enabled": False, "every_n": 10, "every_minutes": 0, "duration_minutes": 10, "source": "live",
                   "folder": "birds", "host": "local-birdframe-local", "port": 8099},

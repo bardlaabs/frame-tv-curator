@@ -1,6 +1,6 @@
 """Core: choose -> render -> push (TV + e-paper) -> state. Plus the rotation scheduler."""
 import os, time, json, threading, logging, urllib.request, urllib.error
-from . import config, library, picker, render, epaper, store, schedule, ha
+from . import config, library, picker, render, epaper, store, schedule, ha, weather
 from .tv import TV
 log = logging.getLogger("engine")
 UNIT = {"minutes": 60, "hours": 3600, "days": 86400}
@@ -65,6 +65,11 @@ class Engine:
     def render_image(self, img_id, force=False):
         s = self.settings.get()
         sc = library.load_sidecar(img_id)
+        crop = (self.active_source()[1] or {}).get("crop")
+        saved = ((sc.get("edit") or {}).get("saved_crops") or {}).get(crop) if crop else None
+        if saved:      # the active schedule asks for a named crop that this picture has
+            sc = dict(sc); sc["edit"] = {"rotate": saved.get("rotate") or 0, "straighten": saved.get("straighten") or 0,
+                                           "crop": {k: saved[k] for k in ("x", "y", "w", "h")}}
         return render.render(library.abspath(img_id), sc, settings=s["display"],
                              cache_dir=config.RENDER_DIR, force=force)
 
@@ -241,7 +246,7 @@ class Engine:
             if nid and d.get("next_key") == key and os.path.exists(library.abspath(nid)) \
                     and not (library.load_sidecar(nid).get("flags") or {}).get("exclude"):
                 return nid
-            nid = picker.next_id(src, d, avoid=d.get("current"))
+            nid = picker.next_id(src, d, avoid=d.get("current"), prefer=weather.prefer(self.settings.get()))
             d["next"], d["next_key"] = nid, key
             self.state.data = d; self.state.save()
             return nid

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.30.0
+
+- **Weather nudge** (Settings > Moods and appearance > Weather): pick a Home Assistant weather entity (automatic finds `weather.weather_home` or the first one), and pictures whose mood fits the current weather are picked more often. Strength and the weather-to-mood mapping are adjustable. Nothing is excluded; with no entity or no moods it does nothing.
+- **Named crops on schedules:** a schedule can name a saved crop; pictures that have it are shown with that crop while the schedule is active.
+
 ## 0.29.0
 
 - **Settings sub-menu:** Settings now has General, Display, TV, Notifications and Moods and appearance pages. The Display and TV tabs moved inside Settings, so the top bar has five tabs. It reopens on the page you were last on.

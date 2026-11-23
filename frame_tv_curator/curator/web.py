@@ -157,6 +157,11 @@ def make(engine):
                     out.sort(key=lambda x: x["id"])
                     return self._send(200, out)
                 if p == "/api/settings": return self._send(200, engine.settings.get())
+                if p == "/api/weather_entities":
+                    from . import weather
+                    ents = weather.entities(); cfg = engine.settings.get().get("weather") or {}
+                    cond, moods = weather.current(cfg)
+                    return self._send(200, {"entities": ents, "auto": weather.pick_entity(cfg), "condition": cond, "moods": moods})
                 if p == "/api/folders": return self._send(200, library.folders())
                 if p == "/api/library":
                     if q.get("album"):

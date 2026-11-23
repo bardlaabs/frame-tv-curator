@@ -36,7 +36,7 @@ def source_key(src):
         return "mix:" + ",".join(sorted((src.get("mix") or {}).keys()))
     return "folder:" + src.get("folder", "Art")
 
-def next_id(src, state_data, avoid=None):
+def next_id(src, state_data, avoid=None, prefer=None):
     """Returns (image_id, bags_dict). Mix mode picks a folder by weight, then draws from that folder's bag."""
     bags = state_data.setdefault("bags", {})
     if src.get("mode") == "mix":
@@ -58,7 +58,15 @@ def next_id(src, state_data, avoid=None):
         # avoid an immediate repeat across the refill boundary
         if avoid and bag[-1] == avoid and len(set(bag)) > 1:
             bag.insert(0, bag.pop())
-    pick = bag.pop()
+    pick = None
+    if prefer and prefer[0] and random.random() < prefer[1]:
+        want = prefer[0]
+        match = [i for i in set(bag) if (library.load_sidecar(i).get("mood") or "").strip().lower() in want]
+        if match:
+            pick = random.choice(match)
+            bag.remove(pick)
+    if pick is None:
+        pick = bag.pop()
     # remove remaining duplicates of weighted pick only after it's drawn: weighting means repeats are allowed in a cycle
     bags[key] = bag
     return pick

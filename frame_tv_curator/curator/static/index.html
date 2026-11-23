@@ -468,6 +468,7 @@ function scheduleEditor(s,ix){const r=s.schedules[ix];r.days??=[];
   el('div',{class:'row'},el('label',{},'Days (none = every day)'),dayChips),
   field('From time (HH:MM, blank = all day)',r,'time_from','text'),field('To time (HH:MM)',r,'time_to','text'),
   field('From date each year (MM-DD, blank = any)',r,'date_from','text'),field('To date (MM-DD)',r,'date_to','text'),
+  field('Use this saved crop (name, optional)',r,'crop','text'),el('p',{class:'mut'},'Pictures that have a saved crop with this name (Library > picture > Crop tab) are shown cropped that way while this schedule is active; others show as usual.'),
   field('Priority (higher wins)',r,'priority','num',{min:0,max:99}),
   el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{if(r.kind=='images'&&!r.images.length){toast('Pick at least one image');return}
     for(const k of ['date_from','date_to'])if(r[k]&&!/^\d{1,2}-\d{1,2}$/.test(r[k])){toast('Dates look like 12-24');return}
@@ -879,6 +880,17 @@ async function openViewer(id,disp,edit){
  v.addEventListener('dblclick',e=>{Math.abs(sc-1)<.01?fit():(()=>{const f=1/sc;zoom(f,e.clientX,e.clientY)})()})}
 
 /* ---------- Settings ---------- */
+const WCOND=['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','lightning','lightning-rainy','snowy','snowy-rainy','fog','hail','windy','windy-variant','exceptional'];
+const WDEF={sunny:'joyful, playful, energetic, bold','clear-night':'calm, mysterious, contemplative, serene',partlycloudy:'serene, calm, nostalgic',cloudy:'contemplative, melancholy, calm',rainy:'melancholy, contemplative, romantic, mysterious',pouring:'melancholy, dramatic, mysterious',lightning:'dramatic, bold, mysterious','lightning-rainy':'dramatic, bold, mysterious',snowy:'serene, calm, nostalgic, contemplative','snowy-rainy':'melancholy, serene, contemplative',fog:'mysterious, calm, melancholy',hail:'dramatic, bold',windy:'energetic, dramatic, bold','windy-variant':'energetic, dramatic, bold',exceptional:'dramatic, bold'};
+function weatherCard(s){s.weather=s.weather||{enabled:false,entity:'',strength:50,map:{}};s.weather.map=s.weather.map||{};
+ const box=el('div',{});const info=el('p',{class:'mut'},'Checking the weather…');
+ api('weather_entities').then(r=>{const ents=r.entities||[];const sel=el('select',{onchange:()=>{s.weather.entity=sel.value}},el('option',{value:''},'Automatic ('+(r.auto||'none found')+')'),...ents.map(e=>el('option',{value:e.entity},e.name+' ('+e.entity+')')));sel.value=s.weather.entity||'';
+  box.replaceChildren(field('Nudge by the weather',s,'weather.enabled','check'),el('div',{class:'row'},el('label',{},'Weather entity'),sel),
+   field('How strong (percent of picks that favor a matching mood)',s,'weather.strength','num',{min:0,max:100,step:5}),
+   el('details',{},el('summary',{},'Which moods fit which weather'),el('p',{class:'mut'},'Comma-separated moods per Home Assistant weather condition. Leave a box as it is to keep the built-in choice.'),
+    ...WCOND.map(c=>{const inp=el('input',{type:'text',style:'width:min(100%,380px)',value:(s.weather.map[c]||[]).join(', ')||WDEF[c]});inp.placeholder=WDEF[c];inp.onchange=()=>{const v=inp.value.split(',').map(x=>x.trim()).filter(Boolean);if(v.join(', ')==WDEF[c])delete s.weather.map[c];else s.weather.map[c]=v};return el('div',{class:'row'},el('label',{style:'min-width:140px'},c),inp)})));
+  info.textContent=r.condition?('Right now: '+r.condition+(r.moods&&r.moods.length?' → favors '+r.moods.join(', ')+'.':'.')):'No weather entity found in Home Assistant; the nudge does nothing until one exists.'}).catch(()=>{info.textContent='Could not read the weather entities.'});
+ return el('div',{class:'card'},el('h3',{},'Weather'),el('p',{class:'mut'},'Pictures whose mood fits the current weather get picked a little more often (set moods in the Info tab, or with AI later). Nothing is ever excluded, and with no weather entity or no moods it does nothing.'),info,box)}
 function moodsEditor(s){const box=el('div',{});const draw=()=>{s.moods=s.moods||[];box.replaceChildren(
   ...s.moods.map((m,i)=>el('div',{class:'row'},el('span',{style:'min-width:140px'},m),
    el('button',{onclick:async()=>{const n=(prompt('Rename mood',m)||'').trim();if(!n||n==m)return;const r=await api('mood_rename',{from:m,to:n});s.moods[i]=n;toast('Renamed; '+r.changed+' picture'+(r.changed==1?'':'s')+' updated. Save settings to keep the list.',6000);draw()}},'Rename'),
@@ -945,7 +957,7 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
  const byT=t=>cards.find(c=>c&&c.querySelector&&c.querySelector('h3')&&c.querySelector('h3').textContent==t);
  put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Logging'),byT('Backups'),mkSave()]);
  put('t-alerts',[byT('Notifications'),mkSave()]);
- put('t-prefs',[byT('Appearance'),byT('Moods'),mkSave()]);
+ put('t-prefs',[byT('Appearance'),byT('Moods'),weatherCard(s),mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);
  const [actCard,liveCard,...tvRest]=tvCards(s);
