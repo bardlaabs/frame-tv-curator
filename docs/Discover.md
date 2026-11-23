@@ -21,3 +21,7 @@ Please keep the polite request rate; the add-on throttles requests to museum ser
 ## Adding to an album
 
 Next to **Add to folder** is **and album**. Pick an album there and everything you add is also put in that album (the pictures still live in the folder you chose). The list shows the albums that existed when you opened Discover; reload the page after creating a new album.
+
+## Smithsonian
+
+Open-access art and design from the Smithsonian museums (CC0, at least 1600 px wide). It needs a free API key: request one at https://api.data.gov/signup/, paste it into the add-on Configuration (Smithsonian API key), save and restart the add-on. Pick a museum from the Type menu or search all of them.

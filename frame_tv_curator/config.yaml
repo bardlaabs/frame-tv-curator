@@ -1,5 +1,5 @@
 name: Frame TV Curator
-version: "0.18.2"
+version: "0.19.0"
 slug: frame_tv_curator
 description: Curate, render and rotate art and photos on a Samsung Frame TV
 url: https://github.com/bardlaabs/frame-tv-curator
@@ -22,7 +22,9 @@ options:
   log_level: info
   tv_ip: ""
   dry_run: false
+  smithsonian_key: ""
 schema:
   log_level: list(debug|info|warning|error)
   tv_ip: str?
   dry_run: bool?
+  smithsonian_key: password?

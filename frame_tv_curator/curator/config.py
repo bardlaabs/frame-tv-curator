@@ -9,7 +9,7 @@ IMG_EXT = (".jpg", ".jpeg", ".png")
 
 
 def options():
-    o = {"log_level": "info", "tv_ip": "", "dry_run": False}
+    o = {"log_level": "info", "tv_ip": "", "dry_run": False, "smithsonian_key": ""}
     p = os.path.join(DATA, "options.json")
     if os.path.exists(p):
         try:

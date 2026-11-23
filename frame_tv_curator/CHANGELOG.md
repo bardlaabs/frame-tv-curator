@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.0
+
+- Discover: new **Smithsonian** source (American Art, Portrait Gallery, Cooper Hewitt, Freer | Sackler, Hirshhorn and more). Only CC0 images at least 1600 px wide are shown. It needs a free key from api.data.gov: paste it into the add-on Configuration (Smithsonian API key) and restart. Without a key the source shows a short explanation.
+
 ## 0.18.2
 
 - New health check: `/api/health` reports whether the add-on can write its data and the picture share, whether its data files are readable, uptime and the last rotation error (HTTP 503 if something is wrong). Handy for a Home Assistant REST sensor or a dashboard.

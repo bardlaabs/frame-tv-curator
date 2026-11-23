@@ -549,7 +549,101 @@ class Commons:
         return d
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA(), "commons": Commons()}
+class Smithsonian:
+    """Smithsonian Open Access (api.si.edu). Needs a free api.data.gov key, set in the add-on's Configuration tab.
+    Only CC0 images at least 1600 px wide are shown."""
+    id = "smithsonian"
+    name = "Smithsonian"
+    home = "https://www.si.edu/openaccess"
+    license = "CC0 (Smithsonian Open Access)"
+    client_fetch = False
+    blurb = ("Open-access art and design from the Smithsonian museums (CC0, at least 1600 px wide). Needs a free key from "
+             "api.data.gov: paste it into the add-on's Configuration tab (Smithsonian API key) and restart the add-on.")
+    sorts = [["relevance", "Best match"]]
+    types = [["unit_code:SAAM", "American Art Museum"], ["unit_code:NPG", "National Portrait Gallery"],
+             ["unit_code:CHNDM", "Cooper Hewitt (design)"], ["unit_code:FSG", "Freer | Sackler (Asian art)"],
+             ["unit_code:HMSG", "Hirshhorn"], ["unit_code:NMAAHC", "African American History & Culture"],
+             ["unit_code:NMAI", "American Indian"], ["unit_code:NASM", "Air and Space"], ["", "All museums"]]
+    has_artists = False
+    API = "https://api.si.edu/openaccess/api/v1.0/search"
+    MIN_W = 1600
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    @staticmethod
+    def key():
+        return (config.options().get("smithsonian_key") or "").strip()
+
+    @staticmethod
+    def _ft(c, name):
+        return [x.get("content") for x in ((c.get("freetext") or {}).get(name) or []) if x.get("content")]
+
+    def _item(self, row):
+        c = row.get("content") or {}
+        dnr = c.get("descriptiveNonRepeating") or {}
+        media = next((m for m in ((dnr.get("online_media") or {}).get("media") or [])
+                      if m.get("type") == "Images" and (m.get("usage") or {}).get("access") == "CC0"), None)
+        if not media:
+            return None
+        w, h = int(media.get("width") or 0), int(media.get("height") or 0)
+        if w and w < self.MIN_W:
+            return None
+        iid = media.get("idsId") or ""
+        hi = next((r for r in (media.get("resources") or []) if r.get("label") == "High-resolution JPEG" and r.get("url")), None)
+        img = hi["url"] if hi else "https://ids.si.edu/ids/deliveryService?id=%s&max=3840" % urllib.parse.quote(iid)
+        thumb = "https://ids.si.edu/ids/deliveryService?id=%s&max=400" % urllib.parse.quote(iid)
+        prev = "https://ids.si.edu/ids/deliveryService?id=%s&max=1200" % urllib.parse.quote(iid)
+        who = (self._ft(c, "name") or [""])[0]
+        who = re.sub(r",\s*(born|died|active|\d).*$", "", who) if who else ""
+        notes = " ".join(self._ft(c, "notes"))
+        d = {"source": self.id, "key": row.get("id") or iid,
+             "url": dnr.get("record_link") or ("https://www.si.edu/object/" + (row.get("id") or "")),
+             "title": row.get("title") or "Untitled", "artist": who, "date": (self._ft(c, "date") or [""])[0],
+             "description": re.sub(r"\s+", " ", notes).strip(), "image": img, "image_fallback": prev,
+             "thumb": thumb, "preview": prev, "w": w or None, "h": h or None, "ai": False, "client_fetch": False,
+             "medium": (self._ft(c, "physicalDescription") or [""])[0], "credit": "; ".join(self._ft(c, "creditLine")) or
+             (self._ft(c, "dataSource") or ["Smithsonian"])[0], "license": self.license}
+        self.det[d["key"]] = d
+        return d
+
+    def _call(self, prm):
+        k = self.key()
+        if not k:
+            raise ValueError("Smithsonian needs a free api.data.gov key: add it in the add-on Configuration (Smithsonian API key).")
+        prm = dict(prm, api_key=k)
+        try:
+            return json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 40, gap=0.5).read().decode("utf8", "replace"))
+        except urllib.error.HTTPError as e:
+            raise ValueError("Smithsonian API refused the request (HTTP %s). Check the key and the rate limit." % e.code)
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="unit_code:SAAM", **kw):
+        parts = ['online_media_type:"Images"']
+        if type:
+            f, _, v = type.partition(":")
+            parts.append('%s:"%s"' % (f, v))
+        if q.strip():
+            parts.append("(%s)" % q.strip())
+        j = self._call({"q": " AND ".join(parts), "start": page * per, "rows": per})
+        r = j.get("response") or {}
+        items = [x for x in (self._item(i) for i in r.get("rows", [])) if x]
+        return {"total": int(r.get("rowCount") or 0), "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        j = self._call({"q": 'id:"%s"' % key, "rows": 1})
+        rows = (j.get("response") or {}).get("rows") or []
+        d = self._item(rows[0]) if rows else None
+        if not d:
+            raise ValueError("Smithsonian image not found, not CC0 or too small")
+        return d
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA(), "commons": Commons(), "smithsonian": Smithsonian()}
 
 
 # ---------------- library matching ----------------
