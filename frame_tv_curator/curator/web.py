@@ -379,7 +379,7 @@ def make(engine):
                     return self._send(200, {"ok": True, "rows": ai.preview(b["id"], b["fields"], b.get("candidate"))})
                 if p == "/api/ai_apply":
                     from . import ai
-                    return self._send(200, {"ok": True, "filled": ai.apply(b["id"], b["fields"], b.get("model", ""), (b.get("overwrite") if isinstance(b.get("overwrite"), list) else bool(b.get("overwrite"))), b.get("candidate"))})
+                    return self._send(200, {"ok": True, "filled": ai.apply(b["id"], b["fields"], b.get("model", ""), (b.get("overwrite") if isinstance(b.get("overwrite"), list) else bool(b.get("overwrite"))), b.get("candidate"), b.get("only") if isinstance(b.get("only"), list) else None)})
                 if p == "/api/exif_refresh":
                     return self._send(200, library.refresh_exif(b["id"]))
                 if p == "/api/mood_rename":

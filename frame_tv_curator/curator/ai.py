@@ -163,24 +163,47 @@ def identify_verify(img_id, settings):
     return r
 
 def _spec(sc, fields, cand):
-    """The fields a result can fill: (key, label, current value, new value, setter)."""
+    """The fields a result can fill: (key, label, current value, new value, setter). Current values are read the way the editor
+    shows them (card_text first), and setters write both card_text and the underlying field, so the change is what you see."""
+    ct = sc.get("card_text")
+    if not isinstance(ct, dict):
+        ct = sc["card_text"] = {}
+    col = sc.get("collection") if isinstance(sc.get("collection"), dict) else {}
+    ar = sc.get("artist") if isinstance(sc.get("artist"), dict) else {}
+    dt = sc.get("date") if isinstance(sc.get("date"), dict) else {}
     def txt(v): return v.strip() if isinstance(v, str) else ""
-    def nm(k): 
-        v = sc.get(k); return (v.get("name") if k == "artist" and isinstance(v, dict) else v.get("display") if k == "date" and isinstance(v, dict) else v) or ""
-    ct = sc.setdefault("card_text", {}) if isinstance(sc.get("card_text"), (dict, type(None))) else {}
+    def set_artist(v):
+        ct["artist"] = v
+        a = dict(ar) if ar else {}; a["name"] = v
+        if "display" in a: a["display"] = v
+        sc["artist"] = a
+    def set_title(v):
+        ct["title"] = v; sc["title"] = v; sc.pop("placard_title", None)
+    def set_date(v):
+        ct["date"] = v; sc["date"] = {"display": v}
+    def set_medium(v):
+        ct["medium"] = v
+        if "medium" in sc: sc["medium"] = v
+    def set_credit(v):
+        ct["credit"] = v
+        c = dict(sc["collection"]) if isinstance(sc.get("collection"), dict) else {}
+        c["credit_line"] = v; sc["collection"] = c
+    def set_source(v):
+        c = dict(sc["collection"]) if isinstance(sc.get("collection"), dict) else {}
+        c.update({"institution": v, "status": "identified from " + v}); sc["collection"] = c
     rows = []
     if sc.get("kind") != "photo" and fields.get("kind") != "photo":
-        rows += [("artist", "Artist", nm("artist"), fields.get("artist"), lambda v: sc.__setitem__("artist", {"name": v})),
-                 ("title", "Title", nm("title"), fields.get("title"), lambda v: sc.__setitem__("title", v)),
-                 ("date", "Date", nm("date"), fields.get("date"), lambda v: sc.__setitem__("date", {"display": v})),
-                 ("medium", "Medium", ct.get("medium") or sc.get("medium") or "", fields.get("medium"), lambda v: ct.__setitem__("medium", v))]
+        rows += [("artist", "Artist", ct.get("artist") or ar.get("display") or ar.get("name") or "", fields.get("artist"), set_artist),
+                 ("title", "Title", ct.get("title") or sc.get("placard_title") or sc.get("title") or "", fields.get("title"), set_title),
+                 ("date", "Date", ct.get("date") or dt.get("display") or "", fields.get("date"), set_date),
+                 ("medium", "Medium", ct.get("medium") or (sc.get("medium") if isinstance(sc.get("medium"), str) else "") or "", fields.get("medium"), set_medium)]
     rows += [("description", "Description", sc.get("description") or "", fields.get("description"), lambda v: sc.__setitem__("description", v)),
              ("mood", "Mood", sc.get("mood") or "", fields.get("mood"), lambda v: sc.__setitem__("mood", v)),
              ("season", "Season", sc.get("season") or "", fields.get("season"), lambda v: sc.__setitem__("season", v)),
              ("occasion", "Occasion", sc.get("occasion") or "", fields.get("occasion"), lambda v: sc.__setitem__("occasion", v))]
     if cand:
-        inst = (sc.get("collection") or {}).get("institution") if isinstance(sc.get("collection"), dict) else ""
-        rows += [("source", "Source", inst or "", cand.get("source_name"), lambda v: sc.__setitem__("collection", {"institution": v, "status": "identified from " + v, "credit_line": cand.get("credit") or None})),
+        rows += [("credit", "Credit", ct.get("credit") or col.get("credit_line") or "", cand.get("credit"), set_credit),
+                 ("source", "Source", col.get("institution") or "", cand.get("source_name"), set_source),
                  ("license", "License", sc.get("license") or "", cand.get("license"), lambda v: sc.__setitem__("license", v))]
     return [r for r in rows if txt(r[3])]
 
@@ -196,32 +219,38 @@ def preview(img_id, fields, cand=None):
     have = [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]
     nt = [t for t in dict.fromkeys(fields.get("tags") or []) if t and t.lower() not in have]
     if nt:
-        out.append({"key": "tags", "label": "Tags", "current": ", ".join(sc.get("tags") or []), "new": ", ".join(nt), "conflict": False, "add": True})
+        out.append({"key": "tags", "label": "Tags", "current": ", ".join(sc.get("tags") or []), "new": ", ".join(nt), "result": ", ".join([x for x in (sc.get("tags") or []) if isinstance(x, str)] + nt), "conflict": False, "add": True})
     return out
 
-def apply(img_id, fields, model="", overwrite=False, cand=None):
+def apply(img_id, fields, model="", overwrite=False, cand=None, only=None):
     """Write identified fields into the sidecar. Empty fields are always filled; a filled field is replaced only when
     overwrite is True (all) or its key is in the overwrite list. Tags are added to yours (replaced only if 'tags' is in the list)."""
     fields = merged(fields, cand)
     sc = library.load_sidecar(img_id); done = []
+    if only is not None:                              # the person chose exactly which fields take the new value
+        overwrite = list(only)
     allow = (lambda k: True) if overwrite is True else (lambda k: bool(overwrite) and k in overwrite)
     for key, label, cur, new, setter in _spec(sc, fields, cand):
+        if only is not None and key not in only: continue
         if str(cur or "").strip() and not allow(key): continue
         if str(cur or "").strip() == str(new).strip(): continue
         setter(str(new).strip()); done.append(key)
     new_tags = list(dict.fromkeys(t for t in (fields.get("tags") or []) if t and t.lower() not in [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]))
     old_tags = [x for x in (sc.get("tags") or []) if isinstance(x, str)]
-    if fields.get("tags") and allow("tags"):
+    if only is not None:
+        if "tags" in only and new_tags:
+            sc["tags"] = old_tags + new_tags; done.append("tags")
+    elif fields.get("tags") and allow("tags"):
         sc["tags"] = list(dict.fromkeys(fields["tags"])); done.append("tags")
     elif new_tags:                                  # tags are added to yours
         sc["tags"] = old_tags + new_tags; done.append("tags")
-    if cand:
+    if cand and (only is None or only):
         lk = sc.setdefault("links", [])
         if cand.get("url") and not any(l.get("url") == cand["url"] for l in lk if isinstance(l, dict)):
             lk.append({"label": cand["source_name"] + " page", "url": cand["url"], "kind": "record"}); done.append("link")
-        if cand.get("url") and (not sc.get("source_url") or allow("source")):
+        if cand.get("url") and (not sc.get("source_url") or allow("source")) and (only is None or "source" in only or not sc.get("source_url")):
             sc["source_url"] = cand["url"]
-    if True:
+    if only is None or only:
         ident = sc.setdefault("identification", {})
         ident.update({"by": "ai", "model": model, "movement": fields.get("movement") or ident.get("movement", ""), "confidence": ("high" if cand else fields.get("confidence", "")), "status": ("matched to " + cand["source_name"] if cand else "identified by AI, not checked against a museum"), "verified": bool(cand), "when": time.strftime("%Y-%m-%d")})
         sc.setdefault("origin", {})["ai_identified"] = True

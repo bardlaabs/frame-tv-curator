@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.3
+
+- Fix: choosing to overwrite did not change the title, artist, date, medium or credit you see in the editor and on the placard. Those are kept in a separate text block that took priority; the AI result is now saved there too (and a shortened placard title is cleared when the title is replaced). Credit from the museum record is now offered as well.
+- The review window is now a left/right list: for each field click the current value (left) or the new value (right); the highlighted side is what gets saved. "Select all current" and "Select all new" are at the top of the columns. Only the fields you chose are changed.
+- Back button: after picking a match, "Back to the matches" returns to the list so you can choose another before anything is saved. The review now always shows after you pick a match.
+
 ## 0.34.2
 
 - The "Which one is it?" window now shows thumbnails: your picture at the top and each museum or source match beside its details. The overwrite review shows them too.
