@@ -497,6 +497,7 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
   el('button',{onclick:()=>{if(!selected.size){toast('Select some images first');return}pickFolder('Move '+selected.size+' image'+(selected.size==1?'':'s')+' to a folder',f=>bulk({move_to:f},'Moved'))}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+const timg=(src,h)=>src?el('img',{src,loading:'lazy',style:'height:'+h+'px;max-width:46%;object-fit:contain;border-radius:4px;background:#0003;flex:none',onerror:function(){this.style.display='none'}}):null;
 function aiReview(id,r,cand,done){const rows=r.rows;const sel={};rows.forEach(x=>sel[x.key]=x.conflict?false:true);
  const src=cand?('matched to '+cand.source_name+(cand.museum?' (museum record)':'')):'Claude\u2019s answer, not checked against a museum';
  const boxes=[];const list=el('div',{style:'max-height:55vh;overflow:auto'});
@@ -508,7 +509,7 @@ function aiReview(id,r,cand,done){const rows=r.rows;const sel={};rows.forEach(x=
    el('div',{},(x.conflict?'New: ':'')+x.new)))});
  const setAll=v=>{boxes.forEach(([x,cb])=>{if(x.conflict){cb.checked=v;sel[x.key]=v}})};
  const close=()=>{closeModal();done()};
- showModal(el('h2',{},'Replace what is there?'),el('p',{class:'mut'},'Result: '+src+'. Empty fields are filled automatically; choose which filled fields to overwrite.'),
+ showModal(el('h2',{},'Replace what is there?'),el('div',{style:'display:flex;gap:12px;align-items:center;margin-bottom:8px'},timg('api/thumb?id='+encodeURIComponent(id),110),cand&&cand.thumb?timg(cand.thumb,110):null),el('p',{class:'mut'},'Result: '+src+'. Empty fields are filled automatically; choose which filled fields to overwrite.'),
   el('div',{class:'row'},el('button',{onclick:()=>setAll(false)},'Keep all current'),el('button',{onclick:()=>setAll(true)},'Overwrite all')),list,
   el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{const ow=Object.keys(sel).filter(k=>sel[k]&&rows.find(x=>x.key==k&&x.conflict));
     const a=await api('ai_apply',{id,fields:r.fields,model:r.model,candidate:cand||null,overwrite:ow});toast('Updated '+(a.filled||[]).join(', '),6000);close()}},'Apply'),el('button',{onclick:close},'Skip')))}
@@ -516,9 +517,9 @@ async function aiResolve(id,r,cand,done){const p=await api('ai_preview',{id,fiel
  if(p.rows.some(x=>x.conflict)){aiReview(id,r,cand,done);return}
  const a=await api('ai_apply',{id,fields:r.fields,model:r.model,candidate:cand||null});toast((cand?'Filled from '+cand.source_name:'Filled from Claude\u2019s answer (no source link)')+(a.filled&&a.filled.length?' \u00b7 '+a.filled.join(', '):''),6000);done()}
 function aiChoose(id,r,done){const f=r.fields||{};const close=()=>{closeModal();done()};
- const opt=c=>el('div',{class:'card',style:'margin:8px 0'},el('b',{},c.title+(c.artist?' \u2014 '+c.artist:'')),el('div',{class:'mut'},[c.source_name+(c.museum?' (museum)':''),c.date,c.medium].filter(Boolean).join(' \u00b7 ')),
-  el('div',{class:'row'},c.url?el('a',{href:c.url,target:'_blank',rel:'noopener'},'Open the record'):null,el('button',{class:'pri',onclick:async()=>{closeModal();await aiResolve(id,r,c,done)}},'Use this one')));
- showModal(el('h2',{},'Which one is it?'),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. '+((r.candidates||[]).some(c=>c.loose)?'No record has exactly that title, so these are works by the same artist; museums often use another title for the same print or painting. Check the picture against the record before choosing. ':'These records match. ')+'Museum records come first.'),
+ const opt=c=>el('div',{class:'card',style:'margin:8px 0;display:flex;gap:12px;align-items:flex-start'},timg(c.thumb,120),el('div',{style:'flex:1;min-width:0'},el('b',{},c.title+(c.artist?' \u2014 '+c.artist:'')),el('div',{class:'mut'},[c.source_name+(c.museum?' (museum)':''),c.date,c.medium].filter(Boolean).join(' \u00b7 ')),
+  el('div',{class:'row'},c.url?el('a',{href:c.url,target:'_blank',rel:'noopener'},'Open the record'):null,el('button',{class:'pri',onclick:async()=>{closeModal();await aiResolve(id,r,c,done)}},'Use this one'))));
+ showModal(el('h2',{},'Which one is it?'),el('div',{class:'card',style:'display:flex;gap:12px;align-items:center'},timg('api/thumb?id='+encodeURIComponent(id),150),el('div',{},el('b',{},'Your picture'),el('div',{class:'mut'},[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')))),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. '+((r.candidates||[]).some(c=>c.loose)?'No record has exactly that title, so these are works by the same artist; museums often use another title for the same print or painting. Check the picture against the record before choosing. ':'These records match. ')+'Museum records come first.'),
   ...(r.candidates||[]).map(opt),
   el('div',{class:'row'},el('button',{onclick:async()=>{closeModal();await aiResolve(id,r,null,done)}},'None of these \u2014 use Claude\u2019s answer only'),el('button',{onclick:close},'Skip')))}
 async function aiOne(id,done){toast('Asking Claude and checking museums\u2026',45000);let r;try{r=await api('ai_identify',{id,apply:true})}catch(e){toast('Failed: '+e.message,8000);return}

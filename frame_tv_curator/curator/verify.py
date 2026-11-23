@@ -63,7 +63,7 @@ def candidates(title, artist, date="", budget=14):
                 cands.append({"source": sid, "source_name": src.name, "museum": sid in MUSEUMS, "key": d.get("key"), "title": d.get("title") or "",
                               "artist": d.get("artist") or "", "date": d.get("date") or "", "medium": d.get("medium") or "", "credit": d.get("credit") or "",
                               "url": d.get("url") or "", "description": d.get("description") or "", "license": d.get("license") or src.license,
-                              "score": round(score, 3), "loose": loose})
+                              "score": round(score, 3), "loose": loose, "thumb": d.get("thumb") or d.get("preview") or ""})
         cands.sort(key=lambda c: (not c["museum"], -c["score"], MUSEUMS.index(c["source"]) if c["source"] in MUSEUMS else 99))
         notes = ["%s unreachable" % discover.SOURCES[s].name for s in errs]
         notes += ["%s did not answer in time" % discover.SOURCES[s].name for s in MUSEUMS + OTHERS if s in discover.SOURCES and s not in out and s not in errs]

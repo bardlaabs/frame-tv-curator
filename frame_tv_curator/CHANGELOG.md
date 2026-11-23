@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.34.2
+
+- The "Which one is it?" window now shows thumbnails: your picture at the top and each museum or source match beside its details. The overwrite review shows them too.
+- Fix: with an inner mat (liner), a placard printed on the mat was centered across the liner and the main mat together, so it sat too high and overlapped the liner. It is now centered in the main mat band.
+
 ## 0.34.1
 
 - Fix: museum matching missed works the museums title differently (for example Hokusai's "The Great Wave off Kanagawa" is "Under the Wave off Kanagawa" at the Art Institute). When no record has the exact title, other works by the same artist are now offered in the chooser (never applied automatically).

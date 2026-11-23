@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.15"
+VERSION = "1.16"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -444,7 +444,10 @@ def compose(img, disp):
         _bevel(canvas, pic_box, inner, bpx, bev)
         canvas.paste(im, (px, py))
     _cast_shadow(canvas, pic_box, bev)
-    strip = (block[0], pic_box[3], block[2], block[3])  # mat area below the picture
+    top = pic_box[3]
+    if len(layers) > 1:        # inner mat / liner: the caption belongs in the main (outer) mat band, not across the liner too
+        top = max(top, block[3] - insets[0][1])
+    strip = (block[0], top, block[2], block[3])  # mat area below the picture
     return canvas, {"img_box": pic_box, "mat": True, "mat_color": hex2rgb(layers[0]["color"]),
                     "inner_color": inner, "strip": strip, "block": tuple(block)}
 
