@@ -1,6 +1,10 @@
 # Rotation and schedules
 
-![The Settings tab](images/ui-settings.png)
+> **Two different meanings of "rotate".** On this page, **rotation** means *changing the picture on the TV every so often* (every 30 minutes, every day, and so on). It has nothing to do with turning a picture sideways. Turning a picture 90 degrees **left or right** (or straightening a tilted one) is a Crop-tab edit in the image editor: see [Crop, rotate and straighten](Library#crop-rotate-and-straighten).
+
+The top of the **Settings** tab, down to the end of the **Image source** card, holds the rotation settings:
+
+![The top of the Settings tab, through Image source](images/ui-settings-top.png)
 
 ## Set up rotation, step by step
 1. Open the **Settings** tab.

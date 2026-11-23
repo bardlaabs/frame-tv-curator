@@ -142,6 +142,17 @@ for i, t in enumerate(tiles):
     grid.paste(t, ((i % 2) * 650, (i // 2) * 370))
 grid.save(os.path.join(OUT, "looks-grid.jpg"), quality=88, optimize=True); print("looks-grid")
 
+
+# --- e-paper card layouts (522x152, black / white / red only), enlarged 2x without smoothing so the pixels stay crisp
+SC_LONG = {"title": "View of the Harbor at Dusk with Fishing Boats Returning", "artist": {"name": "Another Example Painter"},
+           "date": {"display": "c. 1880"}, "card_text": {"medium": "Oil on panel"}}
+SC_PHOTO = {"kind": "photo", "title": "Sunset at the Pier", "date": {"display": "2025-06-14"}, "location": {"name": "San Diego, California"}}
+for style in ("gallery", "inverted", "grid"):
+    for tag, sc in (("art", SC), ("long", SC_LONG), ("photo", SC_PHOTO)):
+        im = R.render_epaper(sc, style=style)
+        im.resize((im.width * 2, im.height * 2), Image.NEAREST).save(os.path.join(OUT, "epaper-%s-%s.png" % (style, tag)))
+        print("epaper", style, tag)
+
 # --- mat placards: one, two and three line layouts (bottom strip of the mat, 1600x900 crop)
 for lay in ("one_line", "two_line", "three_line"):
     go("placard-mat-" + lay.replace("_", "-"),

@@ -71,6 +71,10 @@ try:
         tab("disp"); page("ui-display", True)
         tab("tv"); page("ui-tv", True)
         tab("set"); page("ui-settings", True)
+        # top of the Settings tab down to the end of the Image source card (the part the Rotation page needs)
+        bb = pg.locator("#t-set .card").filter(has_text="Image source").first.bounding_box()
+        label(); pg.screenshot(path=os.path.join(OUT, "ui-settings-top.png"), full_page=True,
+                               clip={"x": 0, "y": 0, "width": 1440, "height": bb["y"] + bb["height"] + 14}); print("ui-settings-top")
 
         # --- Display tab close-ups
         tab("disp")

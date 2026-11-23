@@ -59,7 +59,7 @@ Everything Frame TV Curator can do, in one list. Follow the links for step-by-st
 All editing is non-destructive: your edits are saved as instructions in the sidecar and applied at render time, so the original file is never rewritten.
 
 - **Crop** lets you choose the part of a picture to show, in 16:9 or any shape.
-- **Rotate and straighten** fix a tilted or sideways picture without touching the original.
+- **Rotate left/right and straighten** turn a sideways picture 90 degrees or level a tilted one without touching the original (not to be confused with *rotation*, which changes the picture on the TV over time).
 - **Info and Details** store title, artist, date, medium, credit, description, source link, license, tags and private notes.
 - **Per-image Customize** lets any picture override the default placard, mat, inner liner or bevel while the rest follow the defaults.
 - **Save & show on TV** renders the picture and sends it to the TV right away.

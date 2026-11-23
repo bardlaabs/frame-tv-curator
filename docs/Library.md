@@ -72,8 +72,10 @@ Tags are your own words for finding pictures (for example `winter`, `blue`, `fam
 
 ## Crop, rotate and straighten
 
+Here **rotate** means turning the picture itself: **Rotate left** and **Rotate right** turn it 90 degrees at a time, and **Straighten** fixes a slightly tilted horizon. It is not the same as **rotation**, which is the add-on changing the picture on the TV every so often ([Rotation and schedules](Rotation-and-Schedules)).
+
 1. Open the picture and choose the **Crop** tab.
-2. Drag the crop box (16:9 or free) and use the rotate and straighten controls.
+2. Drag the crop box (16:9 or free) and use **Rotate left**, **Rotate right** and the straighten control.
 3. Click **Save crop**, then **Save**. Originals never change.
 
 ![The Crop tab](images/ui-editor-crop.png)

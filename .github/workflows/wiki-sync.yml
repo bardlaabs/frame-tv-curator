@@ -31,11 +31,16 @@ jobs:
           [ -d main/docs/images ] && cp -r main/docs/images wiki/images
           # wiki links have no .md extension
           sed -i -E 's/\]\(([A-Za-z0-9_-]+)\.md(#[^)]*)?\)/](\1\2)/g' wiki/*.md
+          # sidebar in reading order (same order as the table on Home); any page not listed goes at the end
+          order="Features Getting-Started Library Display-and-Look Display-Defaults Settings-Reference Rotation-and-Schedules TV-Tab Optional-Ambient Optional-Presence Discover Optional-Extras Sidecar-Files Troubleshooting"
           {
             echo "**[Home](Home)**"; echo
+            for n in $order; do
+              [ -f "wiki/$n.md" ] && echo "- [${n//-/ }]($n)"
+            done
             for f in wiki/*.md; do
               n=$(basename "$f" .md)
-              case "$n" in Home|_Sidebar) continue;; esac
+              case " Home _Sidebar $order " in *" $n "*) continue;; esac
               echo "- [${n//-/ }]($n)"
             done
           } > wiki/_Sidebar.md

@@ -18,6 +18,8 @@ Set these in Home Assistant under **Settings > Add-ons > Frame TV Curator > Conf
 
 ## Settings tab
 
+> **Rotation** here means changing the picture on the TV periodically. Turning a picture left or right is **Rotate** on the image editor's Crop tab.
+
 ![The Settings tab](images/ui-settings.png)
 
 ### Image source
