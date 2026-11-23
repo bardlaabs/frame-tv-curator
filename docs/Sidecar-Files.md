@@ -112,6 +112,7 @@ Photos get a sidecar the first time the add-on sees them, prefilled from EXIF. T
 | `camera` | string | Camera from EXIF |
 | `exif_v` | number | Version of the EXIF prefill (used for one-time upgrades) |
 | `tags` | list of strings | Your tags. Replaced as a whole when edited |
+| `mood` | string | How the picture feels, in a word or two (for example `calm`). Shown in Now Playing, matched by the Library search; meant for future weather and mood matching |
 | `flags` | object | `favorite` (weight 3 in the shuffle bag), `show_more` (+1), `exclude` (never picked) |
 | `notes` | string | Private notes, never shown on the TV |
 | `edit` | object | Non-destructive edits, see below |

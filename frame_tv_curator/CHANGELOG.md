@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.1
+
+- **Mood** field for each picture (editor Info > Details > Mood). Shown in Now Playing and matched by the Library search. Stored in the sidecar.
+
 ## 0.23.0
 
 - **Several named crops per picture:** in the editor's Crop tab, save the current crop under a name, switch between saved crops, delete them. Each remembers its rotation and straighten. Stored in the sidecar; the original is never changed.

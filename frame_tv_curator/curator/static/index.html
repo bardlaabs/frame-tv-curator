@@ -282,7 +282,7 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
  const stack=el('div',{class:'nstack'},
   el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,v==null||v===''?'':String(v)))),
   blk('Description',sc.description),
-  blk('Tags',(sc.tags||[]).join(', ')),blk('Notes',sc.notes),
+  blk('Mood',sc.mood),blk('Tags',(sc.tags||[]).join(', ')),blk('Notes',sc.notes),
   blk('Links',(links.length||link(sc.source_url))?el('div',{},link(sc.source_url,'Source page ↗'),links.filter(x=>x&&x.href!=sc.source_url)):null),
   facts.length?el('div',{class:'nfacts'},facts.join(' · ')):null);
  const chip=k=>flagChip(flags,k,async(k,c)=>{flags[k]=!flags[k];await api('flags',{id,flags});c.classList.toggle('on',flags[k]);
@@ -377,7 +377,7 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
  if(curTag&&!tagCount.has(curTag))curTag='';
  if(tagCount.size){const tc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Tags'),[...tagCount.keys()].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'})).map(t=>el('span',{class:'chip sm'+(t==curTag?' on':''),onclick:()=>{curTag=curTag==t?'':t;renderLib()}},t+' ('+tagCount.get(t)+')')));albBar.after(tc)}
  const gnav=el('div',{class:'gnav'});grid.before(gnav);
- const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
   shownList=list;
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
@@ -392,7 +392,7 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
   gnav.replaceChildren(...keys.map((k,n)=>el('span',{class:'chip sm',title:groups.get(k).length+' images',onclick:()=>secs[n].scrollIntoView({behavior:'smooth',block:'start'})},k)))};
  gsel.onchange=()=>{groupKey=gsel.value;try{localStorage.setItem('fc_group',groupKey)}catch(e){}draw()};
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
- q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
+ q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):r.kind=='album'?('album '+((albumList.find(a=>a.id==r.album)||{}).name||'?')):('folder '+(r.folder||'Art')));
  if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
@@ -658,7 +658,7 @@ async function openEditor(id){
   meta:{title:(sc.card_text||{}).title||sc.placard_title||sc.title||'',artist:(sc.card_text||{}).artist||(sc.artist||{}).display||(sc.artist||{}).name||'',
    date:(sc.card_text||{}).date||(sc.date||{}).display||'',medium:(sc.card_text||{}).medium||sc.medium||'',
    credit:(sc.card_text||{}).credit||(sc.collection||{}).credit_line||'',
-   description:sc.description||'',notes:sc.notes||'',tags:(sc.tags||[]).join(', '),source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
+   description:sc.description||'',notes:sc.notes||'',tags:(sc.tags||[]).join(', '),mood:sc.mood||'',source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
    location:(sc.card_text||{}).location||(typeof sc.location=='object'&&sc.location?sc.location.name:sc.location)||''},
   flags:Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{}),
   edit:Object.assign({rotate:0,straighten:0,crop:null},sc.edit||{}),
@@ -704,7 +704,7 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),wide('Mood','mood','How it feels, in a word or two (e.g. calm, dramatic, joyful, melancholy)'),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
   isPhoto?geoP():null,
@@ -725,7 +725,7 @@ async function openEditor(id){
     el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{dlg.remove();try{await save(closeEd)}catch(e){toast('Save failed: '+e.message)}}},'Save & close'),el('button',{onclick:()=>{dlg.remove();closeEd()}},'Discard changes'),el('button',{onclick:()=>dlg.remove()},'Keep editing'))));
   document.body.append(dlg)};
  const save=async(then)=>{const ct={artist:ed.meta.artist,title:ed.meta.title,date:ed.meta.date,medium:ed.meta.medium,credit:ed.meta.credit,location:ed.meta.location};
-  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,tags:ed.meta.tags.split(',').map(t=>t.trim()).filter((t,n,a)=>t&&a.findIndex(u=>u.toLowerCase()==t.toLowerCase())==n),source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
+  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,mood:(ed.meta.mood||'').trim(),tags:ed.meta.tags.split(',').map(t=>t.trim()).filter((t,n,a)=>t&&a.findIndex(u=>u.toLowerCase()==t.toLowerCase())==n),source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
  box.append(el('div',{class:'row',style:'justify-content:space-between;position:sticky;top:0;z-index:5;background:var(--panel);padding:8px 0;margin-bottom:6px'},
    el('h2',{style:'margin:0'},ed.meta.title||id.split('/').pop().replace(/\.[^.]+$/,'')),
    el('div',{class:'row'},el('button',{onclick:askClose},'✕ Close'),el('button',{onclick:()=>save()},'Save'),el('button',{class:'pri',title:'Save, then show this image on the TV now',onclick:()=>save(push)},'Save & show on TV'))),

@@ -66,6 +66,10 @@ An album is a named collection of images from any folder; an image can be in sev
 
 Hover a tile and click the expand button (⤢) to see the picture large. Use ← and → to browse in the order the grid shows (including groups). Keys: **F** favorite, **M** show more often, **X** exclude, **T** show on the TV, **E** open the editor, **Esc** close. The same buttons are in the side panel.
 
+## Mood
+
+Each picture can have a **Mood**: a word or two for how it feels, such as *calm*, *dramatic*, *joyful* or *melancholy*. Set it in the editor under Info > Details > Mood. It shows in Now Playing and the Library search matches it, so searching "calm" finds the calm pictures. It is kept in the sidecar and is groundwork for matching pictures to weather or time of day later.
+
 ## Tags
 
 Tags are your own words for finding pictures (for example `winter`, `blue`, `family`). Add them in the editor under Info > Details > Tags, separated by commas, or select several images and use **+ Tag…** or **− Tag…** in the selection bar. When any tags exist a **Tags** row of chips appears under the folders: click one to show only those pictures (click again to clear). The search box also matches tags. Tags are saved in each picture's sidecar, so they never touch the original file.

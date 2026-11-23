@@ -55,7 +55,7 @@ def library_list(folder, ids=None):
             added = 0
         out.append({"id": i, "file": stem, "title": title, "name": title or stem,
                     "artist": a.get("display") or a.get("name") or "", "medium": (sc.get("medium") or (sc.get("card_text") or {}).get("medium") or "").strip() if isinstance(sc.get("medium") or "", str) else "", "year": _year(sc), "added": added,
-                    "tags": [t for t in (sc.get("tags") or []) if isinstance(t, str)], "flags": sc.get("flags") or {}, "has_display": bool(sc.get("display")), "low_res": library.is_low_res(i)})
+                    "tags": [t for t in (sc.get("tags") or []) if isinstance(t, str)], "mood": sc.get("mood") if isinstance(sc.get("mood"), str) else "", "flags": sc.get("flags") or {}, "has_display": bool(sc.get("display")), "low_res": library.is_low_res(i)})
     library.save_image_cache()
     return out
 
