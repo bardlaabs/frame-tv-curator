@@ -594,16 +594,23 @@ class Smithsonian:
             return None
         iid = media.get("idsId") or ""
         hi = next((r for r in (media.get("resources") or []) if r.get("label") == "High-resolution JPEG" and r.get("url")), None)
-        img = hi["url"] if hi else "https://ids.si.edu/ids/deliveryService?id=%s&max=3840" % urllib.parse.quote(iid)
-        thumb = "https://ids.si.edu/ids/deliveryService?id=%s&max=400" % urllib.parse.quote(iid)
-        prev = "https://ids.si.edu/ids/deliveryService?id=%s&max=1200" % urllib.parse.quote(iid)
+        content = media.get("content") or ""
+        q = urllib.parse.quote(iid)
+        if content.startswith("https://ids.si.edu/ids/deliveryService"):
+            img = hi["url"] if hi else "https://ids.si.edu/ids/download?id=%s.jpg" % q
+            thumb = "https://ids.si.edu/ids/download?id=%s_thumb" % q
+            prev = "https://ids.si.edu/ids/download?id=%s_screen" % q
+        else:                                   # some units (for example the Portrait Gallery) host their own files
+            img = hi["url"] if hi else content
+            thumb = media.get("thumbnail") or content
+            prev = content or thumb
         who = (self._ft(c, "name") or [""])[0]
         who = re.sub(r",\s*(born|died|active|\d).*$", "", who) if who else ""
         notes = " ".join(self._ft(c, "notes"))
         d = {"source": self.id, "key": row.get("id") or iid,
              "url": dnr.get("record_link") or ("https://www.si.edu/object/" + (row.get("id") or "")),
              "title": row.get("title") or "Untitled", "artist": who, "date": (self._ft(c, "date") or [""])[0],
-             "description": re.sub(r"\s+", " ", notes).strip(), "image": img, "image_fallback": prev,
+             "description": re.sub(r"\s+", " ", notes).strip(), "image": img, "image_fallback": prev, "_media": {k: media.get(k) for k in ("content", "thumbnail", "idsId")},
              "thumb": thumb, "preview": prev, "w": w or None, "h": h or None, "ai": False, "client_fetch": False,
              "medium": (self._ft(c, "physicalDescription") or [""])[0], "credit": "; ".join(self._ft(c, "creditLine")) or
              (self._ft(c, "dataSource") or ["Smithsonian"])[0], "license": self.license}

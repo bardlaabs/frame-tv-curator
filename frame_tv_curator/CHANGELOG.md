@@ -2,6 +2,7 @@
 
 ## 0.20.3
 
+- Smithsonian: thumbnails and previews now use the ids.si.edu small "thumb" and "screen" versions (before, the full file was requested for every card, which made pages crawl), and records whose media is hosted elsewhere use the link the API gives for it.
 - Dropdown lists are now alphabetical (case-insensitive): the Discover source list, each source's Type list (for example the Smithsonian museums), the artist list and the album lists.
 
 ## 0.20.2
