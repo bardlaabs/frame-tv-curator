@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.21.0
+
+- Discover: new **Shape** filter next to Order: Any shape, Fits the screen (16:9, no mat needed), Landscape (mat at the sides), Wide / panoramic (mat top and bottom), Square-ish, Portrait. It hides pictures of other shapes on the current page and says how many were hidden; pictures whose size the source does not publish (The Met, Getty) are always shown. The choice is remembered with the rest of Discover's state.
+- Discover: Wikimedia Commons now opens on the postcard set for the season when you switch to it (Halloween in October, Christmas from 20 November to 6 January, Easter from three weeks before Easter to a week after); any other time it opens on the first type as before. You can still pick any type.
+
 ## 0.20.5
 
 - Library: fixed the folder buttons, add block and picture tiles sometimes showing twice. Two refreshes of the Library could overlap (for example right after switching tabs); the newer one now wins and the older one stops.

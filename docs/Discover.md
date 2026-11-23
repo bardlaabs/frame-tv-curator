@@ -27,7 +27,7 @@ Some sources can show fewer than 24 pictures on a page because only suitable fil
 ## Add pictures, step by step
 
 1. Open the **Discover** tab.
-2. Choose a **Source**. Depending on the source, choose a **Type** (or museum, topic or category), **Artist** and **Order**.
+2. Choose a **Source**. Depending on the source, choose a **Type** (or museum, topic or category), **Artist**, **Order** and **Shape**.
 3. Optional: type a title or artist in **Search** and press Enter.
 4. Click a picture to select it (a check mark appears). Click the small expand button on a card for a **full-screen preview** with size, license, description and any duplicate warning; use the arrow keys to browse.
 5. Choose where to put the pictures: **Add to folder** (pick an existing folder or type a new name), and optionally **and album** to also put them in an album.
@@ -67,9 +67,27 @@ Please keep the polite request rate; the add-on already limits how fast it asks 
 2. Pick a **topic** or type a search.
 3. Select and add. The credit line names the NASA center or photographer.
 
+### Shape filter
+**Shape** hides pictures that are not the shape you want, which is handy for finding art that fills the TV without a mat.
+
+| Shape | Width compared with height | What it means on the TV |
+|---|---|---|
+| Fits the screen | 1.65 to 1.9 (16:9 is 1.78) | Fills the screen, no mat needed |
+| Landscape | 1.15 to 1.65 | Mat or bars at the left and right |
+| Wide / panoramic | wider than 1.9 | Mat or bars at the top and bottom |
+| Square-ish | 0.85 to 1.15 | Mat at the sides |
+| Portrait | narrower than 0.85 | Wide mat at the sides |
+
+1. Choose a shape in **Shape**. The grid hides the others on the current page and a line says how many were hidden.
+2. Use **Next** to look at more pages; the filter stays on.
+3. Pictures whose size the source does not publish (The Met and Getty) are always shown, because there is no way to tell; the line says how many.
+4. Choose **Any shape** to turn it off. The choice is remembered.
+
+The filter works on each page of results, so a page can come up short when most pictures are another shape.
+
 ### Wikimedia Commons
 1. Source: **Wikimedia Commons**.
-2. **Type**: a preset (ukiyo-e prints, Christmas / Easter / Halloween postcards, vintage travel posters, Art Nouveau posters, Google Art Project paintings, pop art, digital art) or **Search all**.
+2. **Type**: when you switch to Commons it opens on the postcard set for the season (Halloween postcards in October, Christmas postcards from 20 November to 6 January, Easter postcards from three weeks before Easter to a week after) and otherwise on the first preset; change it any time. Presets: (ukiyo-e prints, Christmas / Easter / Halloween postcards, vintage travel posters, Art Nouveau posters, Google Art Project paintings, pop art, digital art) or **Search all**.
 3. Optional: add a keyword.
 4. Preview before adding: ukiyo-e results can include shunga prints.
 5. Select and add. Only free licenses are shown, and the artist and license are saved.

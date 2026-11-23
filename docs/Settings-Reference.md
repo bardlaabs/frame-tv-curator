@@ -207,7 +207,7 @@ If a chosen sensor or entity is missing, the add-on falls back to the other one,
 
 ## Discover
 
-Discover remembers its last source, type, search, artist, order, page, folder and album in your browser. Each source has its own options; see [Discover](Discover).
+Discover remembers its last source, type, search, artist, order, shape, page, folder and album in your browser. Each source has its own options; see [Discover](Discover).
 
 ## Per-image settings
 

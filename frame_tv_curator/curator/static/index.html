@@ -475,12 +475,12 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
  D.srcs.sort(byName);D.srcs.forEach(x=>{if(x.types)x.types.sort(byName)});
- try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
+ try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{shape:sv.shape||'any',source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;saveDisc();drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
  const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value;saveDisc()}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
  const nf=el('input',{type:'text',placeholder:'or type a new folder name',style:'width:200px',oninput:()=>{D.newf=nf.value;drawDbar()}});
  const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});q.value=D.q||'';
- const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=(m.types[0]||[''])[0];buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
+ const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=defType(m);buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
  const ctl=el('div',{class:'row'}),blurb=el('p',{class:'mut'});
  const buildCtl=()=>{const m=curSrc();blurb.textContent=m.blurb||'';
   const kids=[el('label',{},'Search'),q];
@@ -488,13 +488,24 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
    api('discover/artists?source='+m.id).then(l=>{l.sort(byName).forEach(a=>asel.append(el('option',{value:a.slug},a.name+' ('+a.count+')')));asel.value=D.artist}).catch(()=>{});kids.push(el('label',{},'Artist'),asel)}
   if((m.types||[]).length){const tsel=el('select',{onchange:()=>{D.type=tsel.value;D.page=0;loadDisc()}},m.types.map(([v,l])=>el('option',{value:v},l)));tsel.value=D.type;kids.push(el('label',{},'Type'),tsel)}
   const ssel=el('select',{onchange:()=>{D.sort=ssel.value;D.page=0;loadDisc()}},m.sorts.map(([v,l])=>el('option',{value:v},l)));ssel.value=D.sort;kids.push(el('label',{},'Order'),ssel);
+  const hsel=el('select',{title:'Only show pictures of this shape (pictures whose size the source does not publish are always shown)',onchange:()=>{D.shape=hsel.value;saveDisc();drawDres()}},SHAPES.map(([v,l])=>el('option',{value:v},l)));hsel.value=D.shape||'any';kids.push(el('label',{},'Shape'),hsel);
   ctl.replaceChildren(...kids);loadDisc()};
  root.replaceChildren(
   el('div',{class:'card'},el('h3',{},'Discover art'),
    el('div',{class:'row'},el('label',{},'Source'),srcSel),blurb,ctl,
    el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf,el('label',{},'and album'),asl)),
   el('div',{id:'dres'}),el('div',{id:'dbar'}));buildCtl()}
-const saveDisc=()=>ls.set('fc_disc',JSON.stringify({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album}));
+// first type shown when you switch to a source: for Wikimedia Commons the postcard set that matches the season (Christmas, Halloween, Easter), otherwise the first type in the list
+function easterDate(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da)}
+function seasonType(now=new Date()){const y=now.getFullYear(),day=864e5,e=easterDate(y),m=now.getMonth()+1,d=now.getDate();
+ if(m==10||(m==11&&d==1))return'Halloween postcards';
+ if((m==11&&d>=20)||m==12||(m==1&&d<=6))return'Christmas postcards';
+ if(now>=new Date(e-21*day)&&now<=new Date(+e+7*day))return'Easter postcards';return null}
+function defType(m){const t=(m.types||[]).map(x=>x[0]);if(m.id=='commons'){const s=seasonType();if(s&&t.includes(s))return s}return t[0]||''}
+const SHAPES=[['any','Any shape'],['fit','Fits the screen (16:9, no mat needed)'],['land','Landscape (mat at the sides)'],['wide','Wide / panoramic (mat top and bottom)'],['sq','Square-ish'],['port','Portrait']];
+const shapeOf=i=>{if(!(i.w&&i.h))return null;const a=i.w/i.h;return a>=1.65&&a<=1.9?'fit':a>1.9?'wide':a>=1.15?'land':a>=0.85?'sq':'port'};
+const shapeOk=i=>{if(!D.shape||D.shape=='any')return true;const s=shapeOf(i);return s===null||s==D.shape};
+const saveDisc=()=>ls.set('fc_disc',JSON.stringify({shape:D.shape||'any',source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album}));
 const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
 async function loadDisc(){const box=$('#dres');if(!box)return;saveDisc();box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
  try{D.data=await api('discover/search?'+new URLSearchParams({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page}));drawDres()}
@@ -502,7 +513,9 @@ async function loadDisc(){const box=$('#dres');if(!box)return;saveDisc();box.rep
 function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,pages=Math.max(1,Math.ceil(r.total/r.per));
  const nav=el('div',{class:'row',style:'justify-content:space-between'},el('span',{class:'mut'},r.total+' artworks · page '+(r.page+1)+' of '+pages),
   el('span',{},el('button',{disabled:r.page<=0,onclick:()=>{D.page--;loadDisc()}},'← Prev'),' ',el('button',{disabled:r.page+1>=pages,onclick:()=>{D.page++;loadDisc()}},'Next →')));
- box.replaceChildren(nav,r.items.length?el('div',{class:'grid'},r.items.map(dcard)):el('p',{class:'mut'},'Nothing matches.'),pages>1?nav.cloneNode(true):null);
+ const shown=r.items.filter(shapeOk),hid=r.items.length-shown.length,unk=shown.filter(i=>!i.error&&!shapeOf(i)).length,
+  note=D.shape&&D.shape!='any'?el('p',{class:'mut'},'Shape filter: '+hid+' of '+r.items.length+' on this page hidden'+(unk?' · '+unk+' shown because the source does not publish their size':'')+'.'):null;
+ box.replaceChildren(nav,note,shown.length?el('div',{class:'grid'},shown.map(dcard)):el('p',{class:'mut'},r.items.length?'Nothing on this page has that shape. Try the next page or another shape.':'Nothing matches.'),pages>1?nav.cloneNode(true):null);
  if(pages>1){const n2=box.lastChild;n2.querySelectorAll('button').forEach((b,i)=>b.onclick=i==0?()=>{if(D.page>0){D.page--;loadDisc()}}:()=>{if(D.page+1<pages){D.page++;loadDisc()}})}
  drawDbar()}
 function dcard(i){if(i.error)return el('div',{class:'tile'},el('div',{class:'t'},el('b',{},i.key),el('span',{class:'warn'},i.error)));
