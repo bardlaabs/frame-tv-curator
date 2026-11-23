@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.1
+
+- Developer aid for the upcoming Getty source: `/api/discover/getty_raw?url=...` fetches a Getty data or media URL through the add-on (those two hosts only).
+
 ## 0.19.0
 
 - Discover: new **Smithsonian** source (American Art, Portrait Gallery, Cooper Hewitt, Freer | Sackler, Hirshhorn and more). Only CC0 images at least 1600 px wide are shown. It needs a free key from api.data.gov: paste it into the add-on Configuration (Smithsonian API key) and restart. Without a key the source shows a short explanation.

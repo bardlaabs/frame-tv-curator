@@ -188,6 +188,13 @@ def make(engine):
                     with ThreadPoolExecutor(4) as ex:
                         items = list(ex.map(one, r["keys"]))
                     return self._send(200, {"total": r["total"], "page": r["page"], "per": r["per"], "items": items})
+                if p == "/api/discover/getty_raw":
+                    # developer aid: fetch a Getty data/media URL (host-restricted) so queries can be tried from the home network
+                    tgt = q.get("url", "")
+                    if urllib.parse.urlparse(tgt).hostname not in ("data.getty.edu", "media.getty.edu"):
+                        return self._send(400, {"error": "only data.getty.edu and media.getty.edu"})
+                    r = discover._get(tgt, 40, headers={"Accept": q.get("accept", "application/json")}, gap=1.0)
+                    return self._send(200, {"status": r.status, "type": r.headers.get("Content-Type"), "text": r.read(20000).decode("utf8", "replace")})
                 if p == "/api/discover/sources":
                     return self._send(200, [{"id": s.id, "name": s.name, "blurb": s.blurb, "sorts": s.sorts, "types": s.types,
                                              "has_artists": s.has_artists, "client_fetch": s.client_fetch, "license": s.license}
