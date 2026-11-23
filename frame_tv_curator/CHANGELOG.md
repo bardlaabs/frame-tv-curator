@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.0
+
+- **AI and museum results can now replace what is already there, field by field.** When the result differs from something already filled in, a review window lists each field with what is there now and the new value, an Overwrite box per field, and Keep all current / Overwrite all buttons. Empty fields are still filled automatically, and tags are still added (never replaced) unless you choose otherwise. In a batch, pictures that need a decision are put aside and shown at the end.
+
 ## 0.33.1
 
 - Fix: the Library was slow to open right after 0.33.0 because colors were worked out while it loaded. Colors now fill in only in the background.

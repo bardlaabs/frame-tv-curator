@@ -142,37 +142,65 @@ def identify_verify(img_id, settings):
     elif dec == "choose": r["candidates"] = pick
     return r
 
+def _spec(sc, fields, cand):
+    """The fields a result can fill: (key, label, current value, new value, setter)."""
+    def txt(v): return v.strip() if isinstance(v, str) else ""
+    def nm(k): 
+        v = sc.get(k); return (v.get("name") if k == "artist" and isinstance(v, dict) else v.get("display") if k == "date" and isinstance(v, dict) else v) or ""
+    ct = sc.setdefault("card_text", {}) if isinstance(sc.get("card_text"), (dict, type(None))) else {}
+    rows = []
+    if sc.get("kind") != "photo" and fields.get("kind") != "photo":
+        rows += [("artist", "Artist", nm("artist"), fields.get("artist"), lambda v: sc.__setitem__("artist", {"name": v})),
+                 ("title", "Title", nm("title"), fields.get("title"), lambda v: sc.__setitem__("title", v)),
+                 ("date", "Date", nm("date"), fields.get("date"), lambda v: sc.__setitem__("date", {"display": v})),
+                 ("medium", "Medium", ct.get("medium") or sc.get("medium") or "", fields.get("medium"), lambda v: ct.__setitem__("medium", v))]
+    rows += [("description", "Description", sc.get("description") or "", fields.get("description"), lambda v: sc.__setitem__("description", v)),
+             ("mood", "Mood", sc.get("mood") or "", fields.get("mood"), lambda v: sc.__setitem__("mood", v)),
+             ("season", "Season", sc.get("season") or "", fields.get("season"), lambda v: sc.__setitem__("season", v)),
+             ("occasion", "Occasion", sc.get("occasion") or "", fields.get("occasion"), lambda v: sc.__setitem__("occasion", v))]
+    if cand:
+        inst = (sc.get("collection") or {}).get("institution") if isinstance(sc.get("collection"), dict) else ""
+        rows += [("source", "Source", inst or "", cand.get("source_name"), lambda v: sc.__setitem__("collection", {"institution": v, "status": "identified from " + v, "credit_line": cand.get("credit") or None})),
+                 ("license", "License", sc.get("license") or "", cand.get("license"), lambda v: sc.__setitem__("license", v))]
+    return [r for r in rows if txt(r[3])]
+
+def preview(img_id, fields, cand=None):
+    """Row-by-row comparison of what is stored and what the result would write. 'conflict' = both have a different value."""
+    fields = merged(fields, cand)
+    sc = library.load_sidecar(img_id)
+    out = []
+    for key, label, cur, new, _ in _spec(sc, fields, cand):
+        cur = str(cur or "").strip(); new = str(new).strip()
+        if cur == new: continue
+        out.append({"key": key, "label": label, "current": cur, "new": new, "conflict": bool(cur)})
+    have = [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]
+    nt = [t for t in dict.fromkeys(fields.get("tags") or []) if t and t.lower() not in have]
+    if nt:
+        out.append({"key": "tags", "label": "Tags", "current": ", ".join(sc.get("tags") or []), "new": ", ".join(nt), "conflict": False, "add": True})
+    return out
+
 def apply(img_id, fields, model="", overwrite=False, cand=None):
-    """Write identified fields into the sidecar, filling empty fields only (unless overwrite). Returns the names filled."""
+    """Write identified fields into the sidecar. Empty fields are always filled; a filled field is replaced only when
+    overwrite is True (all) or its key is in the overwrite list. Tags are added to yours (replaced only if 'tags' is in the list)."""
     fields = merged(fields, cand)
     sc = library.load_sidecar(img_id); done = []
-    def empty(v): return not (v or "").strip() if isinstance(v, str) else not v
-    def put(label, cur, setter, val):
-        if val and (overwrite or empty(cur)):
-            setter(val); done.append(label)
-    art = sc.setdefault("artist", {}) if isinstance(sc.get("artist"), (dict, type(None))) else {}
-    if sc.get("kind") != "photo" and fields.get("kind") != "photo":
-        put("artist", (sc.get("artist") or {}).get("name") if isinstance(sc.get("artist"), dict) else sc.get("artist"), lambda v: sc.__setitem__("artist", {"name": v}), fields.get("artist"))
-        put("title", sc.get("title"), lambda v: sc.__setitem__("title", v), fields.get("title"))
-        put("date", (sc.get("date") or {}).get("display") if isinstance(sc.get("date"), dict) else sc.get("date"), lambda v: sc.__setitem__("date", {"display": v}), fields.get("date"))
-        ct = sc.setdefault("card_text", {})
-        put("medium", ct.get("medium") or sc.get("medium"), lambda v: ct.__setitem__("medium", v), fields.get("medium"))
-    put("description", sc.get("description"), lambda v: sc.__setitem__("description", v), fields.get("description"))
-    put("mood", sc.get("mood"), lambda v: sc.__setitem__("mood", v), fields.get("mood"))
-    put("season", sc.get("season"), lambda v: sc.__setitem__("season", v), fields.get("season"))
-    put("occasion", sc.get("occasion"), lambda v: sc.__setitem__("occasion", v), fields.get("occasion"))
-    new_tags = [t for t in (fields.get("tags") or []) if t and t not in [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]]
-    new_tags = list(dict.fromkeys(new_tags))
-    if new_tags:                                    # tags are added to yours, never replaced
-        sc["tags"] = [x for x in (sc.get("tags") or []) if isinstance(x, str)] + new_tags; done.append("tags")
+    allow = (lambda k: True) if overwrite is True else (lambda k: bool(overwrite) and k in overwrite)
+    for key, label, cur, new, setter in _spec(sc, fields, cand):
+        if str(cur or "").strip() and not allow(key): continue
+        if str(cur or "").strip() == str(new).strip(): continue
+        setter(str(new).strip()); done.append(key)
+    new_tags = list(dict.fromkeys(t for t in (fields.get("tags") or []) if t and t.lower() not in [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]))
+    old_tags = [x for x in (sc.get("tags") or []) if isinstance(x, str)]
+    if fields.get("tags") and allow("tags"):
+        sc["tags"] = list(dict.fromkeys(fields["tags"])); done.append("tags")
+    elif new_tags:                                  # tags are added to yours
+        sc["tags"] = old_tags + new_tags; done.append("tags")
     if cand:
         lk = sc.setdefault("links", [])
         if cand.get("url") and not any(l.get("url") == cand["url"] for l in lk if isinstance(l, dict)):
             lk.append({"label": cand["source_name"] + " page", "url": cand["url"], "kind": "record"}); done.append("link")
-        if cand.get("url") and not sc.get("source_url"):
+        if cand.get("url") and (not sc.get("source_url") or allow("source")):
             sc["source_url"] = cand["url"]
-        put("source", (sc.get("collection") or {}).get("institution"), lambda v: sc.__setitem__("collection", {"institution": v, "status": "identified from " + v, "credit_line": cand.get("credit") or None}), cand["source_name"])
-        put("license", sc.get("license"), lambda v: sc.__setitem__("license", v), cand.get("license"))
     if True:
         ident = sc.setdefault("identification", {})
         ident.update({"by": "ai", "model": model, "movement": fields.get("movement") or ident.get("movement", ""), "confidence": ("high" if cand else fields.get("confidence", "")), "status": ("matched to " + cand["source_name"] if cand else "identified by AI, not checked against a museum"), "verified": bool(cand), "when": time.strftime("%Y-%m-%d")})

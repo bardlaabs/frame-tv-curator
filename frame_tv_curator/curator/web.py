@@ -367,11 +367,19 @@ def make(engine):
                     from . import ai
                     r = ai.identify_verify(b["id"], engine.settings.get())
                     if r.get("ok") and b.get("apply") and r.get("decision") in ("auto", "none"):
-                        r["filled"] = ai.apply(b["id"], r["fields"], r.get("model", ""), bool(b.get("overwrite")), r.get("candidate"))
+                        rows = ai.preview(b["id"], r["fields"], r.get("candidate"))
+                        r["rows"] = rows
+                        if any(x["conflict"] for x in rows):      # something already there differs: the person decides
+                            r["review"] = True
+                        else:
+                            r["filled"] = ai.apply(b["id"], r["fields"], r.get("model", ""), False, r.get("candidate"))
                     return self._send(200, r)
+                if p == "/api/ai_preview":
+                    from . import ai
+                    return self._send(200, {"ok": True, "rows": ai.preview(b["id"], b["fields"], b.get("candidate"))})
                 if p == "/api/ai_apply":
                     from . import ai
-                    return self._send(200, {"ok": True, "filled": ai.apply(b["id"], b["fields"], b.get("model", ""), bool(b.get("overwrite")), b.get("candidate"))})
+                    return self._send(200, {"ok": True, "filled": ai.apply(b["id"], b["fields"], b.get("model", ""), (b.get("overwrite") if isinstance(b.get("overwrite"), list) else bool(b.get("overwrite"))), b.get("candidate"))})
                 if p == "/api/exif_refresh":
                     return self._send(200, library.refresh_exif(b["id"]))
                 if p == "/api/mood_rename":

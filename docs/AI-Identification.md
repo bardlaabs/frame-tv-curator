@@ -1,6 +1,6 @@
 # Identify pictures with Claude
 
-Claude can look at a picture and fill in **empty** fields: artist, title, date, medium, description, mood, season and occasion, and it adds tags (to yours, never replacing them) (chosen from your [Moods list](Settings-Reference)). It names an artist or title only when it recognizes the work, never overwrites anything you typed, and does not search the web for matches. Where it is unsure it leaves the field empty.
+Claude can look at a picture and fill in empty fields, and lets you replace wrong ones: artist, title, date, medium, description, mood, season and occasion, and it adds tags (to yours, never replacing them) (chosen from your [Moods list](Settings-Reference)). It names an artist or title only when it recognizes the work, never changes anything you typed unless you say so (see below), and does not search the web for matches. Where it is unsure it leaves the field empty.
 
 ## Set it up
 
@@ -32,3 +32,8 @@ In the editor's Info tab (or on a Library selection) **Refresh from EXIF** re-re
 ## Cost control
 
 Spending is estimated from the tokens each call uses and totaled per calendar month in `ai_usage.json` in the add-on's data folder. When the estimate reaches the limit, identification stops until the next month or until you raise the limit. The per-million-token prices used for the estimate are in `ai.prices` in the settings file (defaults are rough; check them against Anthropic's price list). The estimate is not a bill; your Anthropic console is the authority.
+
+
+## Replacing existing details
+
+Empty fields are filled automatically. If the result differs from something already filled in (for example the old title was wrong), a review window shows each field with what is there now and the new value. Tick **Overwrite** for the fields you want replaced, or use **Keep all current** / **Overwrite all**, then Apply. Tags are added to yours. In a batch, these pictures are put aside and shown one by one at the end.
