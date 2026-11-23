@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.1
+
+- Fix: museum matching missed works the museums title differently (for example Hokusai's "The Great Wave off Kanagawa" is "Under the Wave off Kanagawa" at the Art Institute). When no record has the exact title, other works by the same artist are now offered in the chooser (never applied automatically).
+- Fix: "Claude's answer was not understood". The reply is now read more tolerantly, there is more room for the answer, it retries once, and the error says why. The last answer is kept in the add-on's data folder (`ai_last.json`) for troubleshooting.
+- The "no match" message now says what was searched.
+
 ## 0.34.0
 
 - **AI and museum results can now replace what is already there, field by field.** When the result differs from something already filled in, a review window lists each field with what is there now and the new value, an Overwrite box per field, and Keep all current / Overwrite all buttons. Empty fields are still filled automatically, and tags are still added (never replaced) unless you choose otherwise. In a batch, pictures that need a decision are put aside and shown at the end.

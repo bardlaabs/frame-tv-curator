@@ -52,6 +52,18 @@ def _cost(model, prices, tin, tout):
     pi, po = (prices.get(model) or DEFAULT_PRICES.get(model) or [3.0, 15.0])
     return (tin * pi + tout * po) / 1e6
 
+def _parse_obj(text):
+    """First JSON object in the text (tolerates code fences, chatter before or after, braces inside strings)."""
+    dec = json.JSONDecoder(); i = text.find("{")
+    while i != -1:
+        try:
+            o, _ = dec.raw_decode(text[i:])
+            if isinstance(o, dict): return o
+        except ValueError:
+            pass
+        i = text.find("{", i + 1)
+    return None
+
 def identify(img_id, settings):
     """Returns {"ok": True, "fields": {...}, "cost": x} or {"ok": False, "error": "..."}."""
     a = settings.get("ai") or {}
@@ -76,30 +88,38 @@ def identify(img_id, settings):
             hv.append("%s: %s" % (lab, v))
     hints = ("Existing information about this picture (it may be partial or wrong): " + "; ".join(hv) + ". Use it as a lead and check it against what you see: if the picture matches, confirm and complete it; if it clearly shows a different work, give your own answer.") if hv else ""
     moods = ", ".join(settings.get("moods") or []) or "calm, joyful, dramatic, melancholy"
-    body = {"model": model, "max_tokens": 800, "messages": [{"role": "user", "content": [
+    body = {"model": model, "max_tokens": 1500, "messages": [{"role": "user", "content": [
         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": _image_b64(img_id)}},
         {"type": "text", "text": PROMPT.replace("{moods}", moods).replace("{occasions}", ", ".join(settings.get("occasions") or [])).replace("{hints}", hints)}]}]}
     req = urllib.request.Request(API, json.dumps(body).encode(), {"x-api-key": k, "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    try:
-        r = json.load(urllib.request.urlopen(req, timeout=60))
-    except urllib.error.HTTPError as e:
+    f = None; cost = 0.0
+    for attempt in (1, 2):                      # one retry if the answer cannot be read
         try:
-            msg = json.load(e).get("error", {}).get("message", "")
+            r = json.load(urllib.request.urlopen(req, timeout=60))
+        except urllib.error.HTTPError as e:
+            try:
+                msg = json.load(e).get("error", {}).get("message", "")
+            except Exception:
+                msg = ""
+            return {"ok": False, "error": "Claude said HTTP %d %s" % (e.code, msg[:200])}
+        except Exception as e:
+            return {"ok": False, "error": "Could not reach Claude: %s" % e}
+        us = r.get("usage") or {}
+        c = _cost(model, prices, us.get("input_tokens", 0), us.get("output_tokens", 0)); cost += c
+        with _lock:
+            u = usage(); u["in"] += us.get("input_tokens", 0); u["out"] += us.get("output_tokens", 0); u["cost"] += c; u["calls"] += 1
+            _save_usage(u)
+        text = "".join(c2.get("text", "") for c2 in r.get("content", []) if c2.get("type") == "text")
+        f = _parse_obj(text)
+        try:                                    # keep the last raw answer so a failure can be diagnosed
+            json.dump({"id": img_id, "stop": r.get("stop_reason"), "text": text[:4000], "when": time.strftime("%Y-%m-%d %H:%M:%S")}, open(os.path.join(config.DATA, "ai_last.json"), "w"))
         except Exception:
-            msg = ""
-        return {"ok": False, "error": "Claude said HTTP %d %s" % (e.code, msg[:200])}
-    except Exception as e:
-        return {"ok": False, "error": "Could not reach Claude: %s" % e}
-    us = r.get("usage") or {}
-    cost = _cost(model, prices, us.get("input_tokens", 0), us.get("output_tokens", 0))
-    with _lock:
-        u = usage(); u["in"] += us.get("input_tokens", 0); u["out"] += us.get("output_tokens", 0); u["cost"] += cost; u["calls"] += 1
-        _save_usage(u)
-    text = "".join(c.get("text", "") for c in r.get("content", []) if c.get("type") == "text")
-    try:
-        f = json.loads(text[text.index("{"): text.rindex("}") + 1])
-    except Exception:
-        return {"ok": False, "error": "Claude's answer was not understood", "cost": cost}
+            pass
+        if f is not None:
+            break
+    if f is None:
+        why = "it was cut off" if r.get("stop_reason") == "max_tokens" else ("it did not contain the details: " + text.strip()[:120].replace("\n", " ") if text.strip() else "it was empty")
+        return {"ok": False, "error": "Claude's answer could not be read (%s). Nothing was changed; try again." % why, "cost": cost}
     mood = str(f.get("mood") or "").strip().lower()
     allowed = [m.lower() for m in (settings.get("moods") or [])]
     f["mood"] = mood if (not allowed or mood in allowed) else ""

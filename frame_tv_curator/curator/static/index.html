@@ -518,14 +518,14 @@ async function aiResolve(id,r,cand,done){const p=await api('ai_preview',{id,fiel
 function aiChoose(id,r,done){const f=r.fields||{};const close=()=>{closeModal();done()};
  const opt=c=>el('div',{class:'card',style:'margin:8px 0'},el('b',{},c.title+(c.artist?' \u2014 '+c.artist:'')),el('div',{class:'mut'},[c.source_name+(c.museum?' (museum)':''),c.date,c.medium].filter(Boolean).join(' \u00b7 ')),
   el('div',{class:'row'},c.url?el('a',{href:c.url,target:'_blank',rel:'noopener'},'Open the record'):null,el('button',{class:'pri',onclick:async()=>{closeModal();await aiResolve(id,r,c,done)}},'Use this one')));
- showModal(el('h2',{},'Which one is it?'),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. These records match. Museum records come first.'),
+ showModal(el('h2',{},'Which one is it?'),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. '+((r.candidates||[]).some(c=>c.loose)?'No record has exactly that title, so these are works by the same artist; museums often use another title for the same print or painting. Check the picture against the record before choosing. ':'These records match. ')+'Museum records come first.'),
   ...(r.candidates||[]).map(opt),
   el('div',{class:'row'},el('button',{onclick:async()=>{closeModal();await aiResolve(id,r,null,done)}},'None of these \u2014 use Claude\u2019s answer only'),el('button',{onclick:close},'Skip')))}
 async function aiOne(id,done){toast('Asking Claude and checking museums\u2026',45000);let r;try{r=await api('ai_identify',{id,apply:true})}catch(e){toast('Failed: '+e.message,8000);return}
  if(!r.ok){toast(r.error,8000);return}
  if(r.decision=='choose'){aiChoose(id,r,done);return}
  if(r.review){aiReview(id,r,r.candidate||null,done);return}
- const w=r.decision=='auto'?('Matched '+r.candidate.source_name+': '+r.candidate.title):'No museum match found, so this is Claude\u2019s answer only';
+ const w=r.decision=='auto'?('Matched '+r.candidate.source_name+': '+r.candidate.title):'No museum match found'+(r.search?' (searched for '+[r.search.title,r.search.artist].filter(Boolean).join(' \u00b7 ')+')':'')+(r.notes&&r.notes.length?' ['+r.notes.join('; ')+']':'')+', so this is Claude\u2019s answer only';
  toast(w+(r.filled&&r.filled.length?' \u00b7 filled '+r.filled.join(', '):' \u00b7 nothing new to fill'),8000);done()}
 async function bulkAI(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}
  const st=await api('ai_status');if(!st.key||!st.enabled){toast(!st.key?'Add your Anthropic key first (add-on Configuration tab), then turn AI on in Settings > AI':'Turn AI identification on in Settings > AI',8000);return}
