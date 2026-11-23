@@ -202,7 +202,11 @@ class Ambient:
                 rng = (pr or {}).get("brightness") or {}
                 lo, hi = rng.get("min", 1), rng.get("max", 10)
                 lo = max(lo, 1) if hi <= 10 else lo
-                val = int(round(lo + bpct / 100 * (hi - lo)))
+                raw = lo + bpct / 100 * (hi - lo)
+                val = int(round(raw))
+                hy = max(0.0, min(1.0, _num(bc.get("hysteresis", 0.3)) or 0.0))
+                if self.last["b"] is not None and val != self.last["b"] and abs(raw - self.last["b"]) < 0.5 + hy:
+                    val = self.last["b"]        # inside the dead band around the current step: stay put (no flicker)
                 if (val != self.last["b"] and now - self.last["b_ts"] >= float(bc.get("min_interval_s", 60))) or just_on or self.last["b"] is None:
                     kw["brightness"] = val
                     if bc.get("disable_sensor", True):

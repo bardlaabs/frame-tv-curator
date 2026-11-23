@@ -16,3 +16,7 @@ Off by default. When on, the add-on keeps the last N pictures (default 5, includ
 - Kept pictures stay on the TV in Art Store > My Photos, so they remain available when Home Assistant is down.
 - If you change a picture's look or edits, a fresh copy is uploaded and the old one is removed.
 - **Clear cached pictures** removes them all from the TV. Turning the cache off removes them at the next picture change.
+
+## Brightness steadiness
+
+If the brightness keeps flipping between two neighboring TV steps (a lux reading hovering near the halfway point), raise **Steadiness** in the Art brightness card. At 0.3 (the default) the brightness moves to another step only when the target is clearly past the halfway point; 0 gives the old behavior and 1 is very steady.

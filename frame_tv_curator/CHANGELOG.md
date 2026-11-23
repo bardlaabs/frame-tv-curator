@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.1
+
+- TV brightness: new "Steadiness" setting (default 0.3; 0 turns it off). The brightness only moves to a new TV step when the target is clearly past the halfway point, which stops it flickering between two neighboring steps around a threshold.
+
 ## 0.18.0
 
 - Library: tags. Add them in the editor (Info tab > Details > Tags, separated by commas) or to many images at once with + Tag… / − Tag… in the selection bar. A row of tag chips filters the grid, search also matches tags, and Now Playing shows them. Stored in the sidecar.
