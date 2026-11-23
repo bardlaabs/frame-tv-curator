@@ -26,3 +26,7 @@ An album is a named collection of images from any folder; an image can be in sev
 - Create one with **+ Album** under the folder chips, then switch **Select** on, pick images (in any folder) and choose **+ Album...** in the bar at the bottom. In an album, **- Remove from album** takes the selected images out again.
 - Use an album as the rotation source (Settings > Pick from > An album) or in a schedule (Schedules > Show > An album).
 - Moving an image to another folder keeps it in its albums; deleting an image removes it from them. Deleting an album does not delete its images.
+
+## Large preview (lightbox)
+
+Hover a tile and click the expand button (⤢) to see the picture large. Use ← and → to browse in the order the grid shows (including groups). Keys: **F** favorite, **M** show more often, **X** exclude, **T** show on the TV, **E** open the editor, **Esc** close. The same buttons are in the side panel.

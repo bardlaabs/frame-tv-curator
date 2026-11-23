@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0
+
+- Library: large preview (lightbox). Click the small expand button on a tile to see the picture large with its details. Arrow keys browse in the order shown (including groups); F favorite, M show more, X exclude, T show on TV, E edit, Esc close.
+
 ## 0.16.5
 
 - Wikimedia Commons: category presets replaced by keyword searches that return many more pictures (ukiyo-e, vintage travel and Art Nouveau posters, Google Art Project, pop art, digital art; Christmas, Easter and Halloween postcards stay category based); small files are filtered out by Commons itself.
