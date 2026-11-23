@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0
+
+- Library: tags. Add them in the editor (Info tab > Details > Tags, separated by commas) or to many images at once with + Tag… / − Tag… in the selection bar. A row of tag chips filters the grid, search also matches tags, and Now Playing shows them. Stored in the sidecar.
+
 ## 0.17.1
 
 - Discover: "and album" next to the destination folder also puts everything you add into a chosen album (works for server and browser downloads).

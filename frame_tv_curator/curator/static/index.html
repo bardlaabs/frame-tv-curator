@@ -203,7 +203,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
  return root}
 
 /* ---------- state ---------- */
-let S={},albumList=[],curAlbum=null,folderList=[],curFolder=null,curStatus={};
+let S={},albumList=[],curAlbum=null,curTag='',folderList=[],curFolder=null,curStatus={};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
@@ -277,7 +277,7 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
  const stack=el('div',{class:'nstack'},
   el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,v==null||v===''?'':String(v)))),
   blk('Description',sc.description),
-  blk('Notes',sc.notes),
+  blk('Tags',(sc.tags||[]).join(', ')),blk('Notes',sc.notes),
   blk('Links',(links.length||link(sc.source_url))?el('div',{},link(sc.source_url,'Source page ↗'),links.filter(x=>x&&x.href!=sc.source_url)):null),
   facts.length?el('div',{class:'nfacts'},facts.join(' · ')):null);
  const chip=k=>flagChip(flags,k,async(k,c)=>{flags[k]=!flags[k];await api('flags',{id,flags});c.classList.toggle('on',flags[k]);
@@ -366,8 +366,11 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
    el('img',{loading:'lazy',src:'api/thumb?id='+encodeURIComponent(i.id)}),
    el('div',{class:'badges'},expBtn(i),flagBtn(i,'favorite','fav','Favorite (shown more often)'),flagBtn(i,'show_more','more','Show more often'),flagBtn(i,'exclude','exc','Exclude from rotation'),i.has_display?el('i',{title:'This image has customized display settings'},'⚙'):null,i.low_res?el('i',{title:'Below 1920×1080 — may look soft on the TV'},'⚠'):null),
    el('div',{class:'t'},el('b',{},i.name),el('span',{},(sortKey=='date'&&i.year?i.year+' · ':'')+(i.artist||(i.title?i.file:'')||'\u00a0'))));
+ const tagCount=new Map();items.forEach(i=>(i.tags||[]).forEach(t=>tagCount.set(t,(tagCount.get(t)||0)+1)));
+ if(curTag&&!tagCount.has(curTag))curTag='';
+ if(tagCount.size){const tc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Tags'),[...tagCount.keys()].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'})).map(t=>el('span',{class:'chip sm'+(t==curTag?' on':''),onclick:()=>{curTag=curTag==t?'':t;renderLib()}},t+' ('+tagCount.get(t)+')')));albBar.after(tc)}
  const gnav=el('div',{class:'gnav'});grid.before(gnav);
- const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(f))).slice(0,600);
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
   shownList=list;
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
@@ -382,7 +385,7 @@ async function renderLib(){const root=$('#t-lib');root.replaceChildren();await r
   gnav.replaceChildren(...keys.map((k,n)=>el('span',{class:'chip sm',title:groups.get(k).length+' images',onclick:()=>secs[n].scrollIntoView({behavior:'smooth',block:'start'})},k)))};
  gsel.onchange=()=>{groupKey=gsel.value;try{localStorage.setItem('fc_group',groupKey)}catch(e){}draw()};
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
- q.oninput=dbounce(draw,150);draw();drawBulk();window._libList=()=>sortItems(items.filter(i=>(i.name+' '+i.artist+' '+i.file).toLowerCase().includes(q.value.toLowerCase())))}
+ q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):r.kind=='album'?('album '+((albumList.find(a=>a.id==r.album)||{}).name||'?')):('folder '+(r.folder||'Art')));
  if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
@@ -419,11 +422,20 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
  b.replaceChildren(el('b',{},selected.size+' selected'),el('button',{onclick:()=>{(window._libList?window._libList():[]).forEach(i=>selected.add(i.id));renderLib()}},'All shown'),el('button',{onclick:()=>{selected.clear();renderLib()}},'None'),
   fl('favorite',true,'★ Favorite'),fl('favorite',false,'☆ Un-favorite'),fl('show_more',true,'＋ Show more'),fl('show_more',false,'Show normally'),fl('exclude',true,'Exclude (hide)'),fl('exclude',false,'Include'),
   el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
-  el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),
+  el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),el('button',{onclick:()=>bulkTag(true)},'\uff0b Tag\u2026'),el('button',{onclick:()=>bulkTag(false)},'\u2212 Tag\u2026'),
   curAlbum?el('button',{onclick:async()=>{if(!selected.size)return;await api('album',{action:'remove',id:curAlbum,ids:[...selected]});toast('Removed from the album');selected.clear();renderLib()}},'\u2212 Remove from album'):null,
   el('button',{onclick:()=>{const f=prompt('Move the selected images to which folder? (existing or new)',curFolder);if(f)bulk({move_to:f},'Moved')}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+async function bulkTag(add){if(!selected.size){toast('Select some images first');return}
+ const v=prompt((add?'Add':'Remove')+' which tag(s) on the '+selected.size+' selected image(s)? (separate several with commas)');if(!v)return;
+ const tags=v.split(',').map(t=>t.trim()).filter(Boolean);if(!tags.length)return;
+ const by=new Map((window._libItems||[]).map(i=>[i.id,i]));let n=0;
+ for(const id of selected){const it=by.get(id);const cur=(it&&it.tags)||[];
+  const next=add?[...cur,...tags.filter(t=>!cur.some(c=>c.toLowerCase()==t.toLowerCase()))]:cur.filter(c=>!tags.some(t=>t.toLowerCase()==c.toLowerCase()));
+  if(JSON.stringify(next)==JSON.stringify(cur))continue;
+  try{await api('sidecar',{id,patch:{tags:next}});n++}catch(e){toast('Could not tag '+id+': '+e.message)}}
+ toast((add?'Tagged ':'Untagged ')+n+' image(s)');renderLib()}
 function bulkAlbum(){if(!selected.size){toast('Select some images first');return}
  const o={id:albumList[0]?.id||'',name:''};
  showModal(el('h2',{},'Add '+selected.size+' image'+(selected.size==1?'':'s')+' to an album'),
@@ -617,7 +629,7 @@ async function openEditor(id){
   meta:{title:(sc.card_text||{}).title||sc.placard_title||sc.title||'',artist:(sc.card_text||{}).artist||(sc.artist||{}).display||(sc.artist||{}).name||'',
    date:(sc.card_text||{}).date||(sc.date||{}).display||'',medium:(sc.card_text||{}).medium||sc.medium||'',
    credit:(sc.card_text||{}).credit||(sc.collection||{}).credit_line||'',
-   description:sc.description||'',notes:sc.notes||'',source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
+   description:sc.description||'',notes:sc.notes||'',tags:(sc.tags||[]).join(', '),source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
    location:(sc.card_text||{}).location||(typeof sc.location=='object'&&sc.location?sc.location.name:sc.location)||''},
   flags:Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{}),
   edit:Object.assign({rotate:0,straighten:0,crop:null},sc.edit||{}),
@@ -663,7 +675,7 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
   isPhoto?geoP():null,
@@ -684,7 +696,7 @@ async function openEditor(id){
     el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{dlg.remove();try{await save(closeEd)}catch(e){toast('Save failed: '+e.message)}}},'Save & close'),el('button',{onclick:()=>{dlg.remove();closeEd()}},'Discard changes'),el('button',{onclick:()=>dlg.remove()},'Keep editing'))));
   document.body.append(dlg)};
  const save=async(then)=>{const ct={artist:ed.meta.artist,title:ed.meta.title,date:ed.meta.date,medium:ed.meta.medium,credit:ed.meta.credit,location:ed.meta.location};
-  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
+  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,tags:ed.meta.tags.split(',').map(t=>t.trim()).filter((t,n,a)=>t&&a.findIndex(u=>u.toLowerCase()==t.toLowerCase())==n),source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
  box.append(el('div',{class:'row',style:'justify-content:space-between;position:sticky;top:0;z-index:5;background:var(--panel);padding:8px 0;margin-bottom:6px'},
    el('h2',{style:'margin:0'},ed.meta.title||id.split('/').pop().replace(/\.[^.]+$/,'')),
    el('div',{class:'row'},el('button',{onclick:askClose},'✕ Close'),el('button',{onclick:()=>save()},'Save'),el('button',{class:'pri',title:'Save, then show this image on the TV now',onclick:()=>save(push)},'Save & show on TV'))),

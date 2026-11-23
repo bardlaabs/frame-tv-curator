@@ -30,3 +30,7 @@ An album is a named collection of images from any folder; an image can be in sev
 ## Large preview (lightbox)
 
 Hover a tile and click the expand button (⤢) to see the picture large. Use ← and → to browse in the order the grid shows (including groups). Keys: **F** favorite, **M** show more often, **X** exclude, **T** show on the TV, **E** open the editor, **Esc** close. The same buttons are in the side panel.
+
+## Tags
+
+Tags are your own words for finding pictures (for example `winter`, `blue`, `family`). Add them in the editor under Info > Details > Tags, separated by commas, or select several images and use **+ Tag…** or **− Tag…** in the selection bar. When any tags exist a **Tags** row of chips appears under the folders: click one to show only those pictures (click again to clear). The search box also matches tags. Tags are saved in each picture's sidecar, so they never touch the original file.
