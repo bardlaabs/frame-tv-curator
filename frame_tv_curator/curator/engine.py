@@ -1,6 +1,6 @@
 """Core: choose -> render -> push (TV + e-paper) -> state. Plus the rotation scheduler."""
 import os, time, json, threading, logging, urllib.request, urllib.error
-from . import config, library, picker, render, epaper, store, schedule
+from . import config, library, picker, render, epaper, store, schedule, ha
 from .tv import TV
 log = logging.getLogger("engine")
 UNIT = {"minutes": 60, "hours": 3600, "days": 86400}
@@ -406,7 +406,7 @@ class Engine:
                 "last_change": d.get("last_change"), "interval_s": self.interval_s(),
                 "enabled": self.settings.get()["enabled"], "pending": d.get("pending"),
                 "dry_run": self.dry, "last_error": self.last_error,
-                "tv": self._tv_text(), "activity": dict(self.activity, elapsed=time.time() - self.activity["since"]),
+                "tv": self._tv_text(), "tv_mode": self._tv_mode(), "activity": dict(self.activity, elapsed=time.time() - self.activity["since"]),
                 "due_in": (d.get("last_change", 0) + self.interval_s()) - time.time(), "server_time": time.time(),
                 "showing": (d.get("showing") or {"kind": "image"}), "schedule": (self.active_source()[1] or {}).get("name"), "bird_until": d.get("bird_until"), "next": self._next_info(d), "ambient": self.ambient.status(), "presence": self.presence.status()}
 
@@ -416,6 +416,20 @@ class Engine:
         if not nid or not os.path.exists(library.abspath(nid)):
             return None
         return {"id": nid, "name": library.display_info(nid).get("name")}
+
+    def _tv_mode(self):
+        """'art' | 'tv' | 'off' | 'unknown', cached for a few seconds."""
+        c = getattr(self, "_tvm", (0, "unknown"))
+        if time.time() - c[0] < 8:
+            return c[1]
+        try:
+            info = ha.tv_info(self.settings.get()["tv"]["entity"])
+            st, am = info.get("state"), info.get("art_mode")
+            m = "off" if st in ("off", "standby") else ("art" if (st == "on" and am == "on") else ("tv" if st == "on" and am == "off" else "unknown"))
+        except Exception:
+            m = "unknown"
+        self._tvm = (time.time(), m)
+        return m
 
     def _tv_text(self):
         busy = self.activity["phase"] != "idle"

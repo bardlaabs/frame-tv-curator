@@ -31,6 +31,7 @@ DEFAULT_SETTINGS = {
                "size": [522, 152], "ttl": 60, "refresh_type": "0"},
     "schedules": [],
     "log_level": "",
+    "moods": ["calm", "serene", "joyful", "playful", "dramatic", "bold", "melancholy", "mysterious", "romantic", "nostalgic", "energetic", "contemplative"],
     "notify": {"enabled": False, "service": "", "minutes": 15, "on_recovery": True},
     "birdframe": {"enabled": False, "every_n": 10, "every_minutes": 0, "duration_minutes": 10, "source": "live",
                   "folder": "birds", "host": "local-birdframe-local", "port": 8099},

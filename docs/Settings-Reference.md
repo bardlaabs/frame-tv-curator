@@ -233,3 +233,8 @@ Stored in each picture's sidecar and edited in the image editor.
 | Favorite, Show more, Exclude | under the preview | How often the picture appears. |
 | Crop, Rotate, Straighten | Crop | Non-destructive edits. |
 | Placard, Mat, Inner liner, Bevel and lighting overrides | Display > Customize | Per-picture look. |
+
+## Appearance and Moods (0.28.0)
+
+- **Appearance:** Auto follows the device, or force Light or Dark. It is remembered in this browser only.
+- **Moods:** the list offered in a picture's Info tab and used by the Library's Mood filter. Add a mood, rename one (every picture using it is updated), or remove it from the list (pictures keep their mood text). Press Save settings to keep add and remove changes.

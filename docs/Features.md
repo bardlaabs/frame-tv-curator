@@ -110,3 +110,7 @@ All editing is non-destructive: your edits are saved as instructions in the side
 - **Version footer** shows the add-on version at the bottom of every page.
 - **Logging level** choice (debug to errors) takes effect immediately without a restart.
 - **Dry-run mode** renders everything without touching the TV, which is handy for testing.
+
+## Now Playing status picture
+
+When the TV is off, or on but not in Art Mode, Now Playing shows a "TV is off" or "TV is on" picture rather than the last art.

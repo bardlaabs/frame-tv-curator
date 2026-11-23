@@ -101,10 +101,23 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 }
 @media(max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(prefers-color-scheme:light){
- :root{--bg:#f4f2ec;--panel:#ffffff;--panel2:#ebe8df;--line:#d5d1c6;--fg:#1d1c19;--mut:#6a665c;--acc:#b9812a;--bad:#c0392b;--ok:#2e7d46}
- input,select,textarea{background:#fff}
- .modal{background:#000a}
+ :root:not([data-theme=dark]){--bg:#f4f2ec;--panel:#ffffff;--panel2:#ebe8df;--line:#d5d1c6;--fg:#1d1c19;--mut:#6a665c;--acc:#b9812a;--bad:#c0392b;--ok:#2e7d46}
+ :root:not([data-theme=dark]) input,:root:not([data-theme=dark]) select,:root:not([data-theme=dark]) textarea{background:#fff}
+ :root:not([data-theme=dark]) .modal{background:#000a}
 }
+:root[data-theme=light]{--bg:#f4f2ec;--panel:#ffffff;--panel2:#ebe8df;--line:#d5d1c6;--fg:#1d1c19;--mut:#6a665c;--acc:#b9812a;--bad:#c0392b;--ok:#2e7d46}
+:root[data-theme=light] input,:root[data-theme=light] select,:root[data-theme=light] textarea{background:#fff}
+:root[data-theme=light] .modal{background:#000a}
+
+.tvidle{margin:3px;display:flex;flex-direction:column;align-items:center}
+.tvi-screen{width:100%;aspect-ratio:16/9;border-radius:6px;box-shadow:0 0 0 2px #000,0 0 0 8px #15161a,0 12px 30px #0008;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:16px;box-sizing:border-box}
+.tvidle.off .tvi-screen{background:radial-gradient(ellipse at 30% 20%,#1b1d24 0%,#0b0c0f 70%);color:#7b7f8a}
+.tvidle.tv .tvi-screen{background:linear-gradient(135deg,#16324f 0%,#2b2d6b 55%,#4a2a63 100%);color:#e8ecf5}
+.tvi-ico{font-size:clamp(28px,6vw,54px);line-height:1;opacity:.85}
+.tvi-t{font-size:clamp(18px,3.2vw,30px);font-weight:600;letter-spacing:.03em}
+.tvi-s{font-size:clamp(12px,1.8vw,16px);opacity:.75}
+.tvi-n{font-size:12px;opacity:.55;margin-top:6px}
+.tvi-stand{width:22%;height:10px;background:linear-gradient(#2a2c33,#17181c);border-radius:0 0 8px 8px}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
 <nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>
@@ -116,6 +129,7 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div><div id="toast"></div>
 <script>
 const $=(s,r=document)=>r.querySelector(s);
+const applyTheme=t=>{if(t=='light'||t=='dark')document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme')};try{applyTheme(localStorage.getItem('fc_theme'))}catch(e){}
 const api=async(p,body,m)=>{const r=await fetch('api/'+p,body===undefined?{}:{method:m||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  if(!r.ok){const tx=(await r.text())||r.status;try{clog('API '+p+' failed: '+String(tx).slice(0,300))}catch(e){}throw new Error(tx)};const t=r.headers.get('content-type')||'';return t.includes('json')?r.json():r.blob()};
 function toast(m,ms=2500){if(/fail|error|could not|did not|didn.t|problem|not running|not found/i.test(String(m)))try{clog('popup: '+m)}catch(e){}const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',ms)}
@@ -187,7 +201,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
   cb.onchange=()=>{opts.inherit.use[sec]=!cb.checked;root.applyInherit();opts.inherit.onChange&&opts.inherit.onChange(sec,cb.checked)};
   return el('div',{class:'row'},el('label',{},'Customize the '+SECNAME[sec]+' for this image'),cb,el('span',{class:'mut',id:'inhnote-'+sec}))};
  const ff=el('fieldset',{},el('legend',{},'Framing'),inhRow('framing'),el('div',{class:'inh-framing'},
-  field('Framing mode',d,'framing','select',{options:{whole:'Whole artwork (keep all of it; mat or bars fill the rest)',fill:'Fill the screen (crop to 16:9, no mat)',blur:'Whole artwork on a blurred background (no mat)'},native:true},onch),
+  field('Framing mode',d,'framing','select',{options:{whole:'Whole artwork (keep all of it; mat or bars fill the rest)',fill:'Fill the screen (crop as needed)',blur:'Whole artwork on a blurred background (no mat)'},native:true},onch),
   el('p',{class:'mut'},'Fill the screen trims a picture that is not 16:9 so it covers the whole TV; nothing is changed in the file, and the mat settings are ignored while it is on. Whole artwork on a blurred background keeps all of it and fills the sides with a soft blurred copy (good for portrait pictures; no mat). Whole artwork never crops (apart from the even-mat trim).')));
  const fp=el('fieldset',{},el('legend',{},'Placard'),
   field('Show placard',d,'placard.enabled','check',{},onch),inhRow('placard'),el('div',{class:'inh-placard'},
@@ -233,7 +247,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
  return root}
 
 /* ---------- state ---------- */
-let S={},albumList=[],curAlbum=null,curTag='',folderList=[],curFolder=null,curStatus={};
+let S={},albumList=[],curAlbum=null,curTag='',curMood='',folderList=[],curFolder=null,curStatus={};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){api('version').then(v=>{$('#foot').textContent='Frame TV Curator v'+v.version+' · github.com/bardlaabs/frame-tv-curator'}).catch(()=>{});const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
@@ -244,7 +258,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.query
  ls.set('fc_tab',b.dataset.t);['now','lib','disc','disp','sched','tv','set'].forEach(t=>$('#t-'+t).hidden=t!=b.dataset.t);if(b.dataset.t=='now')renderNow();if(b.dataset.t=='disc')renderDisc();if(b.dataset.t=='lib')renderLib()});
 
 /* ---------- Now playing ---------- */
-async function poll(){try{const t0=Date.now();curStatus=await api('status');curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
+let _lastMode;async function poll(){try{const t0=Date.now();const pm=curStatus.tv_mode;curStatus=await api('status');if(_lastMode!==undefined&&curStatus.tv_mode!==_lastMode&&!$('#t-now').hidden)renderNow();_lastMode=curStatus.tv_mode;curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
  const id=curStatus.current,k=(curStatus.showing||{}).kind,nx=(curStatus.next||{}).id;if((id!==poll.id||k!==poll.kind||nx!==poll.nx)&&!(curStatus.activity&&curStatus.activity.phase!='idle')){poll.id=id;poll.kind=k;poll.nx=nx;if(!$('#t-now').hidden)renderNow()}}catch(e){}}
 let actTimer=null;
 function showAct(){let b=$('#actbar');if(!b){b=el('div',{id:'actbar'});document.body.append(b)}const a=(curStatus.activity||{});
@@ -266,7 +280,13 @@ async function renderNow(){const s=curStatus.current?curStatus:await api('status
  const kind=(s.showing||{}).kind||'image',pat=kind!='image'?kind:null;
  const banner=pat?el('div',{style:'background:var(--acc);color:#1a1a1a;font-weight:700;padding:10px 14px;border-radius:8px;margin-bottom:10px'},
    'On the TV right now: '+PATTERNS[pat]+(pat=='birdframe'&&s.bird_until?' — until '+new Date(s.bird_until*1000).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'')+'. '+(pat=='birdframe'?'Normal rotation resumes afterward.':'Press ↻ Resend art when you are done to put the art back.')):null;
- const shot=pat?el('img',{style:'margin:3px',src:'api/pattern?kind='+pat+'&t='+(s.last_change|0)}):(s.current?el('img',{style:'margin:3px',src:'api/render?id='+encodeURIComponent(s.current)+'&t='+(s.last_change|0)}):el('p',{class:'mut'},'Nothing shown yet.'));
+ const mode=s.tv_mode,idle=!pat&&(mode=='off'||mode=='tv');
+ const idleCard=idle?el('div',{class:'tvidle '+mode},el('div',{class:'tvi-screen'},el('div',{class:'tvi-ico'},mode=='off'?'\u23fb':'\u25b6'),
+   el('div',{class:'tvi-t'},mode=='off'?'TV is off':'TV is on'),
+   el('div',{class:'tvi-s'},mode=='off'?'Art resumes when it is turned on.':'Showing regular TV, not Art Mode.'),
+   s.next?el('div',{class:'tvi-n'},'Next art: '+s.next.name):null),
+  el('div',{class:'tvi-stand'})):null;
+ const shot=idle?idleCard:pat?el('img',{style:'margin:3px',src:'api/pattern?kind='+pat+'&t='+(s.last_change|0)}):(s.current?el('img',{style:'margin:3px',src:'api/render?id='+encodeURIComponent(s.current)+'&t='+(s.last_change|0)}):el('p',{class:'mut'},'Nothing shown yet.'));
  const hero=el('div',{class:'card hero'},banner,shot,el('div',{class:'mut',id:'cd',style:'margin-top:10px'}));
  const side=el('div',{class:'card',id:'details'},el('p',{class:'mut'},'Loading details…'));
  const nx=s.next?el('div',{style:'display:flex;gap:12px;align-items:center;margin-top:12px'},el('img',{src:'api/thumb?id='+encodeURIComponent(s.next.id),style:'width:200px;aspect-ratio:16/9;object-fit:cover;border-radius:0;box-shadow:0 0 0 1px #000,0 0 0 3px rgba(255,255,255,.9);margin:3px'}),
@@ -401,9 +421,12 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
    el('div',{class:'t'},el('b',{},i.name),el('span',{},(sortKey=='date'&&i.year?i.year+' · ':'')+(i.artist||(i.title?i.file:'')||'\u00a0'))));
  const tagCount=new Map();items.forEach(i=>(i.tags||[]).forEach(t=>tagCount.set(t,(tagCount.get(t)||0)+1)));
  if(curTag&&!tagCount.has(curTag))curTag='';
- if(tagCount.size){const tc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Tags'),[...tagCount.keys()].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'})).map(t=>el('span',{class:'chip sm'+(t==curTag?' on':''),onclick:()=>{curTag=curTag==t?'':t;renderLib()}},t+' ('+tagCount.get(t)+')')));albBar.after(tc)}
+ if(tagCount.size){const tc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Tags'),[...tagCount.keys()].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'})).map(t=>el('span',{class:'chip sm'+(t==curTag?' on':''),onclick:()=>{curTag=curTag==t?'':t;renderLib()}},t+' ('+tagCount.get(t)+')')));grid.before(tc)}
+ const moodCount=new Map();items.forEach(i=>{const m=(i.mood||'').trim().toLowerCase();if(m)moodCount.set(m,(moodCount.get(m)||0)+1)});
+ if(curMood&&!moodCount.has(curMood))curMood='';
+ if(moodCount.size){const mc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Mood'),[...moodCount.keys()].sort().map(m=>el('span',{class:'chip sm'+(m==curMood?' on':''),onclick:()=>{curMood=curMood==m?'':m;renderLib()}},m+' ('+moodCount.get(m)+')')));grid.before(mc)}
  const gnav=el('div',{class:'gnav'});grid.before(gnav);
- const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(!curMood||(i.mood||'').trim().toLowerCase()==curMood)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
   shownList=list;
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
@@ -418,7 +441,7 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
   gnav.replaceChildren(...keys.map((k,n)=>el('span',{class:'chip sm',title:groups.get(k).length+' images',onclick:()=>secs[n].scrollIntoView({behavior:'smooth',block:'start'})},k)))};
  gsel.onchange=()=>{groupKey=gsel.value;try{localStorage.setItem('fc_group',groupKey)}catch(e){}draw()};
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
- q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
+ q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(!curMood||(i.mood||'').trim().toLowerCase()==curMood)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):r.kind=='album'?('album '+((albumList.find(a=>a.id==r.album)||{}).name||'?')):('folder '+(r.folder||'Art')));
  if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
@@ -497,16 +520,17 @@ async function findDuplicates(){showModal(el('h2',{},'Duplicate check'),el('p',{
     el('div',{style:'margin-top:8px'},el('button',{onclick:async()=>{if(!confirm('Keep '+best.name+' and delete the other '+(grp.length-1)+'?'))return;for(const i of grp)if(i.id!=best.id)await api('delete',{id:i.id});findDuplicates()}},'Keep the best, delete the rest')))}):[el('p',{},'No duplicates found.')];
  showModal(el('div',{class:'row',style:'justify-content:space-between'},el('h2',{style:'margin:0'},'Duplicate check — '+g.length+' group'+(g.length==1?'':'s')),el('button',{onclick:()=>{closeModal();renderLib()}},'✕ Close')),el('p',{class:'mut'},'Images that look like the same picture (even at different sizes). Deleted images go to the _trash folder.'),...body)}
 /* ---------- Discover: find new art online and add it to the library ---------- */
-const D={source:'reframed',type:'Painting',srcs:null,q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',album:'',data:null,artists:null,built:false};
+const D={source:'reframed',type:'Painting',srcs:null,q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',album:'',framing:'',data:null,artists:null,built:false};
 const mbs=n=>n?(n/1048576).toFixed(1)+' MB':'size unknown';
 const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
  D.srcs.sort(byName);D.srcs.forEach(x=>{if(x.types)x.types.sort(byName)});D.srcs.unshift({id:'__all',name:'Search all sources',blurb:'Type words in Search and every source is asked; the first few results from each are shown together (labelled with their source). Pick a single source to browse it page by page.',sorts:[['rel','Relevance']],types:[],has_artists:false});
- try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{shape:sv.shape||'any',source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
+ try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{shape:sv.shape||'any',source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||'',framing:sv.framing||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;saveDisc();drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
  const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value;saveDisc()}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
+ const frs=el('select',{title:'How the added pictures fill the screen. Fill crops to 16:9 (non-destructive; adjust it later in the Crop tab). You can change it per picture afterward.',onchange:()=>{D.framing=frs.value;saveDisc()}},el('option',{value:''},'Framing: default'),el('option',{value:'whole'},'Whole artwork'),el('option',{value:'fill'},'Fill the screen (crop as needed)'),el('option',{value:'blur'},'Whole on blurred background'));frs.value=D.framing||'';
  const nf=el('input',{type:'text',placeholder:'or type a new folder name',style:'width:200px',oninput:()=>{D.newf=nf.value;drawDbar()}});
  const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});q.value=D.q||'';
  const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=defType(m);buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
@@ -522,7 +546,7 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  root.replaceChildren(
   el('div',{class:'card'},el('h3',{},'Discover art'),
    el('div',{class:'row'},el('label',{},'Source'),srcSel),blurb,ctl,
-   el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf,el('label',{},'and album'),asl)),
+   el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf,el('label',{},'and album'),asl,el('label',{},'framing'),frs)),
   el('div',{id:'dres'}),el('div',{id:'dbar'}));buildCtl()}
 // first type shown when you switch to a source: for Wikimedia Commons the postcard set that matches the season (Christmas, Halloween, Easter), otherwise the first type in the list
 function easterDate(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da)}
@@ -534,7 +558,7 @@ function defType(m){const t=(m.types||[]).map(x=>x[0]);if(m.id=='commons'){const
 const SHAPES=[['any','Any shape'],['fit','Fits the screen (16:9, no mat needed)'],['land','Landscape (mat at the sides)'],['wide','Wide / panoramic (mat top and bottom)'],['sq','Square-ish'],['port','Portrait']];
 const shapeOf=i=>{if(!(i.w&&i.h))return null;const a=i.w/i.h;return a>=1.65&&a<=1.9?'fit':a>1.9?'wide':a>=1.15?'land':a>=0.85?'sq':'port'};
 const shapeOk=i=>{if(!D.shape||D.shape=='any')return true;const s=shapeOf(i);return s===null||s==D.shape};
-const saveDisc=()=>ls.set('fc_disc',JSON.stringify({shape:D.shape||'any',source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album}));
+const saveDisc=()=>ls.set('fc_disc',JSON.stringify({shape:D.shape||'any',source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album,framing:D.framing||''}));
 const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
 async function loadAll(box){const words=(D.q||'').trim();
  if(!words){D.data=null;box.replaceChildren(el('p',{class:'mut'},'Type a word or two in Search to look in every source at once.'));return}
@@ -631,6 +655,7 @@ async function addSel(list){const items=list||[...D.sel.values()];if(!items.leng
  clearInterval(tick);draw();
  const alb=D.album&&albumList.find(a=>a.id==D.album);let inAlb=0;
  if(alb){const ids=items.map(i=>st[i.key]).filter(x=>x.state=='done'&&x.id).map(x=>x.id);if(ids.length){try{await api('album',{action:'add',id:alb.id,ids});inAlb=ids.length}catch(e){toast('Could not add to the album: '+e.message,6000)}}}
+ if(D.framing){const ids2=items.map(i=>st[i.key]).filter(x=>x.state=='done'&&x.id).map(x=>x.id);for(const id of ids2){try{await api('sidecar',{id,patch:{display:{framing:D.framing}}})}catch(e){}}}
  const c=s=>items.filter(i=>st[i.key].state==s).length,ok=c('done'),sk=c('skipped'),fl=c('failed');
  items.forEach(i=>{if(st[i.key].state!='failed'){D.sel.delete(i.key);D.chk.delete(i.key);D.choice.delete(i.key)}});
  refreshFolders().then(()=>{drawDres()});if(ok){setFolder(folder.replace(/[^\w\- ]/g,'').trim())}
@@ -730,6 +755,7 @@ async function openEditor(id){
    el('p',{class:'mut'},'Coordinates are saved with the image (decimal degrees, e.g. 32.9750 and -117.2629). Change them and press Recheck place name to update the Location text.'))};
  const mfs=(isPhoto?['title','artist','date','location']:['title','artist','date','medium','credit']).map(k=>{const f=field(k[0].toUpperCase()+k.slice(1),ed.meta,k,'text',{},refresh);if(k=='location')locF=f;return f});
  const detailsP=()=>{const ta=(l,k,rows,ph)=>{const f=field(l,ed.meta,k,'area');const t=$('textarea',f);t.rows=rows;t.placeholder=ph||'';t.style.width='min(100%,560px)';return f};
+  const moodField=()=>{const list=(S.moods||[]).slice(),cur=(ed.meta.mood||'').trim();if(cur&&!list.some(m=>m.toLowerCase()==cur.toLowerCase()))list.push(cur);return field('Mood',ed.meta,'mood','select',{options:Object.fromEntries([['','(none)']].concat(list.map(m=>[m,m]))),native:true})};
   const wide=(l,k,ph)=>{const f=field(l,ed.meta,k,'text');const t=$('input',f);t.style.width='min(100%,560px)';t.placeholder=ph||'';return f};
   const o=sc.origin||{},si=sc.source_image||{},facts=[];
   if(si.width&&si.height)facts.push('Original size '+si.width+'×'+si.height+' px');
@@ -739,7 +765,7 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),wide('Mood','mood','How it feels, in a word or two (e.g. calm, dramatic, joyful, melancholy)'),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
   isPhoto?geoP():null,
@@ -846,6 +872,11 @@ async function openViewer(id,disp,edit){
  v.addEventListener('dblclick',e=>{Math.abs(sc-1)<.01?fit():(()=>{const f=1/sc;zoom(f,e.clientX,e.clientY)})()})}
 
 /* ---------- Settings ---------- */
+function moodsEditor(s){const box=el('div',{});const draw=()=>{s.moods=s.moods||[];box.replaceChildren(
+  ...s.moods.map((m,i)=>el('div',{class:'row'},el('span',{style:'min-width:140px'},m),
+   el('button',{onclick:async()=>{const n=(prompt('Rename mood',m)||'').trim();if(!n||n==m)return;const r=await api('mood_rename',{from:m,to:n});s.moods[i]=n;toast('Renamed; '+r.changed+' picture'+(r.changed==1?'':'s')+' updated. Save settings to keep the list.',6000);draw()}},'Rename'),
+   el('button',{onclick:()=>{s.moods.splice(i,1);draw()}},'Remove'))),
+  (()=>{const inp=el('input',{type:'text',placeholder:'New mood',style:'width:180px'});return el('div',{class:'row'},inp,el('button',{onclick:()=>{const n=inp.value.trim();if(!n)return;if(s.moods.some(x=>x.toLowerCase()==n.toLowerCase())){toast('Already in the list');return}s.moods.push(n);draw()}},'Add'))})())};draw();return box}
 function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){window._notifySvc=null;api('notify_services').then(r=>{window._notifySvc=(r&&r.services)||[];renderSet()}).catch(()=>{window._notifySvc=[]})}const root=$('#t-set');root.replaceChildren();const s=clone(S);
  const src=el('div');const drawSrc=()=>{src.replaceChildren(field('Pick from',s,'source.mode','select',{options:{folder:'One folder',mix:'Weighted mix of folders',album:'An album'}},drawSrc));
   if(s.source.mode=='folder')src.append(field('Folder',s,'source.folder','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}));
@@ -889,6 +920,10 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
    field('Notify me',s,'notify.enabled','check'),field('Notify service',s,'notify.service','select',{options:Object.fromEntries([['','Choose…']].concat((window._notifySvc||[]).map(x=>[x,x]))),native:true}),
    field('After it has failed for (minutes)',s,'notify.minutes','num',{min:1,max:1440}),field('Also tell me when it is back',s,'notify.on_recovery','check'),
    el('div',{class:'row'},el('button',{onclick:async()=>{const r=await api('notify_test',{});toast(r.ok?'Test notification sent':('Could not send: '+r.message),6000)}},'Send a test notification'))),
+  el('div',{class:'card'},el('h3',{},'Appearance'),el('p',{class:'mut'},'Light, dark, or follow this device. This is remembered in this browser only, so your phone and computer can differ.'),
+   (()=>{const sel=el('select',{onchange:()=>{ls.set('fc_theme',sel.value);applyTheme(sel.value)}},el('option',{value:''},'Auto (follow this device)'),el('option',{value:'light'},'Light'),el('option',{value:'dark'},'Dark'));sel.value=ls.get('fc_theme')||'';return el('div',{class:'row'},el('label',{},'Theme'),sel)})()),
+  el('div',{class:'card'},el('h3',{},'Moods'),el('p',{class:'mut'},'The list of moods you can give a picture (Info tab) and filter by in the Library. Rename changes every picture that uses it. Remove only takes it off this list; pictures keep their mood text.'),
+   moodsEditor(s)),
   el('div',{class:'card'},el('h3',{},'Logging'),field('Log level',s,'log_level','select',{options:{'':'Add-on option (default)',debug:'Debug (most detail)',info:'Info',warning:'Warnings only',error:'Errors only'},native:true}),
    el('p',{class:'mut'},'Takes effect as soon as you save — no restart. Errors shown in pop-ups are also written to the add-on log so they can be read there. Use Debug while chasing a problem, then set it back.')),
   el('div',{class:'card'},el('h3',{},'Backups'),el('p',{class:'mut'},'Sidecar files (titles, mats, crops, flags) and these settings are backed up automatically once a day to the share (folder _backups, newest 14 kept).'),
@@ -900,7 +935,8 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
   field('Convert photos to sRGB using their embedded color profile',gd,'srgb','check'),
   el('p',{class:'mut'},'Photos from phones and cameras are often tagged Display P3 or Adobe RGB. The TV assumes sRGB, so without conversion those can look over- or under-saturated. Untagged images are used as they are. Changing this re-renders images as they come up.'));
  const put=(id,list)=>$('#'+id).replaceChildren(...list.filter(Boolean));
- put('t-set',[cards[0],cards[3],cards[5],cards[6],cards[7],mkSave()]);
+ const byT=t=>cards.find(c=>c&&c.querySelector&&c.querySelector('h3')&&c.querySelector('h3').textContent==t);
+ put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Notifications'),byT('Appearance'),byT('Moods'),byT('Logging'),byT('Backups'),mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);
  const [actCard,liveCard,...tvRest]=tvCards(s);

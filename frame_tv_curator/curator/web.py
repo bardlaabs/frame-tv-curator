@@ -350,6 +350,8 @@ def make(engine):
                     if not ent or not ent.startswith("select.") or opt is None: return self._send(400, {"ok": False, "message": "entity and option required"})
                     ha.call("select", "select_option", {"entity_id": ent, "option": str(opt)})
                     return self._send(200, {"ok": True, "message": "set to %s" % opt})
+                if p == "/api/mood_rename":
+                    return self._send(200, {"ok": True, "changed": library.rename_mood(b.get("from"), b.get("to"))})
                 if p == "/api/notify_test":
                     ok, msg = engine.send_notice("Frame TV Curator", "This is a test notification from the Frame TV Curator add-on.")
                     return self._send(200, {"ok": ok, "message": msg})

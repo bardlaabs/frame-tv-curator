@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.28.0
+
+- **Fix:** notifications (0.23.0) failed with "name 'ha' is not defined"; they now send.
+- **Fix:** the Library's tag chips crashed when no album was open; tags now show.
+- Framing choice renamed **Fill the screen (crop as needed)**; it is a non-destructive crop you can adjust in the Crop tab.
+- Discover: choose a **framing** for the pictures you add (set after the download, per picture).
+- Settings: **Appearance** (auto, light or dark, remembered per browser) and an editable **Moods** list (add, rename everywhere, remove). The editor's Mood is now a dropdown from that list, and the Library has a Mood filter.
+- Now Playing shows a status picture ("TV is off" or "TV is on, regular TV") instead of stale art when the TV is not in Art Mode.
+
 ## 0.27.0
 
 - Discover: **Search all sources** (first item in the Source list) searches every source for your words and shows the first six results from each, labelled by source.

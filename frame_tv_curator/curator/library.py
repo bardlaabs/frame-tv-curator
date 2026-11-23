@@ -554,3 +554,18 @@ def migrate_folder_case():
                 os.replace(p + ".tmp", p)
                 log.info("updated folder names in %s", fn)
     os.replace(marker, marker + ".done")
+
+
+def rename_mood(old, new):
+    """Rename a mood in every sidecar (empty new clears it). Returns how many changed."""
+    old = (old or "").strip(); new = (new or "").strip()
+    n = 0
+    if not old:
+        return 0
+    for i in all_images():
+        sc = load_sidecar(i)
+        if (sc.get("mood") or "").strip().lower() == old.lower():
+            sc["mood"] = new
+            save_sidecar(i, sc)
+            n += 1
+    return n
