@@ -674,7 +674,7 @@ async function openEditor(id){
  const pvimg=el('img',{title:'Click for full screen, zoom and pan',onclick:()=>openViewer(id,build(),editOut())}),pv=el('div',{class:'pv'},pvimg,el('div',{class:'sp'},'Rendering…'));
  let seq=0;const build=()=>{const out={};for(const k in SEC){[...ed.touched].filter(SEC[k].test).forEach(p=>{
     if(ed.use[k]&&(p!=SEC[k].en||!!get(ed.d,p)===!!get(base(),p)))return;set(out,p,get(ed.d,p))})}return out};
- const editOut=()=>{const e=ed.edit;return(!e.crop&&!e.rotate&&Math.abs(e.straighten||0)<.01)?null:{rotate:e.rotate||0,straighten:+e.straighten||0,crop:e.crop}};
+ const editOut=()=>{const e=ed.edit,sv=e.saved_crops&&Object.keys(e.saved_crops).length?e.saved_crops:null;return(!e.crop&&!e.rotate&&Math.abs(e.straighten||0)<.01&&!sv)?null:Object.assign({rotate:e.rotate||0,straighten:+e.straighten||0,crop:e.crop},sv?{saved_crops:sv}:{})};
  const refresh=dbounce(async()=>{const my=++seq;pv.classList.add('busy');try{const b=await api('preview',{id,display:build(),edit:editOut()});
   if(my==seq)pvimg.src=URL.createObjectURL(b)}catch(e){toast('Preview failed: '+e.message)}pv.classList.remove('busy')},600);
   // override toggles: touching any placard/mat control turns that override on; the checkbox lets you go back to global
@@ -751,6 +751,16 @@ function cropPane(ed,id,refresh,onSave){
  const setMode=m=>{mode=m;def();draw();refresh();mk()};
  const chips=el('div',{class:'chips2'});const mk=()=>chips.replaceChildren(...[['full','Whole picture'],['169','Crop to 16:9'],['free','Free crop']].map(([v,l])=>el('span',{class:'ch'+(mode==v?' on':''),onclick:()=>setMode(v)},l)));
  const info=el('div',{class:'mut'});
+ const savedRow=el('div',{class:'row'});
+ const mkSaved=()=>{const sv=e.saved_crops||{},names=Object.keys(sv).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+  const sel=el('select',{},el('option',{value:''},names.length?'Saved crops…':'No saved crops yet'),...names.map(n=>el('option',{value:n},n)));
+  sel.onchange=()=>{const c=sv[sel.value];if(!c)return;const rotChanged=(e.rotate||0)!=(c.rotate||0)||Math.abs((e.straighten||0)-(c.straighten||0))>.01;
+   e.rotate=c.rotate||0;e.straighten=c.straighten||0;e.crop={x:c.x,y:c.y,w:c.w,h:c.h};mode='free';mk();draw();if(rotChanged){sl.value=e.straighten;slv.textContent=(+e.straighten).toFixed(1)+'°';load()}else refresh()};
+  const nm=el('input',{type:'text',placeholder:'Name this crop (e.g. Detail, Portrait)',style:'width:210px'});
+  const add=el('button',{onclick:()=>{const n=nm.value.trim();if(!n)return toast('Type a name for the crop first');if(!e.crop)return toast('Make a crop first (Crop to 16:9 or Free crop)');
+   e.saved_crops=Object.assign({},e.saved_crops,{[n]:{x:e.crop.x,y:e.crop.y,w:e.crop.w,h:e.crop.h,rotate:e.rotate||0,straighten:+e.straighten||0}});mkSaved();toast('Crop "'+n+'" will be stored when you press Save')}},'Save this crop as…');
+  const del=el('button',{onclick:()=>{if(!sel.value)return toast('Choose a saved crop to delete');const o=Object.assign({},e.saved_crops);delete o[sel.value];e.saved_crops=Object.keys(o).length?o:undefined;mkSaved()}},'Delete selected');
+  savedRow.replaceChildren(sel,nm,add,del)};
  const load=async()=>{const my=++seq;stage.style.opacity=.5;try{const r=await fetch('api/edit_base?id='+encodeURIComponent(id)+'&rotate='+(e.rotate||0)+'&straighten='+(e.straighten||0)+'&w=1400');if(!r.ok)throw new Error('HTTP '+r.status);
    const b=await r.blob();if(my!=seq)return;const im=el('img',{src:URL.createObjectURL(b),draggable:false,style:'width:100%;display:block'});await new Promise(ok=>{im.onload=ok});
    nw=im.naturalWidth;nh=im.naturalHeight;img=im;stage.replaceChildren(im,box);ready=true;def();draw();refresh()}catch(x){toast('Crop view failed: '+x.message)}stage.style.opacity=1};
@@ -771,12 +781,12 @@ function cropPane(ed,id,refresh,onSave){
    if(c.x<0){c.x=0}if(c.y<0){c.y=0}if(c.x+c.w>1)c.x=1-c.w;if(c.y+c.h>1)c.y=1-c.h}
   draw()});
  const end=()=>{if(drag){drag=null;refresh()}};stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
- root.append(el('p',{class:'mut'},'Non-destructive: the original file is never changed. Drag the box to move it, drag a corner to resize.'),chips,
+ root.append(el('p',{class:'mut'},'Non-destructive: the original file is never changed. Drag the box to move it, drag a corner to resize.'),chips,savedRow,
   el('div',{class:'row'},el('button',{onclick:()=>rot(-90)},'⟲ Rotate left'),el('button',{onclick:()=>rot(90)},'⟳ Rotate right'),
    el('label',{},'Straighten'),sl,slv,el('button',{onclick:()=>{e.rotate=0;e.straighten=0;sl.value=0;slv.textContent='0.0°';mode='full';e.crop=null;mk();load();refresh()}},'Reset')),
   stage,info,
   el('div',{class:'row'},el('button',{class:'pri',onclick:()=>onSave&&onSave()},'✓ Save crop'),el('span',{class:'mut'},'Changes show in the preview on the left right away, but are only stored when you press Save (here, or the Save button under the preview).')));
- root.start=()=>{if(!ready&&!root._l){root._l=1;if(e.crop)mode='free';mk();load().then(()=>{if(e.crop===null&&mode!='full')def()})}};
+ root.start=()=>{if(!ready&&!root._l){root._l=1;if(e.crop)mode='free';mk();mkSaved();load().then(()=>{if(e.crop===null&&mode!='full')def()})}};
  mk();return root}
 
 /* ---------- Full-screen viewer (zoom / pan at native 3840x2160) ---------- */
@@ -801,7 +811,7 @@ async function openViewer(id,disp,edit){
  v.addEventListener('dblclick',e=>{Math.abs(sc-1)<.01?fit():(()=>{const f=1/sc;zoom(f,e.clientX,e.clientY)})()})}
 
 /* ---------- Settings ---------- */
-function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceChildren();const s=clone(S);
+function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){window._notifySvc=null;api('notify_services').then(r=>{window._notifySvc=(r&&r.services)||[];renderSet()}).catch(()=>{window._notifySvc=[]})}const root=$('#t-set');root.replaceChildren();const s=clone(S);
  const src=el('div');const drawSrc=()=>{src.replaceChildren(field('Pick from',s,'source.mode','select',{options:{folder:'One folder',mix:'Weighted mix of folders',album:'An album'}},drawSrc));
   if(s.source.mode=='folder')src.append(field('Folder',s,'source.folder','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}));
   else if(s.source.mode=='album'){s.source.album??=albumList[0]?.id;src.append(albumList.length?field('Album',s,'source.album','select',{native:true,options:Object.fromEntries(albumList.map(a=>[a.id,a.name+' ('+a.count+')']))}):el('p',{class:'mut'},'No albums yet. Create one in the Library (+ Album), then pick it here.'))}
@@ -838,6 +848,11 @@ function renderSet(){PICKID=null;PALETTE=[];const root=$('#t-set');root.replaceC
    field('Bird source',s,'birdframe.source','select',{options:{live:'Live Bird Frame collage',folder:'Image from a folder'}}),
    field('Bird folder',s,'birdframe.folder','text'),field('Bird Frame add-on host',s,'birdframe.host','text'),
    el('div',{class:'row'},el('button',{onclick:async()=>{toast('Asking for a bird picture…',20000);const r=await api('bird_now',{});toast(r.error?('Bird picture failed: '+r.error):'Bird picture is on the TV',6000);await poll()}},'Show bird picture now'))),
+  el('div',{class:'card'},el('h3',{},'Notifications'),
+   el('p',{class:'mut'},'Get a message on your phone when the add-on cannot send pictures to the TV for a while (the TV is on but not answering). A TV you turned off yourself does not count.'),
+   field('Notify me',s,'notify.enabled','check'),field('Notify service',s,'notify.service','select',{options:Object.fromEntries([['','Choose…']].concat((window._notifySvc||[]).map(x=>[x,x]))),native:true}),
+   field('After it has failed for (minutes)',s,'notify.minutes','num',{min:1,max:1440}),field('Also tell me when it is back',s,'notify.on_recovery','check'),
+   el('div',{class:'row'},el('button',{onclick:async()=>{const r=await api('notify_test',{});toast(r.ok?'Test notification sent':('Could not send: '+r.message),6000)}},'Send a test notification'))),
   el('div',{class:'card'},el('h3',{},'Logging'),field('Log level',s,'log_level','select',{options:{'':'Add-on option (default)',debug:'Debug (most detail)',info:'Info',warning:'Warnings only',error:'Errors only'},native:true}),
    el('p',{class:'mut'},'Takes effect as soon as you save — no restart. Errors shown in pop-ups are also written to the add-on log so they can be read there. Use Debug while chasing a problem, then set it back.')),
   el('div',{class:'card'},el('h3',{},'Backups'),el('p',{class:'mut'},'Sidecar files (titles, mats, crops, flags) and these settings are backed up automatically once a day to the share (folder _backups, newest 14 kept).'),

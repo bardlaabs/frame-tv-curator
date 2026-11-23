@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.23.0
+
+- **Several named crops per picture:** in the editor's Crop tab, save the current crop under a name, switch between saved crops, delete them. Each remembers its rotation and straighten. Stored in the sidecar; the original is never changed.
+- **TV unreachable notification** (Settings > Notifications, off by default): sends a message through a Home Assistant notify service when pictures keep failing to reach a TV that is on, after the number of minutes you choose, and again when it recovers. Includes a test button.
+
 ## 0.22.1
 
 - Art brightness: new **Smoothing** setting (default 120 seconds, 0 = off). A light sensor that jumps between readings every second (for example 0 to 24 lux) made the TV change brightness step every 20 seconds; the reading is now averaged over time first.

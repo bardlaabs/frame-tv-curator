@@ -22,6 +22,41 @@ class Engine:
         self._stop = threading.Event()
         self.activity = {"phase": "idle", "detail": "", "since": time.time()}
         self._tvc = (0, "")
+        self._fail_since = None; self._notified = False
+
+    # ---- "TV unreachable" notification: a push to a TV that Home Assistant says is on keeps failing
+    def send_notice(self, title, message):
+        n = self.settings.get().get("notify") or {}
+        svc = (n.get("service") or "").strip()
+        if not svc.startswith("notify.") or self.dry:
+            return False, "no notify service chosen" if not svc.startswith("notify.") else "dry run"
+        try:
+            ha.call("notify", svc.split(".", 1)[1], {"title": title, "message": message})
+            return True, "sent"
+        except Exception as e:
+            log.warning("notification failed: %s", e)
+            return False, str(e)
+
+    def _note_fail(self):
+        if self._fail_since is None:
+            self._fail_since = time.time()
+
+    def _note_ok(self):
+        n = self.settings.get().get("notify") or {}
+        if self._notified and n.get("enabled") and n.get("on_recovery", True):
+            self.send_notice("Frame TV is back", "The Frame TV is accepting pictures again.")
+        self._fail_since = None; self._notified = False
+
+    def _check_notify(self):
+        n = self.settings.get().get("notify") or {}
+        if not n.get("enabled") or self._fail_since is None or self._notified:
+            return
+        mins = float(n.get("minutes") or 15)
+        if time.time() - self._fail_since >= mins * 60:
+            ok, _ = self.send_notice("Frame TV is not responding", "Pictures have failed to reach the Frame TV for %d minutes (%s)." % (mins, (self.last_error or "no details")[:120]))
+            self._notified = True if ok else self._notified
+            if not ok:
+                self._fail_since = time.time() - mins * 60 + 600     # try again in 10 minutes
 
     def _act(self, phase, detail=""):
         self.activity = {"phase": phase, "detail": detail, "since": time.time()}
@@ -65,9 +100,11 @@ class Engine:
                              (" (cache %d)" % info["cached"]) if info.get("cached") is not None else "")
                     result["tv"] = "pushed"
                     self.last_error = None
+                    self._note_ok()
                 except Exception as e:
                     log.exception("push failed")
                     self.last_error = str(e)
+                    self._note_fail()
                     result["tv"] = f"error: {e}"
                     return result
             else:
@@ -308,6 +345,7 @@ class Engine:
     def loop(self):
         while not self._stop.wait(5):
             try:
+                self._check_notify()
                 s = self.settings.get()
                 if not s["enabled"] or self.in_quiet_hours():
                     continue

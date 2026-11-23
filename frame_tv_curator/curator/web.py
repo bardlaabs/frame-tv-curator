@@ -138,6 +138,7 @@ def make(engine):
                     chk["ok"] = chk["data_writable"] and chk["share_writable"] and not bad
                     return self._send(200 if chk["ok"] else 503, chk)
                 if p == "/api/ambient": return self._send(200, dict(engine.ambient.status(), presence=engine.presence.status()))
+                if p == "/api/notify_services": return self._send(200, {"services": ha.notify_services()})
                 if p == "/api/tv_cache": return self._send(200, engine.tv_cache_status())
                 if p == "/api/tv_probe": return self._send(200, engine.ambient.probe(force=True))
                 if p == "/api/ha_state":
@@ -289,7 +290,7 @@ def make(engine):
                     return self._send(200, preview(engine, b["id"], b.get("display"), int(b.get("w") or 1280), b["edit"] if "edit" in b else False), "image/jpeg")
                 if p == "/api/edit":              # non-destructive crop/rotate/straighten; null or empty clears it
                     sc = library.load_sidecar(b["id"]); e = b.get("edit")
-                    if e and (e.get("crop") or e.get("rotate") or abs(float(e.get("straighten") or 0)) > 0.01): sc["edit"] = e
+                    if e and (e.get("crop") or e.get("rotate") or e.get("saved_crops") or abs(float(e.get("straighten") or 0)) > 0.01): sc["edit"] = e
                     else: sc.pop("edit", None)
                     library.save_sidecar(b["id"], sc); return self._send(200, sc.get("edit") or {})
                 if p == "/api/album":       # {action: create|rename|delete|add|remove, id, name, ids}
@@ -349,6 +350,9 @@ def make(engine):
                     if not ent or not ent.startswith("select.") or opt is None: return self._send(400, {"ok": False, "message": "entity and option required"})
                     ha.call("select", "select_option", {"entity_id": ent, "option": str(opt)})
                     return self._send(200, {"ok": True, "message": "set to %s" % opt})
+                if p == "/api/notify_test":
+                    ok, msg = engine.send_notice("Frame TV Curator", "This is a test notification from the Frame TV Curator add-on.")
+                    return self._send(200, {"ok": ok, "message": msg})
                 if p == "/api/ambient_now": engine.ambient.poke(); return self._send(200, {"ok": True})
                 if p == "/api/light_test":
                     ent = (engine.settings.get().get("ambient", {}).get("light") or {}).get("entity")

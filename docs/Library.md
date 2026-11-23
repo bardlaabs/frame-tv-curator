@@ -79,3 +79,15 @@ Here **rotate** means turning the picture itself: **Rotate left** and **Rotate r
 3. Click **Save crop**, then **Save**. Originals never change.
 
 ![The Crop tab](images/ui-editor-crop.png)
+
+### Several named crops per picture
+
+One picture can keep more than one crop, for example the whole scene and a close detail:
+
+1. Make a crop (Crop to 16:9 or Free crop).
+2. Type a name in the box above the picture (for example *Detail*) and click **Save this crop as…**.
+3. Make another crop and save it under another name. Click **Save crop** (or **Save**) to store them.
+4. Later, pick a name from **Saved crops…** to switch the picture to that crop. A saved crop remembers its rotation and straighten setting too, so choosing it restores them.
+5. **Delete selected** removes a saved crop.
+
+The crop in use is the one shown in the Crop tab; the others are kept in the sidecar (`edit.saved_crops`) until you switch. Nothing changes in the original file.

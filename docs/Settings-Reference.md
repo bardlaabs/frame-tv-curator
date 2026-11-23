@@ -59,6 +59,16 @@ How the picker works: every picture is shown once before any repeats (a "shuffle
 | Bird folder | `birds` | any folder | Used when the source is a folder. |
 | Bird Frame add-on host | `local-birdframe-local` | leave as is | Where the Bird Frame add-on lives (port 8099). |
 
+### Notifications
+
+| Setting | Default | Typical | Description |
+|---|---|---|---|
+| Notify me | Off | On | Sends a message through a Home Assistant notify service when the add-on cannot send pictures to the TV for a while. A TV you turned off yourself does not count; it is for a TV that is on but not answering. |
+| Notify service | none | `notify.mobile_app_your_phone` | Pick from the notify services Home Assistant lists. |
+| After it has failed for (minutes) | 15 | 10-60 | How long pictures must keep failing before you are told. |
+| Also tell me when it is back | On | On | Sends a second message when the next picture goes through. |
+| Send a test notification | n/a | n/a | Checks that the chosen service reaches you. |
+
 ### Logging and backups
 
 | Setting | Default | Typical | Description |

@@ -26,6 +26,14 @@ def states():
 def call(domain, service, data):
     return _req("POST", f"/services/{domain}/{service}", data)
 
+def notify_services():
+    """Names like notify.mobile_app_pixel from Home Assistant's service list."""
+    out = []
+    for d in _req("GET", "/services") or []:
+        if d.get("domain") == "notify":
+            out += ["notify." + k for k in (d.get("services") or {})]
+    return sorted(out, key=str.lower)
+
 def tv_info(entity):
     s = get_state(entity) or {}
     a = s.get("attributes", {})
