@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.2
+
+- Presence: the add-on now remembers across restarts that it turned the TV off for an absence, so an add-on update or restart while you are away no longer leaves the TV off when you return.
+
 ## 0.19.1
 
 - Developer aid for the upcoming Getty source: `/api/discover/getty_raw?url=...` fetches a Getty data or media URL through the add-on (those two hosts only).

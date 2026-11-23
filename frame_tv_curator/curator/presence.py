@@ -38,6 +38,21 @@ class Presence:
         self.away_done = False      # we already turned the TV off for this absence
         self.was_present = None
         self.last_act = 0
+        self.loaded = False
+
+    def _flag(self, on=None):
+        """Remember across add-on restarts that we turned the TV off for an absence."""
+        try:
+            d = self.e.state.get()
+            if on is None:
+                return bool(d.get("presence_away_done"))
+            if bool(d.get("presence_away_done")) != on:
+                d["presence_away_done"] = on
+                self.e.state.data = d
+                self.e.state.save()
+        except Exception:
+            log.exception("presence flag")
+        return on
 
     def start(self):
         threading.Thread(target=self._loop, daemon=True, name="presence").start()
@@ -81,8 +96,13 @@ class Presence:
         if not c.get("enabled"):
             self.st.update(present=None, source="off", away_for_s=0)
             self.away_since, self.away_done, self.was_present = None, False, None
+            self._flag(False)
             return
         now = time.time()
+        if not self.loaded:
+            self.loaded = True
+            if self._flag():                              # we turned the TV off before a restart: still owed a welcome back
+                self.away_done, self.away_since = True, now
         present, src = self.read(c)
         self.st.update(present=present, source=src)
         if present is None:
@@ -99,6 +119,7 @@ class Presence:
                 self.st["last"] = "%s: welcome back - %s" % (time.strftime("%H:%M:%S"), msg)
                 log.info("presence returned: %s", msg)
             self.away_since, self.away_done = None, False
+            self._flag(False)
             self.st["away_for_s"] = 0
             self.was_present = True
             return
@@ -116,6 +137,7 @@ class Presence:
         act = c.get("away_action", "power_off")
         ok, msg = self.e.tv.control("art_off" if act == "art_off" else "power_off")
         self.away_done = True
+        self._flag(True)
         self.last_act = now
         self.st["last"] = "%s: nobody for %d min - %s" % (time.strftime("%H:%M:%S"), gone // 60, msg)
         log.info("presence away: %s", msg)
