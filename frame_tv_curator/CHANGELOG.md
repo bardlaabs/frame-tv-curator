@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.20.1
+
+- Library: the **Move…** dialogs (selected images, and the single-image editor) now offer a dropdown of your existing folders (with counts) plus a box for a new folder, instead of typing a name.
+- Discover: remembers the last source, type, search text, artist, order, page, destination folder and album, and comes back to them when you return to the tab or reload the page (kept in this browser).
+
 ## 0.20.0
 
 - Discover: new **Getty Museum** source (Open Content, CC0; no key). Paintings, drawings, prints, photographs or all types, searchable by title or artist, fetched through Getty's IIIF image server at up to 3840 px.

@@ -29,3 +29,5 @@ Open-access art and design from the Smithsonian museums (CC0, at least 1600 px w
 ## Getty Museum
 
 Open Content from the J. Paul Getty Museum (CC0, no key): choose Paintings, Drawings, Prints, Photographs or All types, or search by title or artist. Images are fetched at up to 3840 px on the long side through the Getty's IIIF image server. The accession number goes into the credit line.
+
+Discover remembers where you were (source, type, search, artist, order, page, folder and album) in this browser.

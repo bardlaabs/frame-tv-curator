@@ -424,7 +424,7 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
   el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
   el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),el('button',{onclick:()=>bulkTag(true)},'\uff0b Tag\u2026'),el('button',{onclick:()=>bulkTag(false)},'\u2212 Tag\u2026'),
   curAlbum?el('button',{onclick:async()=>{if(!selected.size)return;await api('album',{action:'remove',id:curAlbum,ids:[...selected]});toast('Removed from the album');selected.clear();renderLib()}},'\u2212 Remove from album'):null,
-  el('button',{onclick:()=>{const f=prompt('Move the selected images to which folder? (existing or new)',curFolder);if(f)bulk({move_to:f},'Moved')}},'Move…'),
+  el('button',{onclick:()=>{if(!selected.size){toast('Select some images first');return}pickFolder('Move '+selected.size+' image'+(selected.size==1?'':'s')+' to a folder',f=>bulk({move_to:f},'Moved'))}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
 async function bulkTag(add){if(!selected.size){toast('Select some images first');return}
@@ -436,6 +436,12 @@ async function bulkTag(add){if(!selected.size){toast('Select some images first')
   if(JSON.stringify(next)==JSON.stringify(cur))continue;
   try{await api('sidecar',{id,patch:{tags:next}});n++}catch(e){toast('Could not tag '+id+': '+e.message)}}
  toast((add?'Tagged ':'Untagged ')+n+' image(s)');renderLib()}
+function pickFolder(title,cb){const o={f:folderList.some(x=>x.name==curFolder)?curFolder:(folderList[0]||{}).name||'',n:''};const ov=el('div',{class:'modal on',style:'z-index:40'}),close=()=>ov.remove();
+ ov.append(el('div',{class:'mbox'},el('h2',{},title),
+  folderList.length?field('Existing folder',o,'f','select',{native:true,options:Object.fromEntries(folderList.map(f=>[f.name,f.name+' ('+f.count+')']))}):null,
+  field(folderList.length?'Or a new folder':'New folder name',o,'n','text'),
+  el('div',{class:'row'},el('button',{class:'pri',onclick:()=>{const v=(o.n||'').trim()||o.f;if(!v){toast('Pick or name a folder');return}close();cb(v)}},'Move'),el('button',{onclick:close},'Cancel'))));
+ document.body.append(ov)}
 function bulkAlbum(){if(!selected.size){toast('Select some images first');return}
  const o={id:albumList[0]?.id||'',name:''};
  showModal(el('h2',{},'Add '+selected.size+' image'+(selected.size==1?'':'s')+' to an album'),
@@ -464,10 +470,11 @@ const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
- const fsel=el('select',{onchange:()=>{D.folder=fsel.value;drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
- const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
+ try{const sv=JSON.parse(ls.get('fc_disc')||'null');if(sv&&D.srcs.some(x=>x.id==sv.source)){Object.assign(D,{source:sv.source,type:sv.type??D.type,q:sv.q||'',artist:sv.artist||'',sort:sv.sort||D.sort,page:+sv.page||0,album:sv.album||''});if(sv.folder&&folderList.some(f=>f.name==sv.folder))D.folder=sv.folder;if(!albumList.some(a=>a.id==D.album))D.album=''}}catch(e){}
+ const fsel=el('select',{onchange:()=>{D.folder=fsel.value;saveDisc();drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
+ const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value;saveDisc()}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
  const nf=el('input',{type:'text',placeholder:'or type a new folder name',style:'width:200px',oninput:()=>{D.newf=nf.value;drawDbar()}});
- const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});
+ const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});q.value=D.q||'';
  const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=(m.types[0]||[''])[0];buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
  const ctl=el('div',{class:'row'}),blurb=el('p',{class:'mut'});
  const buildCtl=()=>{const m=curSrc();blurb.textContent=m.blurb||'';
@@ -482,8 +489,9 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
    el('div',{class:'row'},el('label',{},'Source'),srcSel),blurb,ctl,
    el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf,el('label',{},'and album'),asl)),
   el('div',{id:'dres'}),el('div',{id:'dbar'}));buildCtl()}
+const saveDisc=()=>ls.set('fc_disc',JSON.stringify({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page,folder:D.folder,album:D.album}));
 const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
-async function loadDisc(){const box=$('#dres');if(!box)return;box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
+async function loadDisc(){const box=$('#dres');if(!box)return;saveDisc();box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
  try{D.data=await api('discover/search?'+new URLSearchParams({source:D.source,type:D.type,q:D.q,artist:D.artist,sort:D.sort,page:D.page}));drawDres()}
  catch(e){box.replaceChildren(el('p',{class:'warn'},'Could not load: '+e.message))}}
 function drawDres(){const box=$('#dres');if(!box||!D.data)return;const r=D.data,pages=Math.max(1,Math.ceil(r.total/r.per));
@@ -701,7 +709,7 @@ async function openEditor(id){
    el('h2',{style:'margin:0'},ed.meta.title||id.split('/').pop().replace(/\.[^.]+$/,'')),
    el('div',{class:'row'},el('button',{onclick:askClose},'✕ Close'),el('button',{onclick:()=>save()},'Save'),el('button',{class:'pri',title:'Save, then show this image on the TV now',onclick:()=>save(push)},'Save & show on TV'))),
   el('div',{class:'cols'},el('div',{},pv,flagP,el('div',{class:'row'},el('button',{onclick:refresh},'↻ Refresh preview'),el('button',{onclick:()=>openViewer(id,build(),editOut())},'⛶ Full screen'),
-    el('button',{onclick:async()=>{const f=prompt('Move to which folder? (existing or new)',curFolder);if(!f)return;const x=await api('move',{id,folder:f});modal.classList.remove('on');setFolder(f.replace(/[^\w\- ]/g,''));renderLib();toast('Moved')}},'Move…'),
+    el('button',{onclick:()=>pickFolder('Move this image to a folder',async f=>{await api('move',{id,folder:f});modal.classList.remove('on');setFolder(f.replace(/[^\w\- ]/g,''));renderLib();toast('Moved')})},'Move…'),
     el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:async()=>{const nm=ed.meta.title||id.split('/').pop();
      if(!confirm('Delete this image?\n\n'+nm+'\n('+id+')\n\nIt is moved to the _trash folder on the share, so it can be recovered from there. Are you sure?'))return;
      try{await api('delete',{id});modal.classList.remove('on');renderLib();toast('Deleted '+nm)}catch(e){toast('Delete failed: '+e.message)}}},'🗑 Delete…'))),
