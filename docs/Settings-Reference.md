@@ -174,6 +174,7 @@ All the conditions you fill in must match for a schedule to be active.
 | Never brighter than (%) | 100 | 80-100 | Upper limit. |
 | Turn off the TV's own auto-brightness | On | On | Stops the TV's sensor from fighting the add-on. |
 | Change at most every (seconds) | 60 | 60-300 | Minimum time between brightness changes. |
+| Smoothing | 120 s | 30-300 | Averages the brightness source over this many seconds so a jittery sensor does not make the TV flip. 0 = off. |
 | Steadiness | 0.3 | 0.3-0.7 | 0 = old behavior, 1 = very steady. Raise it if brightness flips between two steps. |
 
 If a chosen sensor or entity is missing, the add-on falls back to the other one, then the sun or clock, then the fixed value.

@@ -15,7 +15,7 @@ DEFAULT_SETTINGS = {
         "srgb": True,
     },
     "ambient": {
-        "brightness": {"mode": "off", "manual": 60, "hysteresis": 0.3, "lux_entity": "", "lux_low": 10, "lux_high": 400, "entity": "",
+        "brightness": {"mode": "off", "manual": 60, "hysteresis": 0.3, "smoothing_s": 120, "lux_entity": "", "lux_low": 10, "lux_high": 400, "entity": "",
                        "entity_max": 100, "sun_entity": "sun.sun", "min_pct": 15, "max_pct": 100,
                        "disable_sensor": True, "min_interval_s": 60},
         "color_temp": {"mode": "off", "manual_k": 5000, "entity": "", "sun_entity": "sun.sun", "night_k": 2700,

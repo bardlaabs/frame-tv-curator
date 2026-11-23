@@ -185,6 +185,15 @@ class Ambient:
         bpct, bsrc = (None, "off")
         if bmode != "off":
             bpct, bsrc = self.brightness_pct(bc, bmode)
+            tau = _num(bc.get("smoothing_s", 120)) or 0.0       # a jittery lux sensor would otherwise flip the TV between steps
+            if bpct is not None and tau > 0:
+                prev = getattr(self, "_ema", None)
+                if prev is None or now - prev[0] > max(600.0, 5 * tau):
+                    ema = bpct
+                else:
+                    ema = prev[1] + (bpct - prev[1]) * (1 - math.exp(-(now - prev[0]) / tau))
+                self._ema = (now, ema)
+                bpct = ema
         cmode = cc.get("mode", "off")
         kel, ksrc = (None, "off")
         if cmode != "off":

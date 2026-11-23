@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.1
+
+- Art brightness: new **Smoothing** setting (default 120 seconds, 0 = off). A light sensor that jumps between readings every second (for example 0 to 24 lux) made the TV change brightness step every 20 seconds; the reading is now averaged over time first.
+
 ## 0.22.0
 
 - **Framing mode** (Display tab, and per image with Customize): **Whole artwork** keeps the whole picture with a mat or bars (as before); **Fill the screen** crops a non-16:9 picture to 16:9 with no mat. Originals are never changed.

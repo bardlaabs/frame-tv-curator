@@ -29,6 +29,7 @@ Choose **Time of day**; it follows the **Sun entity** (default `sun.sun`).
 ### Other settings
 - **Turn off the TV's own auto-brightness** (default on) stops the TV's sensor from fighting the add-on.
 - **Change at most every (seconds)** (default 60) limits how often it changes.
+- **Smoothing** (default 120 seconds, 0 = off): averages the sensor over about this long before choosing a brightness. Light sensors often jump between readings every second; without smoothing the TV would follow every jump. Lower it if the TV reacts too slowly to real changes.
 - **Steadiness** (default 0.3): if the brightness keeps flipping between two neighboring steps, raise it. 0 is the old behavior, 1 is very steady.
 - Fallback chain: the chosen sensor or entity, then the other one, then the sun or clock, then the fixed value.
 
