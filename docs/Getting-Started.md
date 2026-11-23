@@ -30,6 +30,10 @@ That is all that is required. The TV must be in Art Mode for pushes to happen.
 | `tv_ip` | TV address; blank = taken from the media player entity |
 | `dry_run` | Render but never touch the TV (good for testing) |
 
+## Using it on a phone or tablet
+
+The add-on opens from the Home Assistant app on a phone or tablet. On small screens the tab bar scrolls sideways, controls are larger, forms stack and editors fill the screen. It follows your device's light or dark setting.
+
 ## Where things live
 - Images and their `.json` sidecars: the media share (`/media/frame`). Originals are never modified.
 - Settings, caches and state: the add-on's private `/data` folder (included in HA backups of the add-on).

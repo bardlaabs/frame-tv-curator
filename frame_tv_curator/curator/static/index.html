@@ -86,6 +86,25 @@ textarea{width:100%}fieldset{border:1px solid var(--line);border-radius:10px;mar
 .now>*{min-width:0}#details{overflow-wrap:anywhere}.nsub{color:var(--acc);font-weight:700;margin-bottom:10px}.nstack{display:flex;flex-direction:column;gap:10px}
 .ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.nb.empty{opacity:.6;cursor:pointer}.nb.empty .nv{color:var(--mut);font-style:italic}.nb.empty:hover{opacity:1;outline:1px dashed var(--acc)}.nb{background:var(--panel2);border-radius:8px;padding:7px 10px;min-width:0}.nk{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}.nv{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.nv a{color:var(--acc)}.nfacts{color:var(--mut);font-size:12px;line-height:1.5}
 .lcol{min-width:0}
+
+/* phones and small tablets, plus automatic light mode (0.24.0) */
+@media(max-width:700px){
+ header{flex-wrap:wrap;gap:8px;padding:8px 10px}header h1{font-size:15px}
+ nav{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+ nav button{white-space:nowrap;padding:10px 12px;min-height:44px}
+ main{padding:10px}.card{padding:12px;border-radius:10px}
+ button,.btn{min-height:40px;padding:8px 12px}input,select,textarea{font-size:16px;min-height:38px}
+ .row{gap:6px}.row>label{min-width:0;flex:1 1 100%}.row>input[type=range]{flex:1 1 60%}
+ .modal{padding:0}#mbox{border-radius:0!important;max-width:100%!important;width:100%!important;min-height:100%}
+ .tabs{overflow-x:auto}.tabs button{white-space:nowrap;min-height:44px}
+ .ghd{top:96px}
+}
+@media(max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(prefers-color-scheme:light){
+ :root{--bg:#f4f2ec;--panel:#ffffff;--panel2:#ebe8df;--line:#d5d1c6;--fg:#1d1c19;--mut:#6a665c;--acc:#b9812a;--bad:#c0392b;--ok:#2e7d46}
+ input,select,textarea{background:#fff}
+ .modal{background:#000a}
+}
 </style></head><body>
 <header><h1>Frame TV Curator</h1>
 <nav><button data-t="now" class="on">Now Playing</button><button data-t="lib">Library</button><button data-t="disc">Discover</button><button data-t="disp">Display</button><button data-t="sched">Schedules</button><button data-t="tv">TV</button><button data-t="set">Settings</button></nav>

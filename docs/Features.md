@@ -43,6 +43,8 @@ Everything Frame TV Curator can do, in one list. Follow the links for step-by-st
 - **Folders on your media share** map to simple subfolders, and files you drop in appear within a minute.
 - **Non-destructive sidecars** keep titles, edits, flags and display settings in a small file beside each image, so originals never change. ([Sidecar files](Sidecar-Files))
 - **Search, sort and group** the grid by title, artist, year, decade or medium, with sticky headings and jump chips.
+- **Mood and tags** let you label pictures your own way (a mood such as *calm*, tags such as *winter*) and find them by search.
+- **Several named crops** per picture let you keep, for example, the whole scene and a detail. Nothing changes in the original.
 - **Albums** are named collections that can mix images from any folder.
 - **Tags** are your own words for finding pictures, with filter chips, search and bulk add or remove.
 - **Quick flag buttons** on every tile set Favorite, Show more or Exclude with one click.

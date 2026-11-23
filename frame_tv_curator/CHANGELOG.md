@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.0
+
+- **Phone and tablet layout:** the tab bar scrolls sideways, buttons and fields are larger, forms stack, editors and dialogs fill the screen, and the Library grid uses two columns on small phones.
+- **Automatic light mode:** the add-on follows your device's light or dark setting (dark remains the default look in the screenshots).
+
 ## 0.23.1
 
 - **Mood** field for each picture (editor Info > Details > Mood). Shown in Now Playing and matched by the Library search. Stored in the sidecar.

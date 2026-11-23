@@ -43,7 +43,7 @@ try:
 
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
-        pg = b.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2)   # 2x so close-ups stay sharp
+        pg = b.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2, color_scheme="dark")   # 2x so close-ups stay sharp; dark = the look in the docs
         pg.route("**/api/discover/search*", lambda r: r.fulfill(json={"total": 2879, "page": 0, "per": 24, "items": items}))
         pg.route("**/api/discover/artists*", lambda r: r.fulfill(json={"artists": [{"key": "a", "name": "Another Painter"}, {"key": "s", "name": "Sample Artist"}]}))
         pg.goto(BASE); pg.wait_for_timeout(2500)
