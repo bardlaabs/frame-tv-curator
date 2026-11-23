@@ -501,19 +501,19 @@ const timg=(src,h)=>src?el('img',{src,loading:'lazy',style:'height:'+h+'px;max-w
 function aiReview(id,r,cand,done,back){const rows=r.rows;const sel={};rows.forEach(x=>sel[x.key]=x.current?(x.conflict?'cur':'new'):'new');
  const src=cand?('matched to '+cand.source_name+(cand.museum?' (museum record)':'')):'Claude\u2019s answer, not checked against a museum';
  const cells={};const list=el('div',{style:'max-height:52vh;overflow:auto;display:grid;grid-template-columns:84px 1fr 1fr;gap:6px;align-items:stretch'});
- const paint=()=>rows.forEach(x=>{for(const side of['cur','new']){const c=cells[x.key][side];const on=sel[x.key]==side;c.style.background=on?'rgba(185,129,42,.28)':'transparent';c.style.borderColor=on?'#b9812a':'var(--line,#8884)';c.style.boxShadow=on?'inset 0 0 0 1px #b9812a':'none';c.firstChild.textContent=(on?'\u2713 ':'')+(side=='cur'?'Keep current':'Use new')}});
+ const paint=()=>rows.forEach(x=>{for(const side of['cur','new']){const c=cells[x.key][side];const on=sel[x.key]==side;c.style.background=on?'rgba(185,129,42,.28)':'transparent';c.style.borderColor=on?'#b9812a':'var(--line,#8884)';c.style.boxShadow=on?'inset 0 0 0 1px #b9812a':'none'}});
  const setAll=v=>{rows.forEach(x=>sel[x.key]=v);paint()};
  const hdr=(t,v)=>el('button',{style:'padding:6px 8px',onclick:()=>setAll(v)},t);
  list.append(el('div',{}),hdr('Select all current','cur'),hdr('Select all new','new'));
  rows.forEach(x=>{cells[x.key]={};
-  const cell=(side,txt,empty)=>{const c=el('div',{style:'border:1px solid var(--line,#8884);border-radius:6px;padding:6px 8px;cursor:pointer;min-width:0;word-break:break-word',onclick:()=>{sel[x.key]=side;paint()}},el('div',{class:'mut',style:'font-size:11px'},''),el('div',{style:empty?'opacity:.55;font-style:italic':''},txt));cells[x.key][side]=c;return c};
+  const cell=(side,txt,empty)=>{const c=el('div',{style:'border:1px solid var(--line,#8884);border-radius:6px;padding:6px 8px;cursor:pointer;min-width:0;word-break:break-word',onclick:()=>{sel[x.key]=side;paint()}},el('div',{style:empty?'opacity:.55;font-style:italic':''},txt));cells[x.key][side]=c;return c};
   list.append(el('b',{style:'padding-top:8px;font-size:13px'},x.label),cell('cur',x.current||'(empty)',!x.current),cell('new',x.result||x.new,false))});
  paint();
  const close=()=>{closeModal();done()};
  showModal(el('h2',{},'Choose what to keep'),el('div',{style:'display:flex;gap:12px;align-items:center;margin-bottom:8px'},timg('api/thumb?id='+encodeURIComponent(id),110),cand&&cand.thumb?timg(cand.thumb,110):null),
   el('p',{class:'mut'},'New details: '+src+'. Click the left or right side of each row; the highlighted side is what gets saved.'),list,
   el('div',{class:'row',style:'margin-top:10px'},back?el('button',{onclick:()=>{closeModal();back()}},'\u2190 Back to the matches'):null,el('button',{class:'pri',onclick:async()=>{const only=rows.filter(x=>sel[x.key]=='new').map(x=>x.key);
-    const a=await api('ai_apply',{id,fields:r.fields,model:r.model,candidate:cand||null,only});toast(only.length?'Saved: '+(a.filled||[]).join(', '):'Kept everything as it was',6000);close()}},'Save choices'),el('button',{onclick:close},'Skip')))}
+    const a=await api('ai_apply',{id,fields:r.fields,model:r.model,candidate:cand||null,only});toast(only.length?'Saved: '+(a.filled||[]).join(', '):'Kept everything as it was',6000);close()}},'Save choices'),el('button',{onclick:close},'Cancel (no changes)')))}
 async function aiResolve(id,r,cand,done,back){const p=await api('ai_preview',{id,fields:r.fields,candidate:cand||null});r.rows=p.rows;
  if(p.rows.length&&(back||p.rows.some(x=>x.conflict))){aiReview(id,r,cand,done,back);return}
  const a=await api('ai_apply',{id,fields:r.fields,model:r.model,candidate:cand||null});toast((cand?'Filled from '+cand.source_name:'Filled from Claude\u2019s answer (no source link)')+(a.filled&&a.filled.length?' \u00b7 '+a.filled.join(', '):''),6000);done()}
@@ -522,11 +522,11 @@ function aiChoose(id,r,done){const f=r.fields||{};const close=()=>{closeModal();
   el('div',{class:'row'},c.url?el('a',{href:c.url,target:'_blank',rel:'noopener'},'Open the record'):null,el('button',{class:'pri',onclick:async()=>{closeModal();await aiResolve(id,r,c,done,()=>aiChoose(id,r,done))}},'Use this one'))));
  showModal(el('h2',{},'Which one is it?'),el('div',{class:'card',style:'display:flex;gap:12px;align-items:center'},timg('api/thumb?id='+encodeURIComponent(id),150),el('div',{},el('b',{},'Your picture'),el('div',{class:'mut'},[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')))),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. '+((r.candidates||[]).some(c=>c.loose)?'No record has exactly that title, so these are works by the same artist; museums often use another title for the same print or painting. Check the picture against the record before choosing. ':'These records match. ')+'Museum records come first.'),
   ...(r.candidates||[]).map(opt),
-  el('div',{class:'row'},el('button',{onclick:async()=>{closeModal();await aiResolve(id,r,null,done,()=>aiChoose(id,r,done))}},'None of these \u2014 use Claude\u2019s answer only'),el('button',{onclick:close},'Skip')))}
+  el('div',{class:'row'},el('button',{onclick:async()=>{closeModal();await aiResolve(id,r,null,done,()=>aiChoose(id,r,done))}},'None of these \u2014 use Claude\u2019s answer only'),el('button',{onclick:close},'Cancel (no changes)')))}
 async function aiOne(id,done){toast('Asking Claude and checking museums\u2026',45000);let r;try{r=await api('ai_identify',{id,apply:true})}catch(e){toast('Failed: '+e.message,8000);return}
  if(!r.ok){toast(r.error,8000);return}
  if(r.decision=='choose'){aiChoose(id,r,done);return}
- if(r.review){aiReview(id,r,r.candidate||null,done);return}
+ if(r.review){aiReview(id,r,r.candidate||null,done,(r.candidates||[]).length?()=>aiChoose(id,r,done):null);return}
  const w=r.decision=='auto'?('Matched '+r.candidate.source_name+': '+r.candidate.title):'No museum match found'+(r.search?' (searched for '+[r.search.title,r.search.artist].filter(Boolean).join(' \u00b7 ')+')':'')+(r.notes&&r.notes.length?' ['+r.notes.join('; ')+']':'')+', so this is Claude\u2019s answer only';
  toast(w+(r.filled&&r.filled.length?' \u00b7 filled '+r.filled.join(', '):' \u00b7 nothing new to fill'),8000);done()}
 async function bulkAI(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}
@@ -535,7 +535,7 @@ async function bulkAI(){const ids=[...selected];if(!ids.length){toast('Select so
  let done=0,fail='';const ask=[];
  for(const id of ids){toast('Identifying '+(done+1)+' of '+ids.length+'\u2026',90000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){fail=r.error;break}if(r.decision=='choose')ask.push([id,r]);else if(r.review)ask.push([id,r]);done++}
  selected.clear();toast(fail?('Stopped after '+done+': '+fail):('Identified '+done+' picture(s)'+(ask.length?'; '+ask.length+' need your choice':'')),8000);
- const next=()=>{if(!ask.length){renderLib();return}const [id,r]=ask.shift();(r.decision=='choose'?aiChoose:(i,rr,d)=>aiReview(i,rr,rr.candidate||null,d))(id,r,next)};next()}
+ const next=()=>{if(!ask.length){renderLib();return}const [id,r]=ask.shift();(r.decision=='choose'?aiChoose:(i,rr,d)=>aiReview(i,rr,rr.candidate||null,d,(rr.candidates||[]).length?()=>aiChoose(i,rr,d):null))(id,r,next)};next()}
 async function bulkExif(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}if(!confirm('Re-read EXIF (date, camera, location) for '+ids.length+' picture(s)? This replaces those fields.'))return;let n=0;for(const id of ids){const r=await api('exif_refresh',{id});if(r.ok)n++}toast('Updated '+n+' of '+ids.length+' (the rest have no EXIF)',6000);selected.clear();renderLib()}
 async function bulkTag(add){if(!selected.size){toast('Select some images first');return}
  const v=prompt((add?'Add':'Remove')+' which tag(s) on the '+selected.size+' selected image(s)? (separate several with commas)');if(!v)return;

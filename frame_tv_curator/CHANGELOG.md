@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.34.4
+
+- The "Back to the matches" button now also appears when one museum record was matched automatically (the other candidates are kept so you can go back and pick a different one), including in batches.
+- The choose-what-to-keep list is cleaner: no labels or check marks, the highlight alone shows which side is kept.
+- "Skip" is now "Cancel (no changes)"; it closes the window without changing anything.
+
 ## 0.34.3
 
 - Fix: choosing to overwrite did not change the title, artist, date, medium or credit you see in the editor and on the placard. Those are kept in a separate text block that took priority; the AI result is now saved there too (and a shortened placard title is cleared when the title is replaced). Credit from the museum record is now offered as well.

@@ -158,7 +158,7 @@ def identify_verify(img_id, settings):
     cands, notes = verify.candidates(title, artist, f.get("date"))
     dec, pick = verify.decide(cands)
     r.update(decision=dec, notes=notes, search={"title": title, "artist": artist})
-    if dec == "auto": r["candidate"] = pick
+    if dec == "auto": r["candidate"] = pick; r["candidates"] = cands[:6]
     elif dec == "choose": r["candidates"] = pick
     return r
 
