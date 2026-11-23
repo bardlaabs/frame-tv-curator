@@ -17,3 +17,7 @@ Find public-domain art from museum collections and add it to your library, with 
 4. A toast summarizes how many were added or skipped.
 
 Please keep the polite request rate; the add-on throttles requests to museum servers.
+
+## Adding to an album
+
+Next to **Add to folder** is **and album**. Pick an album there and everything you add is also put in that album (the pictures still live in the folder you chose). The list shows the albums that existed when you opened Discover; reload the page after creating a new album.

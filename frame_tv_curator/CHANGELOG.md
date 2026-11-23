@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.1
+
+- Discover: "and album" next to the destination folder also puts everything you add into a chosen album (works for server and browser downloads).
+
 ## 0.17.0
 
 - Library: large preview (lightbox). Click the small expand button on a tile to see the picture large with its details. Arrow keys browse in the order shown (including groups); F favorite, M show more, X exclude, T show on TV, E edit, Esc close.

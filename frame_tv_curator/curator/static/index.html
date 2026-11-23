@@ -446,13 +446,14 @@ async function findDuplicates(){showModal(el('h2',{},'Duplicate check'),el('p',{
     el('div',{style:'margin-top:8px'},el('button',{onclick:async()=>{if(!confirm('Keep '+best.name+' and delete the other '+(grp.length-1)+'?'))return;for(const i of grp)if(i.id!=best.id)await api('delete',{id:i.id});findDuplicates()}},'Keep the best, delete the rest')))}):[el('p',{},'No duplicates found.')];
  showModal(el('div',{class:'row',style:'justify-content:space-between'},el('h2',{style:'margin:0'},'Duplicate check — '+g.length+' group'+(g.length==1?'':'s')),el('button',{onclick:()=>{closeModal();renderLib()}},'✕ Close')),el('p',{class:'mut'},'Images that look like the same picture (even at different sizes). Deleted images go to the _trash folder.'),...body)}
 /* ---------- Discover: find new art online and add it to the library ---------- */
-const D={source:'reframed',type:'Painting',srcs:null,q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',data:null,artists:null,built:false};
+const D={source:'reframed',type:'Painting',srcs:null,q:'',artist:'',sort:'az',page:0,sel:new Map(),chk:new Map(),choice:new Map(),folder:null,newf:'',album:'',data:null,artists:null,built:false};
 const mbs=n=>n?(n/1048576).toFixed(1)+' MB':'size unknown';
 const dsz=x=>(x.w&&x.h?x.w+'×'+x.h:'size unknown')+' · '+mbs(x.bytes);
 async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  if(D.built){drawDbar();return}D.built=true;D.folder=curFolder||(folderList[0]||{}).name||'Art';
  try{D.srcs=await api('discover/sources')}catch(e){D.srcs=[{id:'reframed',name:'Reframed Gallery',blurb:'',sorts:[['az','A–Z by artist']],types:[],has_artists:true}]}
  const fsel=el('select',{onchange:()=>{D.folder=fsel.value;drawDbar()}},folderList.map(f=>el('option',{value:f.name},f.name+' ('+f.count+')')));fsel.value=D.folder;
+ const asl=el('select',{title:'Also put the added pictures in an album',onchange:()=>{D.album=asl.value}},el('option',{value:''},'(none)'),...albumList.map(a=>el('option',{value:a.id},a.name)));asl.value=D.album;
  const nf=el('input',{type:'text',placeholder:'or type a new folder name',style:'width:200px',oninput:()=>{D.newf=nf.value;drawDbar()}});
  const q=el('input',{type:'search',placeholder:'Search title or artist…',style:'width:min(100%,300px)',oninput:dbounce(()=>{D.q=q.value;D.page=0;loadDisc()},400)});
  const srcSel=el('select',{onchange:()=>{D.source=srcSel.value;D.page=0;D.artist='';const m=curSrc();D.sort=m.sorts[0][0];D.type=(m.types[0]||[''])[0];buildCtl()}},D.srcs.map(x=>el('option',{value:x.id},x.name)));srcSel.value=D.source;
@@ -467,7 +468,7 @@ async function renderDisc(){const root=$('#t-disc');await refreshFolders();
  root.replaceChildren(
   el('div',{class:'card'},el('h3',{},'Discover art'),
    el('div',{class:'row'},el('label',{},'Source'),srcSel),blurb,ctl,
-   el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf)),
+   el('div',{class:'row'},el('label',{},'Add to folder'),fsel,nf,el('label',{},'and album'),asl)),
   el('div',{id:'dres'}),el('div',{id:'dbar'}));buildCtl()}
 const curSrc=()=>(D.srcs||[]).find(x=>x.id==D.source)||D.srcs[0];
 async function loadDisc(){const box=$('#dres');if(!box)return;box.replaceChildren(el('p',{class:'mut'},el('span',{class:'spin'}),'Loading…'));
@@ -542,20 +543,22 @@ async function addSel(list){const items=list||[...D.sel.values()];if(!items.leng
  const runServer=async(list,reduced)=>{if(!list.length)return;let job;
   try{job=await api('discover/add',{items:list.map(x=>Object.assign({},x.sp,reduced?{reduced:true}:{})),folder})}catch(e){list.forEach(x=>{st[x.i.key]={state:'failed',got:0,total:0,error:'could not start: '+e.message}});return}
   for(;;){let j;try{j=await api('discover/job?id='+job.id)}catch(e){await new Promise(r=>setTimeout(r,1500));continue}
-   j.items.forEach(x=>{const o=st[x.key];if(o){o.state=x.state;o.got=x.got;o.total=x.total;o.error=x.error;if(reduced&&x.state=='done')o.note='Downloaded at reduced size (the site would not give your browser the full file)'}});
+   j.items.forEach(x=>{const o=st[x.key];if(o){o.state=x.state;o.got=x.got;o.total=x.total;o.error=x.error;if(x.id)o.id=x.id;if(reduced&&x.state=='done')o.note='Downloaded at reduced size (the site would not give your browser the full file)'}});
    if(j.finished)return;await new Promise(r=>setTimeout(r,800))}};
  const runClient=async x=>{const o=st[x.i.key];if(x.sp.dup=='skip'){o.state='skipped';return}
   try{o.state='downloading';const blob=await browserGet(x.i,o);o.state='saving';
-   const id=await browserUpload(blob,fileNameFor(x.i,'.jpg'),folder);await api('discover/finish',{source:x.i.source,key:x.i.key,id,replace:x.sp.replace});o.state='done'}
+   const id=await browserUpload(blob,fileNameFor(x.i,'.jpg'),folder);await api('discover/finish',{source:x.i.source,key:x.i.key,id,replace:x.sp.replace});o.id=id;o.state='done'}
   catch(e){clog('discover browser download failed for '+x.i.key+': '+e);o.state='queued';o.got=0;o.total=0;return x}};
  const retry=[];
  await Promise.all([runServer(srvItems),(async()=>{for(const x of cliItems){const r=await runClient(x);if(r)retry.push(r)}})()]);
  if(retry.length){await runServer(retry,true)}
  clearInterval(tick);draw();
+ const alb=D.album&&albumList.find(a=>a.id==D.album);let inAlb=0;
+ if(alb){const ids=items.map(i=>st[i.key]).filter(x=>x.state=='done'&&x.id).map(x=>x.id);if(ids.length){try{await api('album',{action:'add',id:alb.id,ids});inAlb=ids.length}catch(e){toast('Could not add to the album: '+e.message,6000)}}}
  const c=s=>items.filter(i=>st[i.key].state==s).length,ok=c('done'),sk=c('skipped'),fl=c('failed');
  items.forEach(i=>{if(st[i.key].state!='failed'){D.sel.delete(i.key);D.chk.delete(i.key);D.choice.delete(i.key)}});
  refreshFolders().then(()=>{drawDres()});if(ok){setFolder(folder.replace(/[^\w\- ]/g,'').trim())}
- const msg=(ok?ok+' added to '+folder:'Nothing added')+(sk?', '+sk+' skipped':'')+(fl?', '+fl+' failed':'');
+ const msg=(ok?ok+' added to '+folder+(inAlb?' and album '+alb.name:''):'Nothing added')+(sk?', '+sk+' skipped':'')+(fl?', '+fl+' failed':'');
  if(fl){foot.replaceChildren(el('button',{class:'pri',onclick:closeModal},'Close'));cnt.textContent=msg;toast(msg,6000)}
  else{closeModal();toast('✓ '+msg,5000)}}
 
