@@ -454,7 +454,95 @@ class NASA:
         return d
 
 
-SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA()}
+class Commons:
+    """Wikimedia Commons (no key). Only files with a free license are shown: public domain, CC0, CC BY and CC BY-SA.
+    Categories are searched with their subcategories. The picture is the 3840 px scaled copy (or the original if smaller)."""
+    id = "commons"
+    name = "Wikimedia Commons"
+    home = "https://commons.wikimedia.org"
+    license = "Free license as shown per file (public domain, CC0, CC BY or CC BY-SA)"
+    client_fetch = False
+    blurb = ("Free-licensed pictures from Wikimedia Commons: ukiyo-e, holiday postcards, vintage posters and more, at up "
+             "to 3840 px wide and kept whole. Only public domain, CC0, CC BY and CC BY-SA files are shown, and the "
+             "artist and license are saved with each one. Pages can come up short because other files are skipped.")
+    sorts = [["relevance", "Best match"]]
+    types = [["Ukiyo-e", "Ukiyo-e prints"], ["Christmas postcards", "Christmas postcards"], ["Easter postcards", "Easter postcards"],
+             ["Halloween postcards", "Halloween postcards"], ["Vintage posters", "Vintage posters"],
+             ["Art Nouveau posters", "Art Nouveau posters"], ["Google Art Project", "Google Art Project paintings"],
+             ["Pop art", "Pop art"], ["Digital art", "Digital art"], ["", "Search all of Commons"]]
+    has_artists = False
+    API = "https://commons.wikimedia.org/w/api.php"
+    MIN_W = 1600
+    OK = re.compile(r"^(public domain|pd\b|cc0|cc[- ]by(?![- ](nc|nd))(?:[- ]sa)?\b|attribution)", re.I)
+    BAD = re.compile(r"\b(nc|nd|noncommercial|no derivatives|fair use|copyrighted|all rights)\b", re.I)
+
+    def __init__(self):
+        self.det = {}
+
+    def artists(self):
+        return []
+
+    @staticmethod
+    def _txt(v):
+        return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", v or ""))).strip()
+
+    def _item(self, p):
+        ii = (p.get("imageinfo") or [{}])[0]
+        md = ii.get("extmetadata") or {}
+        mv = lambda k: self._txt((md.get(k) or {}).get("value"))
+        lic = mv("LicenseShortName")
+        if not lic or self.BAD.search(lic) or not self.OK.search(lic):
+            return None
+        if mv("Restrictions") and "trademark" not in mv("Restrictions").lower():
+            return None
+        if (ii.get("mime") or "") not in ("image/jpeg", "image/png"):
+            return None
+        w, h = int(ii.get("width") or 0), int(ii.get("height") or 0)
+        if w < self.MIN_W:
+            return None
+        title = re.sub(r"^File:|\.[A-Za-z]{3,4}$", "", p.get("title") or "").replace("_", " ")
+        big = ii.get("thumburl") or ii.get("url")
+        small = ii.get("thumburl") or ii.get("url")
+        if big and w > 3840:
+            h = int(round(h * 3840 / w)); w = 3840
+        who = mv("Artist")
+        credit = (who + " - " if who else "") + lic + " - Wikimedia Commons"
+        key = str(p.get("pageid"))
+        d = {"source": self.id, "key": key, "url": ii.get("descriptionurl") or "https://commons.wikimedia.org/?curid=" + key,
+             "title": mv("ObjectName") or title, "artist": who[:120], "date": mv("DateTimeOriginal")[:60],
+             "description": mv("ImageDescription")[:1500], "image": big, "image_fallback": ii.get("url") or big,
+             "thumb": small, "preview": small, "w": w or None, "h": h or None, "ai": False, "client_fetch": False,
+             "medium": "", "credit": credit, "license": lic}
+        self.det[key] = d
+        return d
+
+    def search(self, q="", artist="", sort="relevance", page=0, per=24, type="Ukiyo-e", **kw):
+        term = (q.strip() + " " if q.strip() else "") + ('deepcategory:"%s" ' % type if type else "") + "filetype:bitmap"
+        prm = {"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6, "gsrsearch": term.strip(),
+               "gsrlimit": per, "gsroffset": page * per, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
+               "iiurlwidth": 3840, "iiextmetadatafilter": "LicenseShortName|Artist|ObjectName|ImageDescription|DateTimeOriginal|Restrictions",
+               "uselang": "en"}
+        j = json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 40, gap=1.0).read().decode("utf8", "replace"))
+        pages = sorted(((j.get("query") or {}).get("pages") or {}).values(), key=lambda p: p.get("index", 0))
+        items = [x for x in (self._item(p) for p in pages) if x]
+        more = bool(j.get("continue"))
+        total = (page + 1) * per + (per if more else 0)
+        return {"total": total, "page": page, "per": per, "items": items}
+
+    def detail(self, key):
+        if key in self.det:
+            return self.det[key]
+        prm = {"action": "query", "format": "json", "pageids": key, "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
+               "iiurlwidth": 3840, "iiextmetadatafilter": "LicenseShortName|Artist|ObjectName|ImageDescription|DateTimeOriginal|Restrictions"}
+        j = json.loads(_get(self.API + "?" + urllib.parse.urlencode(prm), 30, gap=1.0).read().decode("utf8", "replace"))
+        pg = list(((j.get("query") or {}).get("pages") or {}).values())
+        d = self._item(pg[0]) if pg else None
+        if not d:
+            raise ValueError("file not found, not freely licensed, or too small")
+        return d
+
+
+SOURCES = {"reframed": Reframed(), "aic": AIC(), "met": Met(), "cleveland": Cleveland(), "nasa": NASA(), "commons": Commons()}
 
 
 # ---------------- library matching ----------------

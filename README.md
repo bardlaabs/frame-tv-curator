@@ -10,7 +10,7 @@ A Home Assistant add-on that curates, renders and rotates art and photos on a Sa
 - Albums (named collections) usable as a rotation source or schedule
 - Library tools: EXIF and place-name prefill, bulk actions, duplicate finder, low-resolution warnings, quick flag buttons
 - TV tab: Art Mode and power control (with Wake-on-LAN), ambient art brightness and color temperature (lux sensor, entity, sun, or manual), companion light
-- Discover: add public-domain art from museum collections (Reframed, Art Institute of Chicago, The Met, Cleveland, NASA)
+- Discover: add public-domain art from museum collections (Reframed, Art Institute of Chicago, The Met, Cleveland, NASA, Wikimedia Commons)
 - Optional e-paper card and Bird Frame interleave
 
 ## Install

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.0
+
+- Discover: new source Wikimedia Commons. Category presets (ukiyo-e, Christmas, Easter and Halloween postcards, vintage and Art Nouveau posters, Google Art Project, pop art, digital art) or free search; only public domain, CC0, CC BY and CC BY-SA files at least 1600 px wide; saves artist, license and file page; one request per second.
+
 ## 0.15.1
 
 - Library: grouping by artist now merges name variants (e.g. "Winslow Homer" with and without nationality and dates) into one group.

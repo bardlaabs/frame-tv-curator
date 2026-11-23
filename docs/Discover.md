@@ -7,6 +7,7 @@ Find public-domain art from museum collections and add it to your library, with 
 - **Art Institute of Chicago**: public-domain works from the museum's open-access API (CC0 data). Images come at the museum's own 3000 px download size (the largest it publishes), downloaded by your browser and uploaded to the add-on.
 - **The Metropolitan Museum of Art**: public-domain works (CC0). Choose Highlights or a department, or search by keyword. The add-on downloads the original file (often several thousand pixels wide). A page can show fewer than 24 items because only public-domain objects with a picture are listed.
 - **Cleveland Museum of Art**: open-access works (CC0) at up to about 3400 px, with the museum's description and credit line.
+- **Wikimedia Commons**: free-licensed pictures (public domain, CC0, CC BY, CC BY-SA only) by category: ukiyo-e, holiday postcards, vintage posters, Google Art Project, pop art, or any search. Pictures come at up to 3840 px wide; the artist and license are saved with each one (CC BY and CC BY-SA need credit, which the placard and Info tab show). Requests to Commons are throttled to one per second.
 - **NASA Image Library**: space and Earth images (generally public domain). Pick a topic or search; images under 1600 px wide are skipped, so a page can show fewer than 24 items.
 
 ## Using it
