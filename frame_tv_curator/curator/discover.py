@@ -621,7 +621,7 @@ class Smithsonian:
             raise ValueError("Smithsonian API refused the request (HTTP %s). Check the key and the rate limit." % e.code)
 
     def search(self, q="", artist="", sort="relevance", page=0, per=24, type="unit_code:SAAM", **kw):
-        parts = ['online_media_type:"Images"']
+        parts = ['online_media_type:"Images"', 'media_usage:"CC0"']
         if type:
             f, _, v = type.partition(":")
             parts.append('%s:"%s"' % (f, v))

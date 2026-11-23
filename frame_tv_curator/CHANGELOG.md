@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.20.2
+
+- Smithsonian: the search now asks only for CC0 images, so the counts, pages and cards match what you can actually add (before, most results were silently dropped and a page could show one record out of 24).
+
 ## 0.20.1
 
 - Library: the **Move…** dialogs (selected images, and the single-image editor) now offer a dropdown of your existing folders (with counts) plus a box for a new folder, instead of typing a name.
