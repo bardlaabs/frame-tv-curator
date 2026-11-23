@@ -4,6 +4,8 @@ All of this is off by default and lives on the **TV** tab. Every entity-linked f
 
 ## Art brightness
 
+![Art brightness card](images/ui-tv-brightness.png)
+
 Mode choices: **Leave the TV alone** (default), **Fixed**, **Lux sensor**, **Follow an entity**, **Time of day**.
 
 ### Fixed brightness, step by step
@@ -34,6 +36,8 @@ The TV's brightness scale is 0-10; the add-on converts your percentages.
 
 ## Art color temperature
 
+![Color temperature card](images/ui-tv-color.png)
+
 Mode choices: **Leave the TV alone** (default), **Fixed**, **Time of day / location**, **Follow Adaptive Lighting (or another entity)**.
 
 ### Follow Adaptive Lighting, step by step
@@ -46,6 +50,8 @@ Mode choices: **Leave the TV alone** (default), **Fixed**, **Time of day / locat
 Other modes: **Fixed** (a Kelvin value, default 5000) and **Time of day / location** (**Night (K)** 2700 and **Daylight (K)** 6500 from the sun entity). The TV only has a simple warm-to-cool scale (-5 to +5), so values are mapped onto it.
 
 ## Companion light
+
+![Companion light card](images/ui-tv-light.png)
 
 1. **Light that follows the TV** card, pick a **Light (or switch)**.
 2. Tick **Turn it on and off with the TV**.

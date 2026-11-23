@@ -22,6 +22,8 @@ Set these in Home Assistant under **Settings > Add-ons > Frame TV Curator > Conf
 
 ### Image source
 
+![Image source card](images/ui-set-source.png)
+
 | Setting | Default | Typical | Description |
 |---|---|---|---|
 | Pick from | One folder | One folder, Weighted mix, An album | Where rotation draws pictures from. |

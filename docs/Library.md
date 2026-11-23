@@ -5,6 +5,8 @@ Browse, search and manage your images. Folders map to subfolders of `frame/` on 
 ![The Library tab](images/ui-library.png)
 
 ## Add pictures, step by step
+
+![A Library tile](images/ui-library-tile.png)
 - **By file share:** copy images into a folder under `frame/` on your media share (for example `frame/Art/`). New files appear within a minute.
 - **By upload:** open the **Library** tab, choose the folder chip, then drag images onto the dashed box or click **choose files**.
 - **From museums:** use [Discover](Discover).
@@ -57,6 +59,8 @@ An album is a named collection of images from any folder; an image can be in sev
 - Moving an image to another folder keeps it in its albums; deleting an image removes it from them. Deleting an album does not delete its images.
 
 ## Large preview (lightbox)
+
+![Large preview](images/ui-lightbox.png)
 
 Hover a tile and click the expand button (⤢) to see the picture large. Use ← and → to browse in the order the grid shows (including groups). Keys: **F** favorite, **M** show more often, **X** exclude, **T** show on the TV, **E** open the editor, **Esc** close. The same buttons are in the side panel.
 

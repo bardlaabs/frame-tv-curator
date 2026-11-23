@@ -6,6 +6,8 @@ All samples below are made from one generated sample picture, so the only change
 
 ## Placards
 
+![Placard settings](images/ui-display-placard.png)
+
 A placard is the small label with the artist, title, date and medium.
 
 ### Turn the placard on or off
@@ -40,11 +42,19 @@ This needs a mat (see below).
 4. Optional: tick **Auto-fit text to the mat height** so the text fills the mat strip as large as it can.
 5. Save.
 
+Layout samples (the mat strip, close up):
+
+| Single line | Two lines | Three lines |
+|---|---|---|
+| ![Single line](images/placard-mat-one-line.jpg) | ![Two lines](images/placard-mat-two-line.jpg) | ![Three lines](images/placard-mat-three-line.jpg) |
+
 | Printed on the mat | Auto-fit text |
 |---|---|
 | ![Printed on the mat](images/placard-on-mat.jpg) | ![Auto-fit](images/placard-on-mat-autofit.jpg) |
 
 ## Mats
+
+![Mat settings](images/ui-display-mat.png)
 
 A mat is the border between the picture and the edge of the screen. It is off by default.
 
@@ -87,6 +97,8 @@ Set **Mat color from the picture** to let the add-on choose a color from the art
 
 ## Inner liner (second mat layer)
 
+![Inner liner settings](images/ui-display-liner.png)
+
 A thin second mat right around the picture, as in a framed print.
 
 1. Turn on **Use a mat**, then in **Inner liner mat** tick **Use an inner liner**.
@@ -98,6 +110,8 @@ A thin second mat right around the picture, as in a framed print.
 | ![Red liner](images/mat-liner.jpg) | ![Dark liner](images/mat-liner-dark.jpg) |
 
 ## Bevel and lighting
+
+![Bevel settings](images/ui-display-bevel.png)
 
 The bevel is the angled cut edge of the mat opening, lit from a direction you choose, with an optional shadow on the mat.
 
@@ -111,6 +125,8 @@ The bevel is the angled cut edge of the mat opening, lit from a direction you ch
 | ![No bevel](images/mat-nobevel.jpg) | ![Strong bevel](images/mat-bevel-strong.jpg) |
 
 ## Overscan
+
+![Overscan settings](images/ui-tv-overscan.png)
 
 Some TVs hide a thin strip around the edge. To measure it:
 

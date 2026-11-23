@@ -3,6 +3,8 @@
 ![The TV tab](images/ui-tv.png)
 
 ## Connect to the TV, step by step
+
+![Connection card](images/ui-tv-connection.png)
 1. Open the **TV** tab, **Connection & remote control** card.
 2. Leave **TV IP address** blank to find the TV from the media player entity, or enter it (same as the `tv_ip` add-on option).
 3. Choose the **Media player entity** (default `media_player.frametv`). A warning appears if it is not found in Home Assistant.
@@ -13,6 +15,8 @@
 If the TV is fully off, "Art Mode on" first tries Home Assistant's turn-on, then Wake-on-LAN (needs the MAC), waits for the TV and sets Art Mode. This runs in the background and takes about a minute.
 
 ## TV picture cache (optional)
+
+![TV picture cache card](images/ui-tv-cache.png)
 Off by default. When on, the add-on keeps the last N pictures (default 5, including the current one) and optionally your favorites (default up to 10) on the TV instead of deleting each picture when the next one arrives.
 
 ### Turn it on
@@ -29,6 +33,8 @@ Off by default. When on, the add-on keeps the last N pictures (default 5, includ
 See [Display and look](Display-and-Look#overscan) for the step-by-step calibration.
 
 ## Presence, brightness, color and companion light
+
+![Status](images/ui-tv-status.png)
 These cards are on the same tab. Each is described on its own page:
 - [Presence](Optional-Presence)
 - [Ambient brightness, color temperature and companion light](Optional-Ambient)

@@ -3,6 +3,8 @@
 Turn the TV off when nobody is around, and bring it back to Art Mode when someone returns. Off by default.
 
 ## Set it up, step by step
+
+![Presence card](images/ui-tv-presence.png)
 1. Open the **TV** tab and find the **Presence** card.
 2. Tick **Turn the Frame on and off with presence**.
 3. Choose one or more presence entities (a binary sensor or person). Any one being "on" counts as someone being home.

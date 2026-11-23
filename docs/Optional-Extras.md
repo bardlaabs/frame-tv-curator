@@ -3,6 +3,8 @@
 Both are off by default and are set on the **Settings** tab.
 
 ## Bird Frame interleave
+
+![Bird Frame settings](images/ui-set-bird.png)
 Mixes bird pictures into the rotation.
 
 ### Set it up, step by step
@@ -14,6 +16,8 @@ Mixes bird pictures into the rotation.
 6. Click **Save settings**. Use **Show bird picture now** to test.
 
 ## E-paper card
+
+![E-paper settings](images/ui-set-epaper.png)
 Sends a small card (current title, artist and more) to an e-paper display through Home Assistant.
 
 1. Open **Settings > E-paper card** and tick **Send info to e-paper**.
