@@ -71,6 +71,19 @@ The crop is centered, and it is only made in the rendered copy sent to the TV; t
 
 A mat is the border between the picture and the edge of the screen. It is off by default.
 
+### Matte styles (starting points)
+
+The **Matte style** menu at the top of the Mat section fills in the settings below it in one step, so you can start from a look and then adjust:
+
+| Style | What it sets |
+|---|---|
+| Classic gallery | 6 % flat mat, even on all sides, no liner, soft bevel and shadow (the default look) |
+| Modern (thin, flat) | 3.5 % flat mat, proportional shape (no trim), no liner, barely-there bevel and shadow |
+| Shadow box | 9 % paper mat, dark inner liner, deep bevel and a strong cast shadow |
+| Panoramic (wide pictures) | 5 % mat, proportional, mat fills the sides, a thin liner |
+
+Choosing a style changes only width, shape, texture, liner, bevel and shadow (and mat fill for Panoramic); your mat color and on/off setting stay as they are. In a picture's editor it works with **Customize the mat**.
+
 ### Turn on a mat
 1. In the **Mat** card tick **Use a mat**.
 2. Pick a color: either type or choose a **Fixed mat color**, or use **Mat color from the picture** (see below).

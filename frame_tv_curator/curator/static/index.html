@@ -203,8 +203,15 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
  const tintHost=el('div');const mkTint=()=>tintHost.replaceChildren(field('Mat color from the picture',d,'mat.auto_tint','select',{options:TINT_OPTS,native:true},onch));mkTint();
  const onc=p=>{if(p=='mat.color'&&d.mat.auto_tint){d.mat.auto_tint='';mkTint();onch('mat.auto_tint')}onch(p)};
  const colorRow=field('Fixed mat color',d,'mat.color','color',{},onc);
+ const MATTE={classic:{'mat.width_pct':6,'mat.shape':'even','mat.texture':'flat','mat.liner.enabled':false,'mat.bevel.width_pct':.4,'mat.bevel.intensity':60,'mat.bevel.shadow':35},
+  modern:{'mat.width_pct':3.5,'mat.shape':'proportional','mat.texture':'flat','mat.liner.enabled':false,'mat.bevel.width_pct':.15,'mat.bevel.intensity':25,'mat.bevel.shadow':15},
+  shadowbox:{'mat.width_pct':9,'mat.shape':'even','mat.texture':'paper','mat.liner.enabled':true,'mat.liner.color':'#1f1d1a','mat.liner.width_pct':1.4,'mat.bevel.width_pct':.6,'mat.bevel.intensity':80,'mat.bevel.shadow':70},
+  panoramic:{'mat.width_pct':5,'mat.shape':'proportional','mat.texture':'flat','mat.letterbox':'mat','mat.liner.enabled':true,'mat.liner.width_pct':.5,'mat.bevel.width_pct':.3,'mat.bevel.intensity':50,'mat.bevel.shadow':30}};
+ const styleRow=el('div',{class:'row'},el('label',{},'Matte style (a starting point)'),el('select',{onchange:ev=>{const m=MATTE[ev.target.value];if(!m)return;
+   for(const[pp,v]of Object.entries(m)){set(d,pp,v);onch(pp)}ev.target.value='';opts.rebuild&&opts.rebuild()}},
+  el('option',{value:''},'Choose to fill in the settings below…'),el('option',{value:'classic'},'Classic gallery'),el('option',{value:'modern'},'Modern (thin, flat)'),el('option',{value:'shadowbox'},'Shadow box (deep, dark liner)'),el('option',{value:'panoramic'},'Panoramic (wide pictures)')));
  const fm=el('fieldset',{},el('legend',{},'Mat'),
-  field('Use a mat',d,'mat.enabled','check',{},onch),inhRow('mat'),el('div',{class:'inh-mat'},tintHost,colorRow,
+  field('Use a mat',d,'mat.enabled','check',{},onch),inhRow('mat'),el('div',{class:'inh-mat'},styleRow,tintHost,colorRow,
   opts.suggest?el('div',{class:'row'},el('label',{},'Suggested'),swatch):null,
   field('Width (% of height)',d,'mat.width_pct','range',{min:1,max:16,step:.5},onch),
   field('Mat shape',d,'mat.shape','select',{options:{even:'Even on all sides (trims picture slightly)',proportional:'Proportional (no trim; sides wider)'}},onch),
@@ -699,7 +706,7 @@ async function openEditor(id){
   // override toggles: touching any placard/mat control turns that override on; the checkbox lets you go back to global
  let form;const dispHost=el('div');
  const mkForm=()=>{form=displayForm(ed.d,p=>{ed.touched.add(p);refresh()},
-   {suggest:true,inherit:{use:ed.use,onChange:(sec,use)=>{if(use){const b=base();[...ed.touched].filter(SEC[sec].test).forEach(p=>{if(p!=SEC[sec].en){set(ed.d,p,get(b,p));ed.touched.delete(p)}});mkForm()}refresh()}}});
+   {suggest:true,rebuild:()=>mkForm(),inherit:{use:ed.use,onChange:(sec,use)=>{if(use){const b=base();[...ed.touched].filter(SEC[sec].test).forEach(p=>{if(p!=SEC[sec].en){set(ed.d,p,get(b,p));ed.touched.delete(p)}});mkForm()}refresh()}}});
    if(ed.sugg)form.setSuggestions(ed.sugg);dispHost.replaceChildren(form);form.applyInherit()};mkForm();
  const tabs=['Info','Display','Crop'],panes={};
  const isPhoto=sc.kind=='photo',gps=sc.location&&typeof sc.location=='object'&&sc.location.lat!=null;
@@ -836,11 +843,12 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
   else if(s.source.mode=='album'){s.source.album??=albumList[0]?.id;src.append(albumList.length?field('Album',s,'source.album','select',{native:true,options:Object.fromEntries(albumList.map(a=>[a.id,a.name+' ('+a.count+')']))}):el('p',{class:'mut'},'No albums yet. Create one in the Library (+ Album), then pick it here.'))}
   else{s.source.mix??={};folderList.forEach(f=>{s.source.mix[f.name]??=0;src.append(field(f.name+' weight',s,'source.mix.'+f.name,'range',{min:0,max:100,step:5}))})}};drawSrc();
  const gd={framing:s.display.framing||'whole',placard:s.display.placard,mat:s.display.mat,overscan:Object.assign({top:0,right:0,bottom:0,left:0,mode:'placard'},s.display.overscan||{}),srgb:s.display.srgb!==false};s.display=gd;
+ const gdHost=el('div');const mkGd=()=>gdHost.replaceChildren(displayForm(gd,()=>{},{rebuild:mkGd}));mkGd();
  const cards=[
   el('div',{class:'card'},el('h3',{},'Image source'),src,field('Rotation enabled',s,'enabled','check'),
    field('Change every',s,'rotation.value','num',{min:1}),field('Unit',s,'rotation.unit','select',{options:{minutes:'minutes',hours:'hours',days:'days'}}),
    field('Quiet hours (HH:MM-HH:MM, blank = none)',s,'rotation.quiet_hours','text')),
-  el('div',{class:'card'},el('h3',{},'Default look (images without their own settings)'),displayForm(gd,()=>{})),
+  el('div',{class:'card'},el('h3',{},'Default look (images without their own settings)'),gdHost),
   el('div',{class:'card'},el('h3',{},'Overscan / TV edge'),
    el('p',{class:'mut'},'If the TV hides a little of the picture edge, measure it: show the grid, read the outermost number you can fully see on each side, and enter it here (percent of the screen).'),
    el('div',{class:'row'},el('button',{onclick:async()=>{const r=await api('calibrate',{});toast(r.error?('Could not show grid: '+r.error):'Grid is on the TV — press Next to resume normal art',7000)}},'Show calibration grid on TV'),

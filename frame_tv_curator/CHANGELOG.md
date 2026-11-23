@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.25.0
+
+- **Matte style** presets (Classic gallery, Modern, Shadow box, Panoramic) at the top of the Mat settings, on the Display tab and in each picture's editor. They fill in width, shape, texture, liner, bevel and shadow; you can adjust everything afterwards.
+
 ## 0.24.0
 
 - **Phone and tablet layout:** the tab bar scrolls sideways, buttons and fields are larger, forms stack, editors and dialogs fill the screen, and the Library grid uses two columns on small phones.
