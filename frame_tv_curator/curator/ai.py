@@ -45,7 +45,8 @@ def _image_b64(img_id, max_side=1568):
 
 PROMPT = """You are helping label pictures for a digital art frame. Look at the picture and answer with ONE JSON object and nothing else.
 Keys: "kind" ("art" for a painting, drawing, print or other artwork; "photo" for a photograph), "artist" (name, or "" if unknown), "title" (or ""), "date" (year or range as text, or ""), "medium" (e.g. "Oil on canvas", or ""), "movement" (art movement or style, or ""), "description" (one or two plain sentences about what it shows), "mood" (exactly one word from this list: {moods}), "confidence" ("high", "medium" or "low" for the artist and title).
-Only name an artist or title if you actually recognize the work; otherwise leave them empty. Never guess. Do not invent facts."""
+Only name an artist or title if you actually recognize the work; otherwise leave them empty. Never guess. Do not invent facts.
+{hints}"""
 
 def _cost(model, prices, tin, tout):
     pi, po = (prices.get(model) or DEFAULT_PRICES.get(model) or [3.0, 15.0])
@@ -66,10 +67,18 @@ def identify(img_id, settings):
         u = usage()
         if limit and u["cost"] >= limit:
             return {"ok": False, "error": "Monthly AI limit reached ($%.2f of $%.2f). Raise it in Settings > AI." % (u["cost"], limit)}
+    sc0 = library.load_sidecar(img_id)
+    hv = []
+    an = (sc0.get("artist") or {}).get("name") if isinstance(sc0.get("artist"), dict) else sc0.get("artist")
+    base = os.path.splitext(os.path.basename(img_id))[0].replace("_", " ")
+    for lab, v in (("artist", an), ("title", sc0.get("title")), ("date", (sc0.get("date") or {}).get("display") if isinstance(sc0.get("date"), dict) else None), ("file name", base)):
+        if v:
+            hv.append("%s: %s" % (lab, v))
+    hints = ("Existing information about this picture (it may be partial or wrong): " + "; ".join(hv) + ". Use it as a lead and check it against what you see: if the picture matches, confirm and complete it; if it clearly shows a different work, give your own answer.") if hv else ""
     moods = ", ".join(settings.get("moods") or []) or "calm, joyful, dramatic, melancholy"
     body = {"model": model, "max_tokens": 600, "messages": [{"role": "user", "content": [
         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": _image_b64(img_id)}},
-        {"type": "text", "text": PROMPT.replace("{moods}", moods)}]}]}
+        {"type": "text", "text": PROMPT.replace("{moods}", moods).replace("{hints}", hints)}]}]}
     req = urllib.request.Request(API, json.dumps(body).encode(), {"x-api-key": k, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     try:
         r = json.load(urllib.request.urlopen(req, timeout=60))
@@ -96,8 +105,39 @@ def identify(img_id, settings):
     f["mood"] = mood if (not allowed or mood in allowed) else ""
     return {"ok": True, "fields": {k2: (str(f.get(k2) or "").strip()) for k2 in ("kind", "artist", "title", "date", "medium", "movement", "description", "mood", "confidence")}, "cost": round(cost, 5), "model": model}
 
-def apply(img_id, fields, model="", overwrite=False):
+def merged(fields, cand):
+    """A museum record wins over Claude's wording for the fields it has."""
+    f = dict(fields)
+    if cand:
+        for k in ("artist", "title", "date", "medium", "description"):
+            if (cand.get(k) or "").strip():
+                f[k] = cand[k].strip()
+        f["kind"] = "art"
+    return f
+
+def identify_verify(img_id, settings):
+    """identify + museum check. decision: 'auto' (one clear match), 'choose' (several, ask the person) or 'none'."""
+    from . import verify
+    r = identify(img_id, settings)
+    if not r.get("ok"):
+        return r
+    f = r["fields"]
+    sc = library.load_sidecar(img_id)
+    an = (sc.get("artist") or {}).get("name") if isinstance(sc.get("artist"), dict) else sc.get("artist")
+    title = f.get("title") or sc.get("title") or ""
+    artist = f.get("artist") or an or ""
+    if f.get("kind") == "photo" or not (title or artist):
+        r.update(decision="none", candidates=[], notes=["no title or artist to check"]); return r
+    cands, notes = verify.candidates(title, artist, f.get("date"))
+    dec, pick = verify.decide(cands)
+    r.update(decision=dec, notes=notes, search={"title": title, "artist": artist})
+    if dec == "auto": r["candidate"] = pick
+    elif dec == "choose": r["candidates"] = pick
+    return r
+
+def apply(img_id, fields, model="", overwrite=False, cand=None):
     """Write identified fields into the sidecar, filling empty fields only (unless overwrite). Returns the names filled."""
+    fields = merged(fields, cand)
     sc = library.load_sidecar(img_id); done = []
     def empty(v): return not (v or "").strip() if isinstance(v, str) else not v
     def put(label, cur, setter, val):
@@ -112,9 +152,17 @@ def apply(img_id, fields, model="", overwrite=False):
         put("medium", ct.get("medium") or sc.get("medium"), lambda v: ct.__setitem__("medium", v), fields.get("medium"))
     put("description", sc.get("description"), lambda v: sc.__setitem__("description", v), fields.get("description"))
     put("mood", sc.get("mood"), lambda v: sc.__setitem__("mood", v), fields.get("mood"))
-    if done or True:
+    if cand:
+        lk = sc.setdefault("links", [])
+        if cand.get("url") and not any(l.get("url") == cand["url"] for l in lk if isinstance(l, dict)):
+            lk.append({"label": cand["source_name"] + " page", "url": cand["url"], "kind": "record"}); done.append("link")
+        if cand.get("url") and not sc.get("source_url"):
+            sc["source_url"] = cand["url"]
+        put("source", (sc.get("collection") or {}).get("institution"), lambda v: sc.__setitem__("collection", {"institution": v, "status": "identified from " + v, "credit_line": cand.get("credit") or None}), cand["source_name"])
+        put("license", sc.get("license"), lambda v: sc.__setitem__("license", v), cand.get("license"))
+    if True:
         ident = sc.setdefault("identification", {})
-        ident.update({"by": "ai", "model": model, "movement": fields.get("movement") or ident.get("movement", ""), "confidence": fields.get("confidence", ""), "when": time.strftime("%Y-%m-%d")})
+        ident.update({"by": "ai", "model": model, "movement": fields.get("movement") or ident.get("movement", ""), "confidence": ("high" if cand else fields.get("confidence", "")), "status": ("matched to " + cand["source_name"] if cand else "identified by AI, not checked against a museum"), "verified": bool(cand), "when": time.strftime("%Y-%m-%d")})
         sc.setdefault("origin", {})["ai_identified"] = True
     if sc.get("artist") is None or sc.get("artist") == {}:
         sc.pop("artist", None)

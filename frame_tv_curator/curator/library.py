@@ -569,3 +569,27 @@ def rename_mood(old, new):
             save_sidecar(i, sc)
             n += 1
     return n
+
+
+def refresh_exif(img_id):
+    """Re-read the picture's EXIF and fill date, camera and GPS (and artist/photographer) into the sidecar. Overwrites those fields only.
+    Returns {"ok": bool, "filled": [...], "message": str}."""
+    f = exif_fields(abspath(img_id))
+    if not f:
+        return {"ok": False, "filled": [], "message": "This picture has no EXIF information."}
+    sc = load_sidecar(img_id); done = []
+    if f.get("date"):
+        sc["date"] = {"display": f["date"]}; done.append("date")
+    if f.get("camera"):
+        sc["camera"] = f["camera"]; done.append("camera")
+    if "lat" in f:
+        old = sc.get("location") if isinstance(sc.get("location"), dict) else {}
+        sc["location"] = {"lat": f["lat"], "lon": f["lon"], "name": old.get("name") if (old.get("lat") == f["lat"] and old.get("lon") == f["lon"]) else None}
+        done.append("location")
+    if f.get("artist"):
+        sc["artist"] = {"name": f["artist"], "display": f["artist"]}; done.append("photographer")
+    save_sidecar(img_id, sc)
+    if "location" in done and not sc["location"].get("name"):
+        try: geocode_image(img_id)
+        except Exception: pass
+    return {"ok": bool(done), "filled": done, "message": ("Updated " + ", ".join(done)) if done else "No usable EXIF fields."}

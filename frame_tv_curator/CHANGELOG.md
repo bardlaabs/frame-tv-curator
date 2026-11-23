@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.32.0
+
+- **Identify / verify with AI** now uses the existing artist, title, date and file name as a lead, then checks the result against museum collections (Art Institute of Chicago, The Met, Cleveland, Getty, Smithsonian, Wikimedia Commons last). A clear museum match fills in the museum's details and adds a link to its record; several possible matches are shown for you to choose from.
+- **Refresh from EXIF** button (editor and Library selection, no AI) re-reads date, camera, location and photographer from a photo.
+
 ## 0.31.0
 
 - **Identify with Claude:** new add-on option `anthropic_key` (password field, kept by Home Assistant) and a Settings > AI page (on/off, model Haiku or Sonnet, monthly limit default $10). Press Identify with AI in a picture's Info tab, or on a Library selection, to fill empty artist, title, date, medium, description and mood. Existing values are never overwritten.

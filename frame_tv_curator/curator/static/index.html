@@ -486,17 +486,32 @@ function drawBulk(){let b=$('#bulk');if(!b){b=el('div',{id:'bulk'});document.bod
  b.replaceChildren(el('b',{},selected.size+' selected'),el('button',{onclick:()=>{(window._libList?window._libList():[]).forEach(i=>selected.add(i.id));renderLib()}},'All shown'),el('button',{onclick:()=>{selected.clear();renderLib()}},'None'),
   fl('favorite',true,'★ Favorite'),fl('favorite',false,'☆ Un-favorite'),fl('show_more',true,'＋ Show more'),fl('show_more',false,'Show normally'),fl('exclude',true,'Exclude (hide)'),fl('exclude',false,'Include'),
   el('button',{onclick:()=>bulkInfo()},'✎ Set info…'),
-  el('button',{title:'Ask Claude to fill in empty info for the selected pictures (keeps anything already filled)',onclick:()=>bulkAI()},'✨ Identify with AI'),
+  el('button',{title:'Ask Claude to fill in empty info for the selected pictures (keeps anything already filled)',onclick:()=>bulkAI()},'✨ Identify / verify with AI'),
+  el('button',{title:'Re-read EXIF date, camera and location (no AI)',onclick:()=>bulkExif()},'↻ From EXIF'),
   el('button',{onclick:()=>bulkAlbum()},'\uff0b Album\u2026'),el('button',{onclick:()=>bulkTag(true)},'\uff0b Tag\u2026'),el('button',{onclick:()=>bulkTag(false)},'\u2212 Tag\u2026'),
   curAlbum?el('button',{onclick:async()=>{if(!selected.size)return;await api('album',{action:'remove',id:curAlbum,ids:[...selected]});toast('Removed from the album');selected.clear();renderLib()}},'\u2212 Remove from album'):null,
   el('button',{onclick:()=>{if(!selected.size){toast('Select some images first');return}pickFolder('Move '+selected.size+' image'+(selected.size==1?'':'s')+' to a folder',f=>bulk({move_to:f},'Moved'))}},'Move…'),
   el('button',{style:'color:#ff7b72;border-color:#ff7b7288',onclick:()=>{if(!selected.size)return;if(confirm('Delete '+selected.size+' selected image'+(selected.size==1?'':'s')+'?\n\nThey are moved to the _trash folder on the share (recoverable there). Are you sure?'))bulk({delete:true},'Deleted')}},'🗑 Delete…'),
   el('button',{onclick:()=>{selMode=false;selected.clear();renderLib()}},'Done'));b.style.display='flex'}
+function aiChoose(id,r,done){const f=r.fields||{};const close=()=>{closeModal();done()};
+ const opt=c=>el('div',{class:'card',style:'margin:8px 0'},el('b',{},c.title+(c.artist?' \u2014 '+c.artist:'')),el('div',{class:'mut'},[c.source_name+(c.museum?' (museum)':''),c.date,c.medium].filter(Boolean).join(' \u00b7 ')),
+  el('div',{class:'row'},c.url?el('a',{href:c.url,target:'_blank',rel:'noopener'},'Open the record'):null,el('button',{class:'pri',onclick:async()=>{await api('ai_apply',{id,fields:f,model:r.model,candidate:c});toast('Filled from '+c.source_name);close()}},'Use this one')));
+ showModal(el('h2',{},'Which one is it?'),el('p',{class:'mut'},'Claude read this as: '+[f.title,f.artist,f.date].filter(Boolean).join(' \u00b7 ')+(f.confidence?' (confidence '+f.confidence+')':'')+'. These records match. Museum records come first.'),
+  ...(r.candidates||[]).map(opt),
+  el('div',{class:'row'},el('button',{onclick:async()=>{await api('ai_apply',{id,fields:f,model:r.model,candidate:null});toast('Filled from Claude\u2019s answer (no source link)');close()}},'None of these \u2014 use Claude\u2019s answer only'),el('button',{onclick:close},'Skip')))}
+async function aiOne(id,done){toast('Asking Claude and checking museums\u2026',45000);let r;try{r=await api('ai_identify',{id,apply:true})}catch(e){toast('Failed: '+e.message,8000);return}
+ if(!r.ok){toast(r.error,8000);return}
+ if(r.decision=='choose'){aiChoose(id,r,done);return}
+ const w=r.decision=='auto'?('Matched '+r.candidate.source_name+': '+r.candidate.title):'No museum match found, so this is Claude\u2019s answer only';
+ toast(w+(r.filled&&r.filled.length?' \u00b7 filled '+r.filled.join(', '):' \u00b7 nothing new to fill'),8000);done()}
 async function bulkAI(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}
  const st=await api('ai_status');if(!st.key||!st.enabled){toast(!st.key?'Add your Anthropic key first (add-on Configuration tab), then turn AI on in Settings > AI':'Turn AI identification on in Settings > AI',8000);return}
- if(!confirm('Ask Claude about '+ids.length+' picture(s)? About one cent each with the cheapest model; this month you have used $'+st.spent.toFixed(2)+' of $'+st.limit.toFixed(2)+'. Only empty fields are filled.'))return;
- let done=0,fail='';for(const id of ids){toast('Identifying '+(done+1)+' of '+ids.length+'…',60000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){fail=r.error;break}done++}
- toast(fail?('Stopped after '+done+': '+fail):('Identified '+done+' picture(s)'),8000);selected.clear();renderLib()}
+ if(!confirm('Ask Claude about '+ids.length+' picture(s) and check them against museums? About one cent each with the cheapest model; this month you have used $'+st.spent.toFixed(2)+' of $'+st.limit.toFixed(2)+'. Only empty fields are filled. Pictures with several possible matches are put aside and shown to you at the end.'))return;
+ let done=0,fail='';const ask=[];
+ for(const id of ids){toast('Identifying '+(done+1)+' of '+ids.length+'\u2026',90000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){fail=r.error;break}if(r.decision=='choose')ask.push([id,r]);done++}
+ selected.clear();toast(fail?('Stopped after '+done+': '+fail):('Identified '+done+' picture(s)'+(ask.length?'; '+ask.length+' need your choice':'')),8000);
+ const next=()=>{if(!ask.length){renderLib();return}const [id,r]=ask.shift();aiChoose(id,r,next)};next()}
+async function bulkExif(){const ids=[...selected];if(!ids.length){toast('Select some images first');return}if(!confirm('Re-read EXIF (date, camera, location) for '+ids.length+' picture(s)? This replaces those fields.'))return;let n=0;for(const id of ids){const r=await api('exif_refresh',{id});if(r.ok)n++}toast('Updated '+n+' of '+ids.length+' (the rest have no EXIF)',6000);selected.clear();renderLib()}
 async function bulkTag(add){if(!selected.size){toast('Select some images first');return}
  const v=prompt((add?'Add':'Remove')+' which tag(s) on the '+selected.size+' selected image(s)? (separate several with commas)');if(!v)return;
  const tags=v.split(',').map(t=>t.trim()).filter(Boolean);if(!tags.length)return;
@@ -779,7 +794,8 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),el('div',{class:'row'},el('button',{title:'Ask Claude to fill in the empty fields (artist, title, date, medium, description, mood). Fields you already filled are kept.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first, then identify');return}toast('Asking Claude…',30000);const r=await api('ai_identify',{id,apply:true});if(!r.ok){toast(r.error,8000);return}toast(r.filled.length?('Filled: '+r.filled.join(', ')):'Nothing new to fill in',5000);openEditor(id)}},'\u2728 Identify with AI')),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),el('div',{class:'row'},el('button',{title:'Ask Claude to identify this picture (or check what is filled in), then confirm it against museum records. Fields you already filled are kept.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first, then identify');return}await aiOne(id,()=>openEditor(id))}},'\u2728 Identify / verify with AI'),
+   el('button',{title:'Re-read the photo\u2019s EXIF information (date, camera, location) into this picture. No AI.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first');return}const r=await api('exif_refresh',{id});toast(r.message,5000);if(r.ok)openEditor(id)}},'\u21bb Refresh from EXIF')),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
   isPhoto?geoP():null,

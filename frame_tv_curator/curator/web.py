@@ -157,6 +157,10 @@ def make(engine):
                     out.sort(key=lambda x: x["id"])
                     return self._send(200, out)
                 if p == "/api/settings": return self._send(200, engine.settings.get())
+                if p == "/api/verify_search":
+                    from . import verify
+                    c, notes = verify.candidates(q.get("title", ""), q.get("artist", ""))
+                    return self._send(200, {"candidates": c, "notes": notes, "decision": verify.decide(c)[0]})
                 if p == "/api/ai_status":
                     from . import ai
                     return self._send(200, ai.status(engine.settings.get()))
@@ -360,11 +364,15 @@ def make(engine):
                     return self._send(200, {"ok": True, "message": "set to %s" % opt})
                 if p == "/api/ai_identify":
                     from . import ai
-                    st = engine.settings.get()
-                    r = ai.identify(b["id"], st)
-                    if r.get("ok") and b.get("apply"):
-                        r["filled"] = ai.apply(b["id"], r["fields"], r.get("model", ""), bool(b.get("overwrite")))
+                    r = ai.identify_verify(b["id"], engine.settings.get())
+                    if r.get("ok") and b.get("apply") and r.get("decision") in ("auto", "none"):
+                        r["filled"] = ai.apply(b["id"], r["fields"], r.get("model", ""), bool(b.get("overwrite")), r.get("candidate"))
                     return self._send(200, r)
+                if p == "/api/ai_apply":
+                    from . import ai
+                    return self._send(200, {"ok": True, "filled": ai.apply(b["id"], b["fields"], b.get("model", ""), bool(b.get("overwrite")), b.get("candidate"))})
+                if p == "/api/exif_refresh":
+                    return self._send(200, library.refresh_exif(b["id"]))
                 if p == "/api/mood_rename":
                     return self._send(200, {"ok": True, "changed": library.rename_mood(b.get("from"), b.get("to"))})
                 if p == "/api/notify_test":
