@@ -1,5 +1,9 @@
 # Getting started
 
+A two-minute tour of the app first:
+
+![Now Playing](images/ui-now-playing.png)
+
 ## What you need
 - A Samsung Frame TV on the same network/VLAN as Home Assistant (tested on a 2022 model).
 - Home Assistant OS or Supervised (add-ons).
@@ -9,7 +13,7 @@
 ## Minimal setup (about 5 minutes)
 1. **Install.** Use the "Add to my Home Assistant" button in the README, or add `https://github.com/bardlaabs/frame-tv-curator` under Settings > Add-ons > Add-on Store > Repositories. Install and start **Frame TV Curator**.
 2. **Give it the TV.** In the add-on **Configuration** tab set `tv_ip` to the TV's address (leave blank to take it from the media player entity). In the add-on panel open the **TV** tab and confirm the media player entity (default `media_player.frametv`).
-3. **Put images in place.** Copy images into the `frame` folder on your media share, for example `frame/art/` and `frame/photos/`. New files appear within a minute.
+3. **Put images in place.** Copy images into the `frame` folder on your media share, for example `frame/Art/` and `frame/Photos/`. New files appear within a minute.
 4. **Pair.** Open **Frame Curator** from the sidebar. The first time the add-on connects, accept the pairing prompt on the TV.
 5. **Pick a rotation.** In **Settings** choose how often the picture changes and which folder(s) to use.
 

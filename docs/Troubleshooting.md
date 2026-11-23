@@ -5,7 +5,9 @@
 - **Pairing prompt keeps appearing**: accept it on the TV once; change the add-on's name in the TV tab only if needed.
 - **Images missing**: confirm they are under `frame/` on the media share; allow a minute for scanning.
 - **Colors look off**: check the sRGB setting in Display.
-- **Placard cut off**: adjust Overscan.
+- **Placard cut off**: adjust Overscan ([steps](Display-and-Look#overscan)).
+- **TV does not turn on when I come home**: check the Presence card's "What it is doing now" status and that the add-on turned the TV off itself ([Presence](Optional-Presence)).
+- **A Smithsonian search says a key is needed**: follow the Smithsonian steps in [Discover](Discover#smithsonian).
 - **Discover add fails**: try again; if a museum refuses the large size the add-on falls back to a smaller copy and tells you.
 
 ## Health check

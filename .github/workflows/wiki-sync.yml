@@ -26,8 +26,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Copy pages
         run: |
-          rm -f wiki/*.md
+          rm -rf wiki/*.md wiki/images
           cp main/docs/*.md wiki/
+          [ -d main/docs/images ] && cp -r main/docs/images wiki/images
           # wiki links have no .md extension
           sed -i -E 's/\]\(([A-Za-z0-9_-]+)\.md(#[^)]*)?\)/](\1\2)/g' wiki/*.md
           {

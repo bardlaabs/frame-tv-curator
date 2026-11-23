@@ -1,33 +1,92 @@
-# Optional: Discover
+# Discover (find free art)
 
-Find public-domain art from museum collections and add it to your library, with metadata and license filled into the sidecar.
+Discover finds public-domain and openly licensed art from museums and archives and adds it to your library, with the title, artist, date, credit, license and source link filled in.
+
+![The Discover tab](images/ui-discover.png)
+*(Sample pictures shown.)*
 
 ## Sources
-- **Reframed**: a curated gallery of public-domain art.
-- **Art Institute of Chicago**: public-domain works from the museum's open-access API (CC0 data). Images come at the museum's own 3000 px download size (the largest it publishes), downloaded by your browser and uploaded to the add-on.
-- **The Metropolitan Museum of Art**: public-domain works (CC0). Choose Highlights or a department, or search by keyword. The add-on downloads the original file (often several thousand pixels wide). A page can show fewer than 24 items because only public-domain objects with a picture are listed.
-- **Cleveland Museum of Art**: open-access works (CC0) at up to about 3400 px, with the museum's description and credit line.
-- **Wikimedia Commons**: free-licensed pictures (public domain, CC0, CC BY, CC BY-SA only) by category: ukiyo-e, holiday postcards, vintage posters, Google Art Project, pop art, or any search. Pictures come at up to 3840 px wide; the artist and license are saved with each one (CC BY and CC BY-SA need credit, which the placard and Info tab show). Requests to Commons are throttled to one per second.
-- **NASA Image Library**: space and Earth images (generally public domain). Pick a topic or search; images under 1600 px wide are skipped, so a page can show fewer than 24 items.
 
-## Using it
-1. Open **Library > Discover**, choose a source, type and order, or search by keyword or artist.
-2. Tick items (a duplicate check warns about images you already have) and choose the destination folder.
-3. Use the preview button for a full-screen look with details before adding.
-4. A toast summarizes how many were added or skipped.
+Eight sources are built in. Pick one from the **Source** menu at the top of the Discover tab.
 
-Please keep the polite request rate; the add-on throttles requests to museum servers.
+| Source | What you get | Key needed? | License |
+|---|---|---|---|
+| **Reframed Gallery** | Classic paintings and photography already extended to 3840x2160, so they fill the screen. | No | Free per the site |
+| **Art Institute of Chicago** | Public-domain paintings, prints, drawings, watercolors, photographs and posters at 3000 px (the largest the museum publishes). | No | CC0 (descriptions CC BY 4.0) |
+| **The Metropolitan Museum of Art** | Public-domain works, Highlights or by department, often with very large originals. | No | CC0 |
+| **Cleveland Museum of Art** | Open-access paintings, prints, drawings, photographs, textiles and sculpture at up to about 3400 px. | No | CC0 |
+| **NASA Image Library** | Space and Earth images by topic or search (under 1600 px wide are skipped). | No | Generally public domain |
+| **Wikimedia Commons** | Ukiyo-e, holiday postcards, vintage and Art Nouveau posters, Google Art Project paintings, pop art, digital art, or any search; up to 3840 px. | No | Public domain, CC0, CC BY, CC BY-SA |
+| **Smithsonian** | Art, design, portraits and more from the Smithsonian museums (at least 1600 px wide). | **Yes** (free) | CC0 |
+| **Getty Museum** | Paintings, drawings, prints and photographs from the Getty's Open Content (about 160,000 CC0 images). | No | CC0 |
 
-## Adding to an album
+CC BY and CC BY-SA pictures (Commons) need credit; the artist and license are saved with each picture and can appear on the placard and in the Info tab.
 
-Next to **Add to folder** is **and album**. Pick an album there and everything you add is also put in that album (the pictures still live in the folder you chose). The list shows the albums that existed when you opened Discover; reload the page after creating a new album.
+Some sources can show fewer than 24 pictures on a page because only suitable files are listed (public domain, with an image, large enough).
 
-## Smithsonian
+## Add pictures, step by step
 
-Open-access art and design from the Smithsonian museums (CC0, at least 1600 px wide). It needs a free API key: request one at https://api.data.gov/signup/, paste it into the add-on Configuration (Smithsonian API key), save and restart the add-on. Pick a museum from the Type menu or search all of them.
+1. Open the **Discover** tab.
+2. Choose a **Source**. Depending on the source, choose a **Type** (or museum, topic or category), **Artist** and **Order**.
+3. Optional: type a title or artist in **Search** and press Enter.
+4. Click a picture to select it (a check mark appears). Click the small expand button on a card for a **full-screen preview** with size, license, description and any duplicate warning; use the arrow keys to browse.
+5. Choose where to put the pictures: **Add to folder** (pick an existing folder or type a new name), and optionally **and album** to also put them in an album.
+6. Click **Add to ...** in the bar at the bottom. A progress dialog shows each download and closes itself with a summary when it is done.
+7. Switch to the **Library** tab. The new pictures are in the folder you chose.
 
-## Getty Museum
+**Duplicates:** if a picture looks like one you already have (same image, or same title and artist), a comparison shows both with their sizes, file sizes and sources. Choose **skip** (the default), **keep both** or **replace** (the old file goes to `_trash`).
 
-Open Content from the J. Paul Getty Museum (CC0, no key): choose Paintings, Drawings, Prints, Photographs or All types, or search by title or artist. Images are fetched at up to 3840 px on the long side through the Getty's IIIF image server. The accession number goes into the credit line.
+**Remembering your place:** Discover restores your last source, type, search, artist, order, page, folder and album when you return.
 
-Discover remembers where you were (source, type, search, artist, order, page, folder and album) in this browser.
+Please keep the polite request rate; the add-on already limits how fast it asks each museum.
+
+## Source guides
+
+### Reframed Gallery
+1. Source: **Reframed Gallery**.
+2. Order by **A-Z by artist**, **Recently added** or **Shuffle**, and optionally pick an **Artist**.
+3. Select and add. Pictures arrive at 3840x2160. A note on the card says when a picture was extended with AI.
+
+### Art Institute of Chicago
+1. Source: **Art Institute of Chicago**.
+2. **Type**: Painting, Print, Drawing, Watercolor, Photograph, Poster or All types.
+3. Select and add. Your browser downloads the image from the museum and uploads it to the add-on; the dialog tells you if it had to fall back to a smaller size.
+
+### The Metropolitan Museum of Art
+1. Source: **The Metropolitan Museum of Art**.
+2. **Type**: **Highlights** or one of the museum's departments; or search by keyword.
+3. Select and add. Original files are often several thousand pixels wide, so adds can take a little longer.
+
+### Cleveland Museum of Art
+1. Source: **Cleveland Museum of Art**.
+2. **Type**: pick a kind of object, or **All types**.
+3. Select and add. The museum's description and credit line are saved.
+
+### NASA Image Library
+1. Source: **NASA Image Library**.
+2. Pick a **topic** or type a search.
+3. Select and add. The credit line names the NASA center or photographer.
+
+### Wikimedia Commons
+1. Source: **Wikimedia Commons**.
+2. **Type**: a preset (ukiyo-e prints, Christmas / Easter / Halloween postcards, vintage travel posters, Art Nouveau posters, Google Art Project paintings, pop art, digital art) or **Search all**.
+3. Optional: add a keyword.
+4. Preview before adding: ukiyo-e results can include shunga prints.
+5. Select and add. Only free licenses are shown, and the artist and license are saved.
+
+### Smithsonian
+1. Get a free key: go to https://api.data.gov/signup/ and sign up.
+2. In Home Assistant open **Settings > Add-ons > Frame TV Curator > Configuration**, paste the key into **Smithsonian API key**, click **Save**.
+3. **Restart** the add-on.
+4. In Discover choose the source **Smithsonian**.
+5. Pick a **Type** (a museum: American Art, Portrait Gallery, Cooper Hewitt, Freer | Sackler, Hirshhorn, African American History & Culture, American Indian, Air and Space) or **All museums**, and optionally search.
+6. Select and add. Only CC0 pictures at least 1600 px wide are listed. Some Portrait Gallery records have no working image at the Smithsonian; those cards are hidden automatically.
+
+Without a key the source explains what to do.
+
+### Getty Museum
+1. Source: **Getty Museum**.
+2. **Type**: Paintings, Drawings, Prints, Photographs or All types; or search by title or artist.
+3. Select and add. Images come at up to 3840 px (a smaller size when the original is smaller). The accession number goes into the credit line. Many Getty records have no date.
+
+See the [Settings reference](Settings-Reference#discover) for what Discover remembers.
