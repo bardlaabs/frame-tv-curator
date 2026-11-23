@@ -1,0 +1,49 @@
+name: Sync docs to wiki
+
+# Copies the manual in docs/ to the GitHub wiki whenever docs change on main.
+# Needs the wiki to exist (create the first page once in the GitHub web UI).
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', '.github/workflows/wiki-sync.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copy pages
+        run: |
+          rm -f wiki/*.md
+          cp main/docs/*.md wiki/
+          # wiki links have no .md extension
+          sed -i -E 's/\]\(([A-Za-z0-9_-]+)\.md(#[^)]*)?\)/](\1\2)/g' wiki/*.md
+          {
+            echo "**[Home](Home)**"; echo
+            for f in wiki/*.md; do
+              n=$(basename "$f" .md)
+              case "$n" in Home|_Sidebar) continue;; esac
+              echo "- [${n//-/ }]($n)"
+            done
+          } > wiki/_Sidebar.md
+      - name: Commit and push
+        working-directory: wiki
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -m "Sync docs from ${GITHUB_SHA::7}"
+          git push
