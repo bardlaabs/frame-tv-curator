@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.33.1
+
+- Fix: the Library was slow to open right after 0.33.0 because colors were worked out while it loaded. Colors now fill in only in the background.
+
 ## 0.33.0
 
 - **Color:** every picture's dominant colors (up to three: red, orange, yellow, green, teal, blue, purple, pink, brown, black, gray, white) are worked out by the add-on (no AI, computed in the background after the update). The Library has a Color filter with swatches and two new sorts: Color (rainbow order) and Brightness.

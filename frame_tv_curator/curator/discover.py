@@ -753,7 +753,7 @@ def _lib_entries():
             a = sc.get("artist") or {}
             title = ct.get("title") or sc.get("placard_title") or sc.get("title") or ""
             artist = ct.get("artist") or a.get("display") or a.get("name") or ""
-            f = library.image_facts(i)
+            f = library.image_facts(i, need_col=False)
             out.append({"id": i, "name": title or os.path.splitext(os.path.basename(i))[0], "folder": i.split("/")[0],
                         "t": norm(title), "a": norm(artist), "file": norm(os.path.splitext(os.path.basename(i))[0]),
                         "w": f["w"], "h": f["h"], "bytes": f["s"], "dh": f["dh"], "source": library.source_of(i, sc)})

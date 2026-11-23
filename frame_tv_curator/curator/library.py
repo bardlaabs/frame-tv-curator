@@ -388,7 +388,7 @@ def _colors(im):
     hue = (math.degrees(math.atan2(sy, sx)) % 360) if (sx * sx + sy * sy) > n * 0.01 else None
     return {"n": names, "h": None if hue is None else round(hue, 1), "l": round(100 * lsum / max(1, n))}
 
-def image_facts(img_id):
+def image_facts(img_id, need_col=True):
     """{w, h, dh (64-bit difference hash as hex)} for an image, cached until the file changes."""
     from PIL import ImageOps
     p = abspath(img_id)
@@ -396,7 +396,7 @@ def image_facts(img_id):
     with _ic_lock:
         _ic_load()
         e = _ic.get(img_id)
-        if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size and e.get("col"):
+        if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size and (e.get("col") or not need_col):
             return e
     im = Image.open(p)
     w, h = im.size
@@ -443,7 +443,7 @@ def warm_facts(budget=120):
 
 def is_low_res(img_id):
     try:
-        e = image_facts(img_id)
+        e = image_facts(img_id, need_col=False)
         return e["w"] < 1920 or e["h"] < 1080
     except Exception:
         return False
@@ -482,7 +482,7 @@ def find_duplicates(threshold=4):
     facts = {}
     for i in ids:
         try:
-            facts[i] = image_facts(i)
+            facts[i] = image_facts(i, need_col=False)
         except Exception:
             pass
     save_image_cache()
@@ -508,13 +508,13 @@ def find_duplicates(threshold=4):
 
 def duplicate_of(img_id, threshold=5):
     try:
-        me = image_facts(img_id)
+        me = image_facts(img_id, need_col=False)
     except Exception:
         return None
     for i in all_images():
         if i != img_id:
             try:
-                if _ham(me["dh"], image_facts(i)["dh"]) <= threshold:
+                if _ham(me["dh"], image_facts(i, need_col=False)["dh"]) <= threshold:
                     return i
             except Exception:
                 pass
