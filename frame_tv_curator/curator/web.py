@@ -55,7 +55,7 @@ def library_list(folder, ids=None):
             added = 0
         out.append({"id": i, "file": stem, "title": title, "name": title or stem,
                     "artist": a.get("display") or a.get("name") or "", "medium": (sc.get("medium") or (sc.get("card_text") or {}).get("medium") or "").strip() if isinstance(sc.get("medium") or "", str) else "", "year": _year(sc), "added": added,
-                    "tags": [t for t in (sc.get("tags") or []) if isinstance(t, str)], "mood": sc.get("mood") if isinstance(sc.get("mood"), str) else "", "flags": sc.get("flags") or {}, "has_display": bool(sc.get("display")), "low_res": library.is_low_res(i)})
+                    "tags": [t for t in (sc.get("tags") or []) if isinstance(t, str)], "mood": sc.get("mood") if isinstance(sc.get("mood"), str) else "", "season": sc.get("season") if isinstance(sc.get("season"), str) else "", "occasion": sc.get("occasion") if isinstance(sc.get("occasion"), str) else "", "colors": (library._ic.get(i) or {}).get("col", {}).get("n", []), "hue": (library._ic.get(i) or {}).get("col", {}).get("h"), "light": (library._ic.get(i) or {}).get("col", {}).get("l", 50), "flags": sc.get("flags") or {}, "has_display": bool(sc.get("display")), "low_res": library.is_low_res(i)})
     library.save_image_cache()
     return out
 
@@ -157,6 +157,7 @@ def make(engine):
                     out.sort(key=lambda x: x["id"])
                     return self._send(200, out)
                 if p == "/api/settings": return self._send(200, engine.settings.get())
+                if p == "/api/color_hex": return self._send(200, library.COLOR_HEX)
                 if p == "/api/verify_search":
                     from . import verify
                     c, notes = verify.candidates(q.get("title", ""), q.get("artist", ""))

@@ -95,3 +95,7 @@ One picture can keep more than one crop, for example the whole scene and a close
 5. **Delete selected** removes a saved crop.
 
 The crop in use is the one shown in the Crop tab; the others are kept in the sidecar (`edit.saved_crops`) until you switch. Nothing changes in the original file.
+
+## Color, season and occasion filters (0.33.0)
+
+The Library shows filter chips for **Color**, **Season** and **Occasion** (as well as Tags and Mood) when pictures have them. Colors are worked out automatically from the picture (up to three dominant colors, shown with swatches), so the first run after updating fills them in over a few minutes. Sort by **Color (rainbow order)** or **Brightness** from the sort menu; gray pictures sort last by color. Season and Occasion are set in a picture's Info tab or by [AI](AI-Identification); the Occasions list is under Settings > Moods and appearance.

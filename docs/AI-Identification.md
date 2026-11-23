@@ -1,6 +1,6 @@
 # Identify pictures with Claude
 
-Claude can look at a picture and fill in **empty** fields: artist, title, date, medium, description and mood (chosen from your [Moods list](Settings-Reference)). It names an artist or title only when it recognizes the work, never overwrites anything you typed, and does not search the web for matches. Where it is unsure it leaves the field empty.
+Claude can look at a picture and fill in **empty** fields: artist, title, date, medium, description, mood, season and occasion, and it adds tags (to yours, never replacing them) (chosen from your [Moods list](Settings-Reference)). It names an artist or title only when it recognizes the work, never overwrites anything you typed, and does not search the web for matches. Where it is unsure it leaves the field empty.
 
 ## Set it up
 

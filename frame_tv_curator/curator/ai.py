@@ -1,6 +1,6 @@
 """Identify artwork with Claude (Anthropic Messages API, stdlib only). The key comes from the add-on option
 `anthropic_key` (kept by Home Assistant's Supervisor), never from the settings file."""
-import base64, io, json, os, time, threading, urllib.request, urllib.error
+import base64, io, json, os, re, time, threading, urllib.request, urllib.error
 from . import config, library
 
 API = "https://api.anthropic.com/v1/messages"
@@ -44,7 +44,7 @@ def _image_b64(img_id, max_side=1568):
     return base64.b64encode(b.getvalue()).decode()
 
 PROMPT = """You are helping label pictures for a digital art frame. Look at the picture and answer with ONE JSON object and nothing else.
-Keys: "kind" ("art" for a painting, drawing, print or other artwork; "photo" for a photograph), "artist" (name, or "" if unknown), "title" (or ""), "date" (year or range as text, or ""), "medium" (e.g. "Oil on canvas", or ""), "movement" (art movement or style, or ""), "description" (one or two plain sentences about what it shows), "mood" (exactly one word from this list: {moods}), "confidence" ("high", "medium" or "low" for the artist and title).
+Keys: "kind" ("art" for a painting, drawing, print or other artwork; "photo" for a photograph), "artist" (name, or "" if unknown), "title" (or ""), "date" (year or range as text, or ""), "medium" (e.g. "Oil on canvas", or ""), "movement" (art movement or style, or ""), "description" (one or two plain sentences about what it shows), "mood" (exactly one word from this list: {moods}), "tags" (3 to 6 short lowercase words about subject and style, e.g. "landscape", "river", "impressionism"), "season" (exactly one of spring, summer, autumn, winter, or "" if it is not clearly seasonal), "occasion" (exactly one word or phrase from this list if the picture is clearly about it, else ""): {occasions}), "confidence" ("high", "medium" or "low" for the artist and title).
 Only name an artist or title if you actually recognize the work; otherwise leave them empty. Never guess. Do not invent facts.
 {hints}"""
 
@@ -76,9 +76,9 @@ def identify(img_id, settings):
             hv.append("%s: %s" % (lab, v))
     hints = ("Existing information about this picture (it may be partial or wrong): " + "; ".join(hv) + ". Use it as a lead and check it against what you see: if the picture matches, confirm and complete it; if it clearly shows a different work, give your own answer.") if hv else ""
     moods = ", ".join(settings.get("moods") or []) or "calm, joyful, dramatic, melancholy"
-    body = {"model": model, "max_tokens": 600, "messages": [{"role": "user", "content": [
+    body = {"model": model, "max_tokens": 800, "messages": [{"role": "user", "content": [
         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": _image_b64(img_id)}},
-        {"type": "text", "text": PROMPT.replace("{moods}", moods).replace("{hints}", hints)}]}]}
+        {"type": "text", "text": PROMPT.replace("{moods}", moods).replace("{occasions}", ", ".join(settings.get("occasions") or [])).replace("{hints}", hints)}]}]}
     req = urllib.request.Request(API, json.dumps(body).encode(), {"x-api-key": k, "anthropic-version": "2023-06-01", "content-type": "application/json"})
     try:
         r = json.load(urllib.request.urlopen(req, timeout=60))
@@ -103,7 +103,14 @@ def identify(img_id, settings):
     mood = str(f.get("mood") or "").strip().lower()
     allowed = [m.lower() for m in (settings.get("moods") or [])]
     f["mood"] = mood if (not allowed or mood in allowed) else ""
-    return {"ok": True, "fields": {k2: (str(f.get(k2) or "").strip()) for k2 in ("kind", "artist", "title", "date", "medium", "movement", "description", "mood", "confidence")}, "cost": round(cost, 5), "model": model}
+    season = str(f.get("season") or "").strip().lower()
+    occ = str(f.get("occasion") or "").strip()
+    occ_ok = {o.lower(): o for o in (settings.get("occasions") or [])}
+    tags = f.get("tags") if isinstance(f.get("tags"), list) else []
+    tags = [re.sub(r"\s+", " ", str(t).strip().lower())[:30] for t in tags if str(t).strip()][:8]
+    out = {k2: (str(f.get(k2) or "").strip()) for k2 in ("kind", "artist", "title", "date", "medium", "movement", "description", "mood", "confidence")}
+    out.update(season=season if season in ("spring", "summer", "autumn", "winter") else "", occasion=occ_ok.get(occ.lower(), ""), tags=tags)
+    return {"ok": True, "fields": out, "cost": round(cost, 5), "model": model}
 
 def merged(fields, cand):
     """A museum record wins over Claude's wording for the fields it has."""
@@ -152,6 +159,12 @@ def apply(img_id, fields, model="", overwrite=False, cand=None):
         put("medium", ct.get("medium") or sc.get("medium"), lambda v: ct.__setitem__("medium", v), fields.get("medium"))
     put("description", sc.get("description"), lambda v: sc.__setitem__("description", v), fields.get("description"))
     put("mood", sc.get("mood"), lambda v: sc.__setitem__("mood", v), fields.get("mood"))
+    put("season", sc.get("season"), lambda v: sc.__setitem__("season", v), fields.get("season"))
+    put("occasion", sc.get("occasion"), lambda v: sc.__setitem__("occasion", v), fields.get("occasion"))
+    new_tags = [t for t in (fields.get("tags") or []) if t and t not in [x.lower() for x in (sc.get("tags") or []) if isinstance(x, str)]]
+    new_tags = list(dict.fromkeys(new_tags))
+    if new_tags:                                    # tags are added to yours, never replaced
+        sc["tags"] = [x for x in (sc.get("tags") or []) if isinstance(x, str)] + new_tags; done.append("tags")
     if cand:
         lk = sc.setdefault("links", [])
         if cand.get("url") and not any(l.get("url") == cand["url"] for l in lk if isinstance(l, dict)):

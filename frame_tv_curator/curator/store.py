@@ -31,6 +31,7 @@ DEFAULT_SETTINGS = {
                "size": [522, 152], "ttl": 60, "refresh_type": "0"},
     "schedules": [],
     "log_level": "",
+    "occasions": ["Christmas", "Halloween", "Easter", "Thanksgiving", "Valentine's Day", "New Year", "Fourth of July"],
     "moods": ["calm", "serene", "joyful", "playful", "dramatic", "bold", "melancholy", "mysterious", "romantic", "nostalgic", "energetic", "contemplative"],
     "weather": {"enabled": False, "entity": "", "strength": 50, "map": {}},
     "ai": {"enabled": False, "model": "claude-haiku-5-5", "monthly_limit_usd": 10.0, "prices": {}},

@@ -361,6 +361,33 @@ def _ic_load():
         except Exception:
             _ic = {}
 
+COLOR_HEX = {"red": "#c0392b", "orange": "#e67e22", "yellow": "#f1c40f", "green": "#3c9a4f", "teal": "#1aa6a6", "blue": "#2f6fd0",
+             "purple": "#7d4cc2", "pink": "#e07aa8", "brown": "#7a5130", "black": "#1b1b1b", "gray": "#8a8a8a", "white": "#f2f2f2"}
+
+def _colors(im):
+    """Dominant color names (up to 3, each at least 10% of the picture), a sort hue (0-360, None for gray pictures) and lightness 0-100."""
+    import colorsys, math
+    sm = im.convert("RGB"); sm.thumbnail((80, 80))
+    cnt, tot, sx, sy, lsum, n = {}, 0, 0.0, 0.0, 0.0, 0
+    for r, g, b in sm.getdata():
+        h, sat, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255); hd = h * 360
+        if v < 0.15: c = "black"
+        elif sat < 0.12: c = "white" if v > 0.85 else "gray"
+        elif hd < 15 or hd >= 345: c = "red"
+        elif hd < 45: c = "brown" if v < 0.55 else "orange"
+        elif hd < 70: c = "yellow"
+        elif hd < 165: c = "green"
+        elif hd < 200: c = "teal"
+        elif hd < 255: c = "blue"
+        elif hd < 290: c = "purple"
+        else: c = "pink"
+        cnt[c] = cnt.get(c, 0) + 1; n += 1; lsum += v
+        if sat >= 0.2 and v >= 0.2:
+            sx += math.cos(h * 6.2832) * sat; sy += math.sin(h * 6.2832) * sat
+    names = [c for c, k in sorted(cnt.items(), key=lambda x: -x[1]) if k / max(1, n) >= 0.10][:3] or [max(cnt, key=cnt.get)]
+    hue = (math.degrees(math.atan2(sy, sx)) % 360) if (sx * sx + sy * sy) > n * 0.01 else None
+    return {"n": names, "h": None if hue is None else round(hue, 1), "l": round(100 * lsum / max(1, n))}
+
 def image_facts(img_id):
     """{w, h, dh (64-bit difference hash as hex)} for an image, cached until the file changes."""
     from PIL import ImageOps
@@ -369,7 +396,7 @@ def image_facts(img_id):
     with _ic_lock:
         _ic_load()
         e = _ic.get(img_id)
-        if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size:
+        if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size and e.get("col"):
             return e
     im = Image.open(p)
     w, h = im.size
@@ -380,7 +407,12 @@ def image_facts(img_id):
     for r in range(8):
         for c in range(8):
             bits = (bits << 1) | (1 if px[r * 9 + c] > px[r * 9 + c + 1] else 0)
-    e = {"m": st.st_mtime, "s": st.st_size, "w": w, "h": h, "dh": "%016x" % bits}
+    try:
+        im2 = Image.open(p); im2.draft("RGB", (320, 320))
+        col = _colors(ImageOps.exif_transpose(im2))
+    except Exception:
+        col = {"n": [], "h": None, "l": 50}
+    e = {"m": st.st_mtime, "s": st.st_size, "w": w, "h": h, "dh": "%016x" % bits, "col": col}
     with _ic_lock:
         _ic[img_id] = e
     return e
@@ -391,7 +423,7 @@ def save_image_cache():
         json.dump(_ic, open(tmp, "w"))
         os.replace(tmp, os.path.join(config.DATA, "imgcache.json"))
 
-def warm_facts(budget=40):
+def warm_facts(budget=120):
     """Compute size/hash facts for up to `budget` not-yet-cached images per call (keeps duplicate check and low-res badges fast)."""
     n = 0
     for i in all_images():
@@ -399,7 +431,7 @@ def warm_facts(budget=40):
             p = abspath(i); st = os.stat(p)
             with _ic_lock:
                 _ic_load(); e = _ic.get(i)
-            if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size:
+            if e and e.get("m") == st.st_mtime and e.get("s") == st.st_size and e.get("col"):
                 continue
             image_facts(i); n += 1
         except Exception:

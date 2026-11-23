@@ -249,7 +249,7 @@ function displayForm(d,onch,opts={}){ // d = {placard:{}, mat:{}} edited in plac
  return root}
 
 /* ---------- state ---------- */
-let S={},albumList=[],curAlbum=null,curTag='',curMood='',folderList=[],curFolder=null,curStatus={};
+let S={},albumList=[],curAlbum=null,curTag='',curMood='',curColor='',curSeason='',curOcc='',folderList=[],curFolder=null,curStatus={};
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const setFolder=n=>{curFolder=n;ls.set('fc_folder',n)};
 async function boot(){api('version').then(v=>{$('#foot').textContent='Frame TV Curator v'+v.version+' · github.com/bardlaabs/frame-tv-curator'}).catch(()=>{});const t=await api('templates');Object.assign(TEMPL,t);S=await api('settings');await refreshFolders();{const sf=ls.get('fc_folder');curFolder=(sf&&folderList.some(f=>f.name==sf))?sf:(S.source.folder||folderList[0]?.name||'Art')}
@@ -265,7 +265,7 @@ function showTab(t){if(SUBIDS.includes(t)&&t!='set')ls.set('fc_sub',t);const top
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 
 /* ---------- Now playing ---------- */
-let _lastMode;async function poll(){try{const t0=Date.now();const pm=curStatus.tv_mode;curStatus=await api('status');if(_lastMode!==undefined&&curStatus.tv_mode!==_lastMode&&!$('#t-now').hidden)renderNow();_lastMode=curStatus.tv_mode;curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
+api('color_hex').then(h=>window._colHex=h).catch(()=>{});let _lastMode;async function poll(){try{const t0=Date.now();const pm=curStatus.tv_mode;curStatus=await api('status');if(_lastMode!==undefined&&curStatus.tv_mode!==_lastMode&&!$('#t-now').hidden)renderNow();_lastMode=curStatus.tv_mode;curStatus.skew=(curStatus.server_time*1000-(t0+Date.now())/2)/1000;showAct();$('#tvs').textContent=(curStatus.dry_run?'DRY-RUN · ':'')+'TV: '+curStatus.tv;
  const id=curStatus.current,k=(curStatus.showing||{}).kind,nx=(curStatus.next||{}).id;if((id!==poll.id||k!==poll.kind||nx!==poll.nx)&&!(curStatus.activity&&curStatus.activity.phase!='idle')){poll.id=id;poll.kind=k;poll.nx=nx;if(!$('#t-now').hidden)renderNow()}}catch(e){}}
 let actTimer=null;
 function showAct(){let b=$('#actbar');if(!b){b=el('div',{id:'actbar'});document.body.append(b)}const a=(curStatus.activity||{});
@@ -335,7 +335,7 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
  const stack=el('div',{class:'nstack'},
   el('div',{class:'ngrid'},rows.map(([k,v])=>blk(k,v==null||v===''?'':String(v)))),
   blk('Description',sc.description),
-  blk('Mood',sc.mood),blk('Tags',(sc.tags||[]).join(', ')),blk('Notes',sc.notes),
+  blk('Mood',sc.mood),blk('Season',sc.season),blk('Occasion',sc.occasion),blk('Tags',(sc.tags||[]).join(', ')),blk('Notes',sc.notes),
   blk('Links',(links.length||link(sc.source_url))?el('div',{},link(sc.source_url,'Source page ↗'),links.filter(x=>x&&x.href!=sc.source_url)):null),
   facts.length?el('div',{class:'nfacts'},facts.join(' · ')):null);
  const chip=k=>flagChip(flags,k,async(k,c)=>{flags[k]=!flags[k];await api('flags',{id,flags});c.classList.toggle('on',flags[k]);
@@ -346,14 +346,15 @@ async function drawDetails(id){const box=$('#details');if(!box)return;
   el('button',{onclick:()=>openEditor(id)},'Edit details & look…'))}
 
 /* ---------- Library ---------- */
-const SORTS={name:'Title (or filename)',artist:'Artist',medium:'Medium',file:'Filename',date:'Artwork date',added:'Date added',fav:'Favorites first'};
+const SORTS={color:'Color (rainbow order)',bright:'Brightness',name:'Title (or filename)',artist:'Artist',medium:'Medium',file:'Filename',date:'Artwork date',added:'Date added',fav:'Favorites first'};
 const GROUPS={none:'No grouping',year:'Year',decade:'Decade',artist:'Artist',medium:'Medium'};
 let groupKey=(()=>{try{return localStorage.getItem('fc_group')||'none'}catch(e){return 'none'}})();if(!GROUPS[groupKey])groupKey='none';
 const sortPref=(()=>{try{return JSON.parse(localStorage.getItem('fc_sort')||'{}')}catch(e){return{}}})();
 let sortKey=sortPref.k||'name',sortDir=sortPref.d||1;
 const saveSort=()=>{try{localStorage.setItem('fc_sort',JSON.stringify({k:sortKey,d:sortDir}))}catch(e){}};
+const passF=i=>(!curTag||(i.tags||[]).includes(curTag))&&(!curMood||(i.mood||'').trim().toLowerCase()==curMood)&&(!curColor||(i.colors||[]).includes(curColor))&&(!curSeason||(i.season||'')==curSeason)&&(!curOcc||(i.occasion||'')==curOcc);
 function sortItems(items){const c=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
- const key={name:i=>i.name,artist:i=>i.artist,medium:i=>i.medium,file:i=>i.file,date:i=>i.year,added:i=>i.added,fav:i=>(i.flags.favorite?0:i.flags.show_more?1:2)}[sortKey];
+ const key={name:i=>i.name,artist:i=>i.artist,medium:i=>i.medium,file:i=>i.file,date:i=>i.year,added:i=>i.added,color:i=>i.hue,bright:i=>i.light,fav:i=>(i.flags.favorite?0:i.flags.show_more?1:2)}[sortKey];
  return items.slice().sort((a,b)=>{const x=key(a),y=key(b);const nx=x===''||x==null,ny=y===''||y==null;if(nx!==ny)return nx?1:-1; // empties always last
   let r=typeof x=='number'&&typeof y=='number'?x-y:c(x,y);if(!r)r=c(a.name,b.name);return r*sortDir})}
 const EYE_SLASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7c2 0 3.7.6 5.1 1.5M22 12s-3.5 7-10 7c-2 0-3.7-.6-5.1-1.5"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
@@ -432,8 +433,11 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
  const moodCount=new Map();items.forEach(i=>{const m=(i.mood||'').trim().toLowerCase();if(m)moodCount.set(m,(moodCount.get(m)||0)+1)});
  if(curMood&&!moodCount.has(curMood))curMood='';
  if(moodCount.size){const mc=el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},'Mood'),[...moodCount.keys()].sort().map(m=>el('span',{class:'chip sm'+(m==curMood?' on':''),onclick:()=>{curMood=curMood==m?'':m;renderLib()}},m+' ('+moodCount.get(m)+')')));grid.before(mc)}
+ {const rowOf=(label,key,get,cur,set,swatch)=>{const m=new Map();items.forEach(i=>{const v=get(i);(Array.isArray(v)?v:[v]).forEach(x=>{if(x)m.set(x,(m.get(x)||0)+1)})});if(cur&&!m.has(cur))set('');
+   if(m.size)grid.before(el('div',{class:'chips'},el('span',{class:'mut',style:'align-self:center'},label),[...m.keys()].sort((a,b)=>a.localeCompare(b)).map(x=>el('span',{class:'chip sm'+(x==cur?' on':''),onclick:()=>{set(cur==x?'':x);renderLib()}},swatch?el('i',{style:'display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid #0006;background:'+(window._colHex||{})[x]}):null,x+' ('+m.get(x)+')'))))};
+  rowOf('Color','c',i=>i.colors,curColor,v=>curColor=v,true);rowOf('Season','s',i=>i.season,curSeason,v=>curSeason=v);rowOf('Occasion','o',i=>i.occasion,curOcc,v=>curOcc=v)}
  const gnav=el('div',{class:'gnav'});grid.before(gnav);
- const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(!curMood||(i.mood||'').trim().toLowerCase()==curMood)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
+ const draw=()=>{const f=q.value.toLowerCase();const list=sortItems(items.filter(i=>passF(i)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(f))).slice(0,600);
   shownList=list;
   $('#cnt').textContent=list.length+' image'+(list.length==1?'':'s');
   if(groupKey=='none'){grid.classList.remove('grouped');gnav.replaceChildren();grid.replaceChildren(...list.map(tile));return}
@@ -448,7 +452,7 @@ async function renderLib(){const tok=++_libTok,root=$('#t-lib');root.replaceChil
   gnav.replaceChildren(...keys.map((k,n)=>el('span',{class:'chip sm',title:groups.get(k).length+' images',onclick:()=>secs[n].scrollIntoView({behavior:'smooth',block:'start'})},k)))};
  gsel.onchange=()=>{groupKey=gsel.value;try{localStorage.setItem('fc_group',groupKey)}catch(e){}draw()};
  sel.onchange=()=>{sortKey=sel.value;saveSort();draw()};dir.onclick=()=>{sortDir=-sortDir;dir.textContent=sortDir>0?'↑ A→Z':'↓ Z→A';saveSort();draw()};
- q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>(!curTag||(i.tags||[]).includes(curTag))&&(!curMood||(i.mood||'').trim().toLowerCase()==curMood)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
+ q.oninput=dbounce(draw,150);draw();drawBulk();window._libItems=items;window._libList=()=>sortItems(items.filter(i=>passF(i)&&(i.name+' '+i.artist+' '+i.file+' '+(i.mood||'')+' '+(i.tags||[]).join(' ')).toLowerCase().includes(q.value.toLowerCase())))}
 const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 function scheduleText(r){const p=[];p.push(r.kind=='images'?((r.images||[]).length+' image(s)'):r.kind=='album'?('album '+((albumList.find(a=>a.id==r.album)||{}).name||'?')):('folder '+(r.folder||'Art')));
  if((r.days||[]).length&&r.days.length<7)p.push(r.days.map(d=>DAYN[d]).join(' '));if(r.time_from&&r.time_to)p.push(r.time_from+'–'+r.time_to);
@@ -747,7 +751,7 @@ async function openEditor(id){
   meta:{title:(sc.card_text||{}).title||sc.placard_title||sc.title||'',artist:(sc.card_text||{}).artist||(sc.artist||{}).display||(sc.artist||{}).name||'',
    date:(sc.card_text||{}).date||(sc.date||{}).display||'',medium:(sc.card_text||{}).medium||sc.medium||'',
    credit:(sc.card_text||{}).credit||(sc.collection||{}).credit_line||'',
-   description:sc.description||'',notes:sc.notes||'',tags:(sc.tags||[]).join(', '),mood:sc.mood||'',source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
+   description:sc.description||'',notes:sc.notes||'',tags:(sc.tags||[]).join(', '),mood:sc.mood||'',season:sc.season||'',occasion:sc.occasion||'',source_name:(sc.collection||{}).institution||'',source_url:sc.source_url||'',license:sc.license||'',
    location:(sc.card_text||{}).location||(typeof sc.location=='object'&&sc.location?sc.location.name:sc.location)||''},
   flags:Object.assign({favorite:false,show_more:false,exclude:false},sc.flags||{}),
   edit:Object.assign({rotate:0,straighten:0,crop:null},sc.edit||{}),
@@ -794,7 +798,7 @@ async function openEditor(id){
   const link=ed.meta.source_url&&/^https?:\/\//.test(ed.meta.source_url)?el('a',{href:ed.meta.source_url,target:'_blank',rel:'noopener'},'Open source page ↗'):null;
   return el('fieldset',{},el('legend',{},'Details'),ta('Description','description',5,'About this image: what it shows, the story, the technique…'),
    wide('Source','source_name','Museum, website or photographer'),wide('Source link','source_url','https://…'),link?el('div',{class:'row'},el('label',{}),link):null,
-   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),el('div',{class:'row'},el('button',{title:'Ask Claude to identify this picture (or check what is filled in), then confirm it against museum records. Fields you already filled are kept.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first, then identify');return}await aiOne(id,()=>openEditor(id))}},'\u2728 Identify / verify with AI'),
+   wide('License','license','e.g. CC0, public domain, all rights reserved'),moodField(),field('Season',ed.meta,'season','select',{options:{'':'(none)',spring:'Spring',summer:'Summer',autumn:'Autumn',winter:'Winter'},native:true}),field('Occasion',ed.meta,'occasion','select',{options:Object.fromEntries([['','(none)']].concat((S.occasions||[]).concat(ed.meta.occasion&&!(S.occasions||[]).includes(ed.meta.occasion)?[ed.meta.occasion]:[]).map(o=>[o,o]))),native:true}),el('div',{class:'row'},el('button',{title:'Ask Claude to identify this picture (or check what is filled in), then confirm it against museum records. Fields you already filled are kept.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first, then identify');return}await aiOne(id,()=>openEditor(id))}},'\u2728 Identify / verify with AI'),
    el('button',{title:'Re-read the photo\u2019s EXIF information (date, camera, location) into this picture. No AI.',onclick:async()=>{if(snap()!==saved){toast('Save your changes first');return}const r=await api('exif_refresh',{id});toast(r.message,5000);if(r.ok)openEditor(id)}},'\u21bb Refresh from EXIF')),wide('Tags','tags','Words to find and group pictures by, separated by commas (e.g. winter, blue, landscape)'),ta('Notes','notes',3,'Private notes (not shown on the TV)'),
    facts.length?el('p',{class:'mut'},facts.join(' · ')):null)};
  const metaP=el('div',{},...mfs,
@@ -816,7 +820,7 @@ async function openEditor(id){
     el('div',{class:'row'},el('button',{class:'pri',onclick:async()=>{dlg.remove();try{await save(closeEd)}catch(e){toast('Save failed: '+e.message)}}},'Save & close'),el('button',{onclick:()=>{dlg.remove();closeEd()}},'Discard changes'),el('button',{onclick:()=>dlg.remove()},'Keep editing'))));
   document.body.append(dlg)};
  const save=async(then)=>{const ct={artist:ed.meta.artist,title:ed.meta.title,date:ed.meta.date,medium:ed.meta.medium,credit:ed.meta.credit,location:ed.meta.location};
-  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,mood:(ed.meta.mood||'').trim(),tags:ed.meta.tags.split(',').map(t=>t.trim()).filter((t,n,a)=>t&&a.findIndex(u=>u.toLowerCase()==t.toLowerCase())==n),source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
+  await api('sidecar',{id,patch:{card_text:ct,flags:ed.flags,description:ed.meta.description,notes:ed.meta.notes,mood:(ed.meta.mood||'').trim(),season:(ed.meta.season||''),occasion:(ed.meta.occasion||''),tags:ed.meta.tags.split(',').map(t=>t.trim()).filter((t,n,a)=>t&&a.findIndex(u=>u.toLowerCase()==t.toLowerCase())==n),source_url:ed.meta.source_url,license:ed.meta.license,collection:{institution:ed.meta.source_name}}});await api('flags',{id,flags:ed.flags});if(isPhoto)await api('location',{id,lat:ed.geo.lat,lon:ed.geo.lon,name:ed.geo.name});await api('display',{id,display:build()});await api('edit',{id,edit:editOut()});saved=snap();toast('Saved');return then&&then()};
  box.append(el('div',{class:'row',style:'justify-content:space-between;position:sticky;top:0;z-index:5;background:var(--panel);padding:8px 0;margin-bottom:6px'},
    el('h2',{style:'margin:0'},ed.meta.title||id.split('/').pop().replace(/\.[^.]+$/,'')),
    el('div',{class:'row'},el('button',{onclick:askClose},'✕ Close'),el('button',{onclick:()=>save()},'Save'),el('button',{class:'pri',title:'Save, then show this image on the TV now',onclick:()=>save(push)},'Save & show on TV'))),
@@ -912,6 +916,8 @@ function aiCard(s){s.ai=s.ai||{enabled:false,model:'claude-haiku-5-5',monthly_li
   field('Model',s,'ai.model','select',{options:{'claude-haiku-5-5':'Haiku 5.5 (cheapest, good for bulk)','claude-sonnet-5-5':'Sonnet 5.5 (better at obscure art)'},native:true}),
   field('Monthly spending limit (US dollars, 0 = none)',s,'ai.monthly_limit_usd','num',{min:0,max:1000,step:1}),
   el('p',{class:'mut'},'Your key is NOT entered here. Put it in Home Assistant: Settings > Add-ons > Frame TV Curator > Configuration > Anthropic key, then Save and restart the add-on. Home Assistant stores it, masks it, and it never goes into this page, your settings or the backups. Create the key at console.anthropic.com and give it a spend limit there too.'))}
+function occCard(s){s.occasions=s.occasions||[];const inp=el('input',{type:'text',style:'width:min(100%,520px)',value:s.occasions.join(', ')});inp.onchange=()=>{s.occasions=inp.value.split(',').map(x=>x.trim()).filter(Boolean)};
+ return el('div',{class:'card'},el('h3',{},'Occasions'),el('p',{class:'mut'},'Holidays and events a picture can belong to (Info tab, Library filter, and what AI chooses from). Separate with commas. Season (spring to winter) is fixed.'),el('div',{class:'row'},inp))}
 function weatherCard(s){s.weather=s.weather||{enabled:false,entity:'',strength:50,map:{}};s.weather.map=s.weather.map||{};
  const box=el('div',{});const info=el('p',{class:'mut'},'Checking the weather…');
  api('weather_entities').then(r=>{const ents=r.entities||[];const sel=el('select',{onchange:()=>{s.weather.entity=sel.value}},el('option',{value:''},'Automatic ('+(r.auto||'none found')+')'),...ents.map(e=>el('option',{value:e.entity},e.name+' ('+e.entity+')')));sel.value=s.weather.entity||'';
@@ -988,7 +994,7 @@ function renderSet(){PICKID=null;PALETTE=[];if(window._notifySvc===undefined){wi
  put('t-set',[cards[0],cards[3],byT('Bird Frame interleave'),byT('Logging'),byT('Backups'),mkSave()]);
  put('t-alerts',[byT('Notifications'),mkSave()]);
  put('t-ai',[aiCard(s),mkSave()]);
- put('t-prefs',[byT('Appearance'),byT('Moods'),weatherCard(s),mkSave()]);
+ put('t-prefs',[byT('Appearance'),byT('Moods'),occCard(s),weatherCard(s),mkSave()]);
  put('t-disp',[cards[1],srgbCard,mkSave()]);
  put('t-sched',[cards[4]]);
  const [actCard,liveCard,...tvRest]=tvCards(s);

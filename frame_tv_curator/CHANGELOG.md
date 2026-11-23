@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.0
+
+- **Color:** every picture's dominant colors (up to three: red, orange, yellow, green, teal, blue, purple, pink, brown, black, gray, white) are worked out by the add-on (no AI, computed in the background after the update). The Library has a Color filter with swatches and two new sorts: Color (rainbow order) and Brightness.
+- **Season and Occasion** fields (Info tab, Library filters). Season is spring to winter; Occasions is an editable list (Settings > Moods and appearance), default Christmas, Halloween, Easter, Thanksgiving, Valentine's Day, New Year, Fourth of July.
+- **AI** now also adds **tags** (added to yours, never replacing them), season and occasion.
+
 ## 0.32.0
 
 - **Identify / verify with AI** now uses the existing artist, title, date and file name as a lead, then checks the result against museum collections (Art Institute of Chicago, The Met, Cleveland, Getty, Smithsonian, Wikimedia Commons last). A clear museum match fills in the museum's details and adds a link to its record; several possible matches are shown for you to choose from.
