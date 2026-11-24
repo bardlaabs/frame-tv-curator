@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.6
+
+- Fix: presence did not wake the TV when you came back if something other than the add-on had turned it off (a manual power-off, the TV's own timer, the end of the active hours). The wake required that presence itself had turned the TV off. Now a TV that is off is also woken into Art Mode when you return after the sensors read "nobody" for at least a set time (new setting "Also wake a TV that is off after being away at least", default 2 minutes, 0 = any absence). Shorter absences still leave the TV alone, so switching it off by hand while you sit there stays off. Active hours still apply, and the log now says why a return did not wake the TV.
+
 ## 0.34.5
 
 - Text fields in the editor: the page behind a window (Now Playing redraws when the TV rotates or its status changes, every few seconds) no longer redraws while a window is open or you are typing in a field, and catches up right afterward. This is meant to stop selections from being cleared mid-edit. Text in fields and windows is also explicitly selectable, and keyboard shortcuts of the full-screen preview ignore keys typed in a text field.

@@ -112,12 +112,20 @@ class Presence:
         if tv not in ("on", "off", "standby"):
             return                                        # TV unreachable: do nothing
         if present:
-            if self.away_since is not None and self.away_done and c.get("on_return", True) and \
-                    in_window(c.get("active_hours"), now) and tv != "on" and now - self.last_act > 30:
-                ok, msg = self.e.tv.control("art_on")
-                self.last_act = now
-                self.st["last"] = "%s: welcome back - %s" % (time.strftime("%H:%M:%S"), msg)
-                log.info("presence returned: %s", msg)
+            if self.away_since is not None and c.get("on_return", True) and tv != "on" and now - self.last_act > 30:
+                # Wake after an absence we caused (away_done), or after any real absence long enough
+                # that the TV being off is not just someone switching it off by hand while sitting here.
+                away_s = now - self.away_since
+                min_s = max(0.0, float(c.get("return_min_away_minutes", 2))) * 60
+                if not in_window(c.get("active_hours"), now):
+                    log.info("presence returned after %d s, TV is %s: outside active hours, leaving it", away_s, tv)
+                elif self.away_done or away_s >= min_s:
+                    ok, msg = self.e.tv.control("art_on")
+                    self.last_act = now
+                    self.st["last"] = "%s: welcome back after %d min - %s" % (time.strftime("%H:%M:%S"), away_s // 60, msg)
+                    log.info("presence returned after %d s (TV %s): %s", away_s, tv, msg)
+                else:
+                    log.info("presence returned after %d s, TV is %s: absence shorter than %d min, leaving it", away_s, tv, min_s // 60)
             self.away_since, self.away_done = None, False
             self._flag(False)
             self.st["away_for_s"] = 0

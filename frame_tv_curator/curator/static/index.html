@@ -1145,10 +1145,11 @@ function tvCards(s){
   P.enabled?num('Nobody here for (minutes) before turning off',P,'away_minutes',1,240):null,
   P.enabled?field('When everyone has left',P,'away_action','select',{options:{power_off:'Power the TV off',art_off:'Leave Art Mode (normal TV)'}}):null,
   P.enabled?field('Turn Art Mode on when someone returns',P,'on_return','check'):null,
+  P.enabled&&P.on_return!==false?num('Also wake a TV that is off after being away at least (minutes, even if presence did not turn it off)',P,'return_min_away_minutes',0,240):null,
   P.enabled?field('Only turn off while Art Mode is showing (never interrupt TV)',P,'only_art_mode','check'):null,
   P.enabled?field('Only wake it during these hours (HH:MM-HH:MM, blank = always)',P,'active_hours','text'):null,
   P.enabled?field('Fallback if every sensor is unavailable: assume home during (HH:MM-HH:MM, blank = do nothing)',P,'fallback_hours','text'):null,
-  P.enabled?el('p',{class:'mut'},'Short sensor dropouts are ignored: the TV is only turned off after the sensors have read “nobody” continuously for the time above. If no sensor is available, the TV is left alone (or follows the fallback hours). Presence only ever turns the TV on when someone returns after it turned it off, so switching it off by hand while you are in the room stays off.'):null,
+  P.enabled?el('p',{class:'mut'},'Short sensor dropouts are ignored: the TV is only turned off after the sensors have read “nobody” continuously for the time above. If no sensor is available, the TV is left alone (or follows the fallback hours). Presence turns the TV on when someone returns after it turned it off, or after the sensors read “nobody” for at least the wake time above (so something else switching the TV off while you were away does not leave it dark). Switching it off by hand while you stay in the room, or after only a short absence, stays off.'):null,
   el('h4',{},'The TV’s own motion sensor'),
   tvSel('Motion sensitivity','tv_motion_sensitivity_entity'),tvSel('Motion timer (minutes, off = disabled)','tv_motion_timer_entity'),
   el('p',{class:'mut'},'The Frame has a built-in sensor that dims or turns off the screen when no motion is seen. Use it instead of, or together with, the sensors above. Changes apply to the TV immediately.'))};drawP();

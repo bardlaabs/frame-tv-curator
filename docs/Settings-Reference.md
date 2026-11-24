@@ -162,7 +162,8 @@ All the conditions you fill in must match for a schedule to be active.
 | Presence entities | none | one or more binary sensors | Any one "on" means someone is home. |
 | Away minutes | 10 | 10-30 | How long nobody must be detected before acting. |
 | Away action | Power off | Power off, Leave Art Mode | What to do when everyone is gone. |
-| On return | On | On | Wake the TV into Art Mode when someone comes back (only if the add-on turned it off). |
+| On return | On | On | Wake the TV into Art Mode when someone comes back (after an absence the add-on caused, or one at least as long as the next setting).. |
+| Also wake a TV that is off after being away at least (minutes) | 2 | 2-10 | If something else turned the TV off while nobody was home, wake it on return when the sensors read "nobody" for at least this long. 0 = any absence. Shorter absences leave it alone. |
 | Only act in Art Mode | On | On | Never turn the TV off while you are watching TV. |
 | Active hours | blank | `06:00-01:00` | Only act within this window. Blank means always. |
 | Fallback hours | blank | `07:00-22:00` | A clock window used only if every sensor is unavailable. |

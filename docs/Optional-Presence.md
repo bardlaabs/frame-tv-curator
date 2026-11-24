@@ -15,7 +15,7 @@ Turn the TV off when nobody is around, and bring it back to Art Mode when someon
 8. Click **Save & apply now**.
 
 ## How it behaves
-- It wakes the TV on return **only if the add-on turned it off**. If you switch the TV off yourself while you are in the room, it stays off.
+- It wakes the TV on return after an absence it turned the TV off for, **or** when the TV is off and the sensors read "nobody" for at least **Also wake a TV that is off after being away at least** (default 2 minutes). So a TV switched off by something else while you were out still comes back. If you switch the TV off yourself while you stay in the room, or after only a short absence, it stays off.
 - That "I turned it off" memory survives add-on updates and restarts.
 - If every sensor is unavailable it does nothing, or uses the fallback hours if you set them.
 - Use the **What it is doing now** card to see the current presence state.

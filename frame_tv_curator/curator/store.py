@@ -23,7 +23,7 @@ DEFAULT_SETTINGS = {
         "light": {"entity": "", "follow": False, "sync_brightness": False, "sync_color_temp": False,
                   "light_min_pct": 10, "light_max_pct": 100},
     },
-    "presence": {"enabled": False, "entities": [], "away_minutes": 10, "away_action": "power_off", "on_return": True,
+    "presence": {"enabled": False, "entities": [], "away_minutes": 10, "away_action": "power_off", "on_return": True, "return_min_away_minutes": 2,
                  "only_art_mode": True, "active_hours": "", "fallback_hours": "",
                  "tv_motion_sensitivity_entity": "select.living_room_frametv_motion_sensitivity",
                  "tv_motion_timer_entity": "select.living_room_frametv_motion_timer"},
