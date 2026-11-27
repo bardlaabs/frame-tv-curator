@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.9
+
+- Watchdog for a hung upload: right after a TV reboot a picture upload could sit forever (the TV's art service was not ready), holding the TV connection and the engine. If a push to the TV runs longer than 4 minutes, the add-on now restarts itself to abort it (at most once every 30 minutes; same TV-tab setting as the Art Mode reload, on by default) and sends a notification if you set one up. Settings, state and the presence flag are on disk, so nothing is lost.
+
 ## 0.34.8
 
 - When the TV's art service hangs and stops answering, brightness/probe calls no longer hold the TV connection for minutes (shorter timeout, fewer retries), and the status says **Art Mode status unknown: the TV is not answering** instead of "connection is busy". A hung TV needs a full power cycle (unplug it for about 30 seconds); the add-on cannot restart the TV's own art service.

@@ -58,6 +58,26 @@ class Engine:
             if not ok:
                 self._fail_since = time.time() - mins * 60 + 600     # try again in 10 minutes
 
+    def _check_push_hung(self):
+        """A push that never finishes (the TV's art service stops answering mid-upload) holds the only TV connection and the
+        engine for good. Restart the add-on once in a while to abort it; state and the presence flag are saved on disk."""
+        a = self.activity
+        t = self.settings.get().get("tv") or {}
+        if self.dry or not t.get("self_heal", True) or a.get("phase") != "pushing" or time.time() - a.get("since", time.time()) < 240:
+            return
+        d = self.state.get()
+        if time.time() - float(d.get("watchdog_restart_ts") or 0) < 1800:
+            return
+        d["watchdog_restart_ts"] = time.time(); self.state.data = d; self.state.save()
+        log.error("a push to the TV has been running for %d s: restarting the add-on to abort it", time.time() - a["since"])
+        if (self.settings.get().get("notify") or {}).get("enabled"):
+            self.send_notice("Frame TV: restarting the add-on", "A picture upload to the Frame TV hung for 4 minutes; the add-on is restarting itself to recover.")
+        try:
+            urllib.request.urlopen(urllib.request.Request("http://supervisor/addons/self/restart", data=b"", method="POST",
+                                   headers={"Authorization": "Bearer " + os.environ.get("SUPERVISOR_TOKEN", "")}), timeout=15)
+        except Exception as e:
+            log.warning("self-restart failed: %s", e)
+
     def _check_stuck(self):
         """The TV is on but its Art Mode stays unreadable (Home Assistant's Art connection wedged, TV busy): reload the
         integration once in a while to clear it, and say so."""
@@ -371,6 +391,7 @@ class Engine:
             try:
                 self._check_notify()
                 self._check_stuck()
+                self._check_push_hung()
                 s = self.settings.get()
                 if not s["enabled"] or self.in_quiet_hours():
                     continue
