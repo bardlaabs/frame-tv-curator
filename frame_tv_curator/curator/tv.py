@@ -30,15 +30,17 @@ class TV:
     def _brief(e):
         if TV._is_notice(e):
             return "the TV was busy with another connection (join/leave notice)"
+        if isinstance(e, TimeoutError) or "timed out" in str(e).lower():
+            return "the TV is not answering"
         return str(e)[:100] or e.__class__.__name__
 
-    def _art(self, tries=6):
+    def _art(self, tries=6, timeout=30):
         """A connected Art API object. A join/leave notice from another client during the handshake is retried."""
         from samsungtvws import SamsungTVWS
         tok = os.path.join(config.DATA, "tv_token.txt")
         for i in range(tries):
             art = SamsungTVWS(host=self.host(), port=8002, token_file=tok, name=self.cfg.get("name", "FrameTVCurator"),
-                              timeout=30).art()
+                              timeout=timeout).art()
             try:
                 art.open()
                 return art
@@ -52,7 +54,7 @@ class TV:
                 time.sleep(0.5 * (i + 1) + random.random() * 0.5)
 
     @contextmanager
-    def _session(self, wait=90):
+    def _session(self, wait=90, timeout=30, tries=6):
         """The only way the add-on talks to the TV's art channel: one connection at a time, always closed afterwards.
         Overlapping connections (this add-on's own threads, Home Assistant's) make the TV broadcast join/leave notices
         that break each other's handshakes."""
@@ -60,7 +62,7 @@ class TV:
             raise TimeoutError("the TV connection is busy")
         art = None
         try:
-            art = self._art()
+            art = self._art(tries=tries, timeout=timeout)
             yield art
         finally:
             try:
@@ -93,7 +95,7 @@ class TV:
         if self._rc[2] and now < self._rc[0]:         # recent answer: do not open a connection every few seconds
             return self._rc[1], self._rc[2]
         try:
-            with self._session(wait=10) as art:
+            with self._session(wait=10, timeout=8, tries=3) as art:
                 mode = str(art.get_artmode()).lower()
         except Exception as e:
             self._unk_n += 1
@@ -200,7 +202,7 @@ class TV:
             return {"brightness": {"value": 5, "min": 1, "max": 10}, "color_temperature": {"value": 0, "min": -5, "max": 5}, "sensor": "off", "dry": True}
         out = {}
         try:
-            with self._session() as art:
+            with self._session(timeout=10, tries=3) as art:
                 raw = art.get_artmode_settings()
                 out["raw"] = str(raw)[:600]
                 items = raw
@@ -247,7 +249,7 @@ class TV:
         if self.dry:
             return True, "dry-run"
         try:
-            with self._session() as art:
+            with self._session(timeout=10, tries=3) as art:
                 if sensor_off is not None:
                     art.set_brightness_sensor_setting("off" if sensor_off else "on")
                 if brightness is not None:

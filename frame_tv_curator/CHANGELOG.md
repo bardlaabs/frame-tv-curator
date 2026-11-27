@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.8
+
+- When the TV's art service hangs and stops answering, brightness/probe calls no longer hold the TV connection for minutes (shorter timeout, fewer retries), and the status says **Art Mode status unknown: the TV is not answering** instead of "connection is busy". A hung TV needs a full power cycle (unplug it for about 30 seconds); the add-on cannot restart the TV's own art service.
+
 ## 0.34.7
 
 - Fix: the TV showed art but pictures stopped changing for hours because the add-on decided it was not in Art Mode. When Home Assistant's own Art connection to the TV is stuck its Art Mode report disappears, and the add-on's fallback (asking the TV directly) failed on almost every try: the TV sends "client connected / disconnected" notices to every open connection, the Samsung library treats such a notice during its handshake as a failed connection, and the add-on opened several connections at once (the Art Mode check every few seconds, brightness, probing), which set those notices off in each other.
