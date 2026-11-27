@@ -1,12 +1,17 @@
 """Samsung Frame push: upload -> select -> delete previous (Art Mode API)."""
-import os, time, logging, threading, hashlib
+import os, time, logging, threading, hashlib, random
+from contextlib import contextmanager
 from . import config, ha
 log = logging.getLogger("tv")
 
 class TV:
     def __init__(self, cfg, dry_run=False):
         self.cfg, self.dry = cfg, dry_run
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()     # one art-channel connection at a time (see _session)
+        self.unknown_since = None         # when Art Mode status first became unreadable while the TV is on
+        self.last_heal = 0
+        self._unk_n = 0
+        self._rc = (0, False, "")         # cached direct Art Mode verdict: (valid until, ok, why)
 
     def host(self):
         h = self.cfg.get("ip") or config.options().get("tv_ip")
@@ -14,35 +19,112 @@ class TV:
             h = ha.tv_info(self.cfg["entity"]).get("ip")
         return h
 
-    def _art(self):
+    @staticmethod
+    def _is_notice(e):
+        """The TV tells every connected client when another client joins or leaves (ms.channel.clientConnect / clientDisconnect).
+        samsungtvws treats such a notice, arriving where it expects the handshake, as a failed connection. No command was sent
+        yet, so trying again is safe."""
+        return "ms.channel.client" in str(e)
+
+    @staticmethod
+    def _brief(e):
+        if TV._is_notice(e):
+            return "the TV was busy with another connection (join/leave notice)"
+        return str(e)[:100] or e.__class__.__name__
+
+    def _art(self, tries=6):
+        """A connected Art API object. A join/leave notice from another client during the handshake is retried."""
         from samsungtvws import SamsungTVWS
         tok = os.path.join(config.DATA, "tv_token.txt")
-        tv = SamsungTVWS(host=self.host(), port=8002, token_file=tok, name=self.cfg.get("name", "FrameTVCurator"),
-                         timeout=30)
-        return tv.art()
+        for i in range(tries):
+            art = SamsungTVWS(host=self.host(), port=8002, token_file=tok, name=self.cfg.get("name", "FrameTVCurator"),
+                              timeout=30).art()
+            try:
+                art.open()
+                return art
+            except Exception as e:
+                try:
+                    art.close()
+                except Exception:
+                    pass
+                if not self._is_notice(e) or i == tries - 1:
+                    raise
+                time.sleep(0.5 * (i + 1) + random.random() * 0.5)
+
+    @contextmanager
+    def _session(self, wait=90):
+        """The only way the add-on talks to the TV's art channel: one connection at a time, always closed afterwards.
+        Overlapping connections (this add-on's own threads, Home Assistant's) make the TV broadcast join/leave notices
+        that break each other's handshakes."""
+        if not self.lock.acquire(timeout=wait):
+            raise TimeoutError("the TV connection is busy")
+        art = None
+        try:
+            art = self._art()
+            yield art
+        finally:
+            try:
+                if art is not None:
+                    art.close()
+            except Exception:
+                pass
+            time.sleep(0.3)               # let the TV announce our leaving before anyone else connects
+            self.lock.release()
+
+    def stuck_for(self):
+        """Seconds the TV has been on with an Art Mode status we cannot read (0 = fine)."""
+        return 0 if self.unknown_since is None else time.time() - self.unknown_since
 
     def ready(self):
-        """Only push while the TV is in Art Mode (selecting art wakes it otherwise)."""
+        """Only push while the TV is in Art Mode (selecting art wakes it otherwise).
+        Home Assistant's art_mode_status attribute can lag, and is missing for as long as its own Art connection is stuck, so
+        when it does not say "on" we ask the TV itself. A question the TV could not answer is "unknown", never "not in Art Mode"."""
         if self.dry:
             return True, "dry-run"
         info = ha.tv_info(self.cfg["entity"])
+        st = info.get("state")
         if info.get("art_mode") == "on":
+            self.unknown_since, self._unk_n = None, 0
             return True, "ok"
-        # HA's attribute can lag; ask the TV itself before giving up
+        if st != "on":
+            self.unknown_since, self._unk_n = None, 0
+            return False, f"TV not in Art Mode (state={st}, art_mode={info.get('art_mode')})"
+        now = time.time()
+        if self._rc[2] and now < self._rc[0]:         # recent answer: do not open a connection every few seconds
+            return self._rc[1], self._rc[2]
         try:
-            if info.get("state") == "on" and str(self._art().get_artmode()).lower() == "on":
-                return True, "ok (TV reports Art Mode)"
+            with self._session(wait=10) as art:
+                mode = str(art.get_artmode()).lower()
         except Exception as e:
-            log.warning("direct art-mode check failed: %s", e)
-        return False, f"TV not in Art Mode (state={info.get('state')}, art_mode={info.get('art_mode')})"
+            self._unk_n += 1
+            if self.unknown_since is None:
+                self.unknown_since = now
+            why = "Art Mode status unknown: %s" % self._brief(e)
+            if self._unk_n <= 3 or self._unk_n % 10 == 0:
+                log.warning("direct art-mode check failed (%d in a row): %s", self._unk_n, self._brief(e))
+            self._rc = (now + min(15 * self._unk_n, 60), False, why)
+            return False, why
+        self.unknown_since, self._unk_n = None, 0
+        res = (True, "ok (TV reports Art Mode)") if mode == "on" else (False, f"TV not in Art Mode (state=on, art_mode={mode})")
+        self._rc = (now + 15, res[0], res[1])
+        return res
+
+    def heal(self):
+        """Reload Home Assistant's Samsung integration: clears an Art connection that stopped answering. -> (ok, message)"""
+        ent = self.cfg["entity"]
+        try:
+            ha.call("homeassistant", "reload_config_entry", {"entity_id": ent})
+            self._rc = (0, False, "")
+            return True, "reloaded the integration behind %s" % ent
+        except Exception as e:
+            return False, "could not reload the integration behind %s: %s" % (ent, e)
 
     def push(self, jpeg_path, previous_ids):
         """Returns the new content_id (or None). previous_ids: ids we uploaded earlier, to delete."""
         if self.dry:
             log.info("[dry-run] would upload %s and delete %s", jpeg_path, previous_ids)
             return "DRY-%d" % os.path.getsize(jpeg_path)
-        with self.lock:
-            art = self._art()
+        with self._session() as art:
             data = open(jpeg_path, "rb").read()
             cid = art.upload(data, matte="none", portrait_matte="none", file_type="JPEG")
             art.select_image(cid, show=True)
@@ -62,8 +144,7 @@ class TV:
         if self.dry:
             log.info("[dry-run] would cache-push %s (%d cached)", img_id, len(cache))
             return "DRY-%d" % len(data), cache, {"reused": False, "deleted": 0, "cached": len(cache)}
-        with self.lock:
-            art = self._art()
+        with self._session() as art:
             try:
                 on_tv = {x.get("content_id") for x in (art.available() or [])}
             except Exception as e:
@@ -105,8 +186,7 @@ class TV:
         if self.dry or not cids:
             return 0
         n = 0
-        with self.lock:
-            art = self._art()
+        with self._session() as art:
             for c in cids:
                 try:
                     art.delete(c); n += 1
@@ -120,8 +200,7 @@ class TV:
             return {"brightness": {"value": 5, "min": 1, "max": 10}, "color_temperature": {"value": 0, "min": -5, "max": 5}, "sensor": "off", "dry": True}
         out = {}
         try:
-            with self.lock:
-                art = self._art()
+            with self._session() as art:
                 raw = art.get_artmode_settings()
                 out["raw"] = str(raw)[:600]
                 items = raw
@@ -168,8 +247,7 @@ class TV:
         if self.dry:
             return True, "dry-run"
         try:
-            with self.lock:
-                art = self._art()
+            with self._session() as art:
                 if sensor_off is not None:
                     art.set_brightness_sensor_setting("off" if sensor_off else "on")
                 if brightness is not None:
@@ -248,8 +326,9 @@ class TV:
         return False, "TV did not wake up (%s).%s" % (why, hint)
 
     def _art_mode_on(self):
-        if str(self._art().get_artmode()).lower() != "on":
-            self._art().set_artmode(True)
+        with self._session() as art:
+            if str(art.get_artmode()).lower() != "on":
+                art.set_artmode(True)
 
     def _key(self, key):
         from samsungtvws import SamsungTVWS
@@ -287,7 +366,8 @@ class TV:
                 self._art_mode_on()
                 return True, "Art Mode on"
             if action == "art_off":
-                self._art().set_artmode(False)
+                with self._session() as art:
+                    art.set_artmode(False)
                 return True, "Art Mode off (TV is showing normal TV)"
             if action == "power_off":
                 try:

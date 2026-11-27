@@ -58,6 +58,21 @@ class Engine:
             if not ok:
                 self._fail_since = time.time() - mins * 60 + 600     # try again in 10 minutes
 
+    def _check_stuck(self):
+        """The TV is on but its Art Mode stays unreadable (Home Assistant's Art connection wedged, TV busy): reload the
+        integration once in a while to clear it, and say so."""
+        t = self.settings.get().get("tv") or {}
+        if self.dry or not t.get("self_heal", True):
+            return
+        mins = float(t.get("heal_after_minutes") or 5)
+        if self.tv.stuck_for() < mins * 60 or time.time() - self.tv.last_heal < 1800:
+            return
+        self.tv.last_heal = time.time()
+        ok, msg = self.tv.heal()
+        log.warning("Art Mode status unreadable for %d min: %s", self.tv.stuck_for() // 60, msg)
+        if (self.settings.get().get("notify") or {}).get("enabled"):
+            self.send_notice("Frame TV: Art Mode status stuck", "The Frame TV is on but its Art Mode could not be read for %d minutes, so pictures were not changing. The add-on %s." % (self.tv.stuck_for() // 60, msg))
+
     def _act(self, phase, detail=""):
         self.activity = {"phase": phase, "detail": detail, "since": time.time()}
 
@@ -86,6 +101,10 @@ class Engine:
             name = library.display_info(img_id).get("name") or img_id
             self._act("checking", "Checking the TV")
             ok, why = self.tv.ready()
+            if not ok and self.tv.unknown_since:          # TV is on but its Art Mode cannot be read: counts as a failure to notify about
+                self.last_error = why; self._note_fail()
+            elif not ok and not self._notified:
+                self._fail_since = None
             library.ensure_sidecar(img_id)
             if ok or force_push:        # the e-paper is slow: start it now, in parallel with the TV render/upload
                 threading.Thread(target=self._epaper, args=(s["epaper"], library.load_sidecar(img_id)), daemon=True).start()
@@ -351,6 +370,7 @@ class Engine:
         while not self._stop.wait(5):
             try:
                 self._check_notify()
+                self._check_stuck()
                 s = self.settings.get()
                 if not s["enabled"] or self.in_quiet_hours():
                     continue

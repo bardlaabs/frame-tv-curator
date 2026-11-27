@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.34.7
+
+- Fix: the TV showed art but pictures stopped changing for hours because the add-on decided it was not in Art Mode. When Home Assistant's own Art connection to the TV is stuck its Art Mode report disappears, and the add-on's fallback (asking the TV directly) failed on almost every try: the TV sends "client connected / disconnected" notices to every open connection, the Samsung library treats such a notice during its handshake as a failed connection, and the add-on opened several connections at once (the Art Mode check every few seconds, brightness, probing), which set those notices off in each other.
+- All art-channel conversations now go through one connection at a time that is always closed afterwards, and a handshake spoiled by such a notice is retried. The direct Art Mode answer is remembered for 15 seconds (up to a minute while the TV cannot be asked) instead of opening a connection every 5 seconds.
+- "Could not ask the TV" is now reported as **Art Mode status unknown**, no longer as "not in Art Mode".
+- Protection against getting stuck again: if the TV is on and its Art Mode stays unreadable for 5 minutes, the add-on reloads the Samsung integration in Home Assistant (at most once every 30 minutes; new TV-tab setting, on by default) and sends a notification when notifications are set up. An unreadable status also counts toward the "TV is not responding" notification.
+
 ## 0.34.6
 
 - Fix: presence did not wake the TV when you came back if something other than the add-on had turned it off (a manual power-off, the TV's own timer, the end of the active hours). The wake required that presence itself had turned the TV off. Now a TV that is off is also woken into Art Mode when you return after the sensors read "nobody" for at least a set time (new setting "Also wake a TV that is off after being away at least", default 2 minutes, 0 = any absence). Shorter absences still leave the TV alone, so switching it off by hand while you sit there stays off. Active hours still apply, and the log now says why a return did not wake the TV.

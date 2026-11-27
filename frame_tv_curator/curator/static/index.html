@@ -1070,6 +1070,8 @@ function tvCards(s){
   field('TV IP address (blank = find automatically)',s,'tv.ip','text'),
   entityField('Media player entity',s,'tv.entity','media_player',{ph:'media_player.frametv'}),
   field('TV MAC address (for Wake-on-LAN when the TV is fully off)',s,'tv.mac','text'),
+  field('If the TV is on but its Art Mode cannot be read, reload the Samsung integration in Home Assistant',s,'tv.self_heal','check'),
+  s.tv.self_heal!==false?num('…after this many minutes',s,'tv.heal_after_minutes',2,60):null,
   el('div',{class:'row'},...[['art_on','Art Mode on'],['art_off','Art Mode off'],['power_off','Power off']].map(([a,l])=>el('button',{onclick:async()=>{toast('Sending…');const r=await api('tv',{action:a});toast(r.message,5000)}},l))));
  // TV-side cache
  s.tv.cache??={enabled:false,keep_recent:5,keep_favorites:true,max_favorites:10};const TCC=s.tv.cache,tcbox=el('div'),tcstat=el('div',{class:'mut'});

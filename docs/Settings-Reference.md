@@ -140,6 +140,8 @@ All the conditions you fill in must match for a schedule to be active.
 | TV IP address | blank | `192.168.1.50` | Blank means find it automatically from the media player entity. Same as the `tv_ip` add-on option. |
 | Media player entity | `media_player.frametv` | your TV's entity | The Home Assistant entity for the TV. |
 | TV MAC address | blank | `d0:c2:4e:xx:xx:xx` | Lets the add-on wake a fully off TV with Wake-on-LAN. |
+| Reload the Samsung integration if Art Mode cannot be read | On | On | When the TV is on but its Art Mode status stays unreadable, reload the Samsung integration in Home Assistant to clear a stuck connection (at most once every 30 minutes). |
+| ...after this many minutes | 5 | 5 | How long the status must stay unreadable before the reload. |
 | Name (pairing) | `FrameTVCurator` | leave as is | How the add-on appears in the TV's pairing list. |
 | Keep uploads | 1 | 1 | Old uploaded pictures to keep on the TV when the cache is off. |
 | Art Mode on / off, Power off | n/a | n/a | Remote-control buttons. |

@@ -9,6 +9,7 @@
 2. Leave **TV IP address** blank to find the TV from the media player entity, or enter it (same as the `tv_ip` add-on option).
 3. Choose the **Media player entity** (default `media_player.frametv`). A warning appears if it is not found in Home Assistant.
 4. Enter the **TV MAC address** if you want the add-on to wake a fully powered-off TV with Wake-on-LAN.
+   Below it, **If the TV is on but its Art Mode cannot be read, reload the Samsung integration** (on by default) clears a stuck connection by itself; see Troubleshooting.
 5. Click **Save settings**.
 6. Try the buttons: **Art Mode on**, **Art Mode off**, **Power off**. The first time the add-on connects, accept the pairing prompt on the TV.
 

@@ -38,7 +38,7 @@ DEFAULT_SETTINGS = {
     "notify": {"enabled": False, "service": "", "minutes": 15, "on_recovery": True},
     "birdframe": {"enabled": False, "every_n": 10, "every_minutes": 0, "duration_minutes": 10, "source": "live",
                   "folder": "birds", "host": "local-birdframe-local", "port": 8099},
-    "tv": {"ip": "", "entity": "media_player.frametv", "name": "FrameTVCurator", "keep_uploads": 1, "mac": "",
+    "tv": {"ip": "", "entity": "media_player.frametv", "name": "FrameTVCurator", "keep_uploads": 1, "mac": "", "self_heal": True, "heal_after_minutes": 5,
            "cache": {"enabled": False, "keep_recent": 5, "keep_favorites": True, "max_favorites": 10}},
 }
 
