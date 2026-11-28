@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.10
+
+- Text printed on the mat now sits a little higher in the strip (it looked too low on the TV, e.g. on "The Eruption of Vesuvius"). Cached renders are redrawn.
+
 ## 0.34.9
 
 - Watchdog for a hung upload: right after a TV reboot a picture upload could sit forever (the TV's art service was not ready), holding the TV connection and the engine. If a push to the TV runs longer than 4 minutes, the add-on now restarts itself to abort it (at most once every 30 minutes; same TV-tab setting as the Art Mode reload, on by default) and sends a notification if you set one up. Settings, state and the presence flag are on disk, so nothing is lost.

@@ -10,7 +10,7 @@ import os, re, json, math, copy, hashlib, colorsys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps, ImageChops
 
-VERSION = "1.16"
+VERSION = "1.17"
 W, H = 3840, 2160
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -602,7 +602,7 @@ def draw_on_mat(base, sc, pl, geom, region=None):
         lines, gap, wmax, hts = build(0.45, [])
         chosen = (lines, gap, hts)
     lines, gap, hts = chosen
-    cy = y0 + (hs - sum(hts)) // 2
+    cy = y0 + int((hs - sum(hts)) * 0.32)      # slightly above centre: the line boxes hold extra space under the letters and the TV edge crops the bottom
     pos = pl["position"]
     for ln, lh_ in zip(lines, hts):
         wd = int(sum(seg_w(t_[0], t_[1], t_[3]) for t_ in ln) + gap * (len(ln) - 1))
